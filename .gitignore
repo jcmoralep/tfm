@@ -1,0 +1,25 @@
+# Build output
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+.idea/
+TestResults/
+
+# Logs (Serilog file sink)
+Logs/
+
+# Secrets and local environment
+.env
+*.env.local
+appsettings.*.local.json
+secrets.json
+
+# Tailwind standalone CLI (downloaded by Tailwind.targets) and its generated CSS
+.tools/
+src/BmadPlatform.Web/wwwroot/css/app.css
+
+# Local agent tooling
+.atl/

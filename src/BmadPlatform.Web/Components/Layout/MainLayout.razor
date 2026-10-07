@@ -1,0 +1,36 @@
+@using BmadPlatform.Web.Authentication
+@inherits LayoutComponentBase
+
+<div class="min-h-screen">
+    <header class="border-b border-line bg-surface-raised">
+        <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
+            <a href="" class="text-base font-semibold text-ink">Plataforma BMAD</a>
+
+            <AuthorizeView>
+                <Authorized>
+                    <div class="flex items-center gap-4">
+                        <span class="hidden text-sm text-ink-muted sm:inline">@context.User.Identity?.Name</span>
+                        <form action="@AuthenticationEndpoints.LogoutPath" method="post">
+                            <AntiforgeryToken />
+                            <button type="submit"
+                                    class="rounded-control border border-line px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface">
+                                Cerrar sesión
+                            </button>
+                        </form>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-5xl px-6 py-10">
+        @Body
+    </main>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet
+     class="fixed inset-x-0 bottom-0 z-50 border-t border-danger-line bg-danger-surface px-6 py-3 text-sm text-danger">
+    Se produjo un error inesperado.
+    <a href="." class="reload ml-2 font-semibold underline">Recargar</a>
+    <button type="button" class="dismiss ml-2 font-semibold" aria-label="Cerrar">×</button>
+</div>

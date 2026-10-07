@@ -1,0 +1,31 @@
+@page "/"
+@attribute [Authorize]
+@using BmadPlatform.Application.Abstractions.Authentication
+@using BmadPlatform.Application.Features.Authentication.GetCurrentUser
+@inject IMediator Mediator
+
+<PageTitle>Inicio · Plataforma BMAD</PageTitle>
+
+<section class="rounded-card border border-line bg-surface-raised p-8 shadow-card">
+    <h1 class="text-2xl font-semibold text-ink">Acceso confirmado</h1>
+
+    @if (user is not null)
+    {
+        <p class="mt-3 text-ink-muted">
+            Ha iniciado sesión como <span class="font-medium text-ink">@user.Email</span>.
+        </p>
+    }
+
+    <p class="mt-2 text-ink-muted">
+        Desde aquí podrá gestionar sus iniciativas cuando el módulo esté disponible.
+    </p>
+</section>
+
+@code {
+    private AuthenticatedUser? user;
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await Mediator.Send(new GetCurrentUserQuery());
+    }
+}

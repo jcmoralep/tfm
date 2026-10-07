@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/BmadPlatform.Application/BmadPlatform.Application.csproj" />
+    <Project Path="src/BmadPlatform.Domain/BmadPlatform.Domain.csproj" />
+    <Project Path="src/BmadPlatform.Infrastructure/BmadPlatform.Infrastructure.csproj" />
+    <Project Path="src/BmadPlatform.Web/BmadPlatform.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BmadPlatform.Application.Tests/BmadPlatform.Application.Tests.csproj" />
+    <Project Path="tests/BmadPlatform.ArchitectureTests/BmadPlatform.ArchitectureTests.csproj" />
+    <Project Path="tests/BmadPlatform.Infrastructure.Tests/BmadPlatform.Infrastructure.Tests.csproj" />
+    <Project Path="tests/BmadPlatform.Web.Tests/BmadPlatform.Web.Tests.csproj" />
+  </Folder>
+</Solution>

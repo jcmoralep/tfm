@@ -1,0 +1,113 @@
+@page "/login"
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
+@layout AuthLayout
+@using BmadPlatform.Application.Abstractions.Authentication
+@using BmadPlatform.Application.Features.Authentication.SignIn
+@using BmadPlatform.Web.Authentication
+@using FluentValidation
+@inject IMediator Mediator
+@inject NavigationManager Navigation
+
+<PageTitle>Iniciar sesión · Plataforma BMAD</PageTitle>
+
+<section class="rounded-card border border-line bg-surface-raised p-8 shadow-card">
+    <h1 class="text-xl font-semibold text-ink">Iniciar sesión</h1>
+    <p class="mt-1 text-sm text-ink-muted">Plataforma BMAD para producto</p>
+
+    @if (errors.Count > 0)
+    {
+        <div role="alert" class="mt-6 rounded-control border border-danger-line bg-danger-surface p-3 text-sm text-danger">
+            <ul class="space-y-1">
+                @foreach (var error in errors)
+                {
+                    <li>@error</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <EditForm Model="Input" method="post" OnSubmit="SignInAsync" FormName="login" class="mt-6 space-y-5">
+        <div>
+            <label for="email" class="block text-sm font-medium text-ink">Correo electrónico</label>
+            <InputText id="email" type="email" @bind-Value="Input.Email" autocomplete="username" required
+                       class="mt-1.5 block w-full rounded-control border border-line bg-surface-raised px-3 py-2 text-sm text-ink" />
+        </div>
+
+        <div>
+            <label for="password" class="block text-sm font-medium text-ink">Contraseña</label>
+            <InputText id="password" type="password" @bind-Value="Input.Password" autocomplete="current-password" required
+                       class="mt-1.5 block w-full rounded-control border border-line bg-surface-raised px-3 py-2 text-sm text-ink" />
+        </div>
+
+        <button type="submit"
+                class="w-full rounded-control bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary hover:bg-primary-hover">
+            Iniciar sesión
+        </button>
+    </EditForm>
+</section>
+
+@code {
+    private IReadOnlyList<string> errors = [];
+
+    [SupplyParameterFromForm]
+    private LoginInput Input { get; set; } = default!;
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Input ??= new LoginInput();
+
+        if (AuthenticationStateTask is not null
+            && (await AuthenticationStateTask).User.Identity?.IsAuthenticated == true)
+        {
+            Navigation.NavigateTo(LocalRedirect.Sanitize(ReturnUrl), forceLoad: true);
+        }
+    }
+
+    private async Task SignInAsync()
+    {
+        AuthenticationResult result;
+
+        try
+        {
+            result = await Mediator.Send(new SignInCommand(Input.Email, Input.Password));
+        }
+        catch (ValidationException exception)
+        {
+            errors = exception.Errors.Select(failure => failure.ErrorMessage).Distinct().ToList();
+            Input.Password = string.Empty;
+            return;
+        }
+
+        if (result == AuthenticationResult.Succeeded)
+        {
+            Navigation.NavigateTo(LocalRedirect.Sanitize(ReturnUrl), forceLoad: true);
+            return;
+        }
+
+        errors = [ToMessage(result)];
+        Input.Password = string.Empty;
+    }
+
+    private static string ToMessage(AuthenticationResult result) => result switch
+    {
+        AuthenticationResult.LockedOut =>
+            "La cuenta está bloqueada temporalmente por varios intentos fallidos. Vuelva a intentarlo más tarde.",
+        AuthenticationResult.NotAllowed =>
+            "Esta cuenta no tiene permitido iniciar sesión.",
+        _ => "El correo electrónico o la contraseña no son correctos.",
+    };
+
+    private sealed class LoginInput
+    {
+        public string Email { get; set; } = string.Empty;
+
+        public string Password { get; set; } = string.Empty;
+    }
+}
