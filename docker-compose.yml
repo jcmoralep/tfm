@@ -1,6 +1,9 @@
 # Local MySQL for development. Credentials come from environment variables or a local .env file
 # (gitignored; variables are listed in README.md). The image version must match the configuration key Database:MySqlServerVersion
 # (env var Database__MySqlServerVersion; default in MySqlDatabase.DefaultServerVersion).
+# Fixed project name so container, network and volume names do not depend on the folder name.
+name: bmadplatform
+
 services:
   mysql:
     image: mysql:8.4
