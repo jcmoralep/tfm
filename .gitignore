@@ -15,7 +15,20 @@ Logs/
 .env
 *.env.local
 appsettings.*.local.json
+appsettings.Local.json
+appsettings.Production.json
 secrets.json
+
+# Certificates and keys (IIS / Azure deployments)
+*.pfx
+*.pem
+*.key
+
+# Stray log files outside Logs/
+*.log
+
+# Local Claude Code settings
+.claude/settings.local.json
 
 # Tailwind standalone CLI (downloaded by Tailwind.targets) and its generated CSS
 .tools/
