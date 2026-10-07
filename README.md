@@ -32,7 +32,7 @@ Ningún secreto se guarda en el repositorio. La aplicación lee estas variables:
 | Variable | Obligatoria | Descripción |
 |---|---|---|
 | `ConnectionStrings__DefaultConnection` | Sí | Cadena de conexión a MySQL. Ejemplo con el MySQL de Docker Compose: `Server=localhost;Port=3307;Database=bmadplatform;User=bmad;Password=<contraseña>` |
-| `Database__MySqlServerVersion` | No | Versión del servidor MySQL (por defecto `8.4.0`, la imagen de Docker Compose). Debe coincidir con el servidor al que se conecta, por ejemplo `8.0` en Azure Database for MySQL si se eligió esa versión |
+| `Database__MySqlServerVersion` | No | Versión del servidor MySQL (por defecto `8.4.0`, la imagen de Docker Compose). Debe coincidir con el servidor al que se conecta: la imagen de Docker Compose en local o la del servicio MySQL en Railway |
 | `SeedUsers__0__Email` | Sí, para poder entrar | Correo del primer usuario inicial |
 | `SeedUsers__0__Password` | Sí, para poder entrar | Contraseña del primer usuario inicial |
 | `SeedUsers__1__Email`, `SeedUsers__1__Password`, ... | No | Usuarios adicionales, con índices consecutivos |
@@ -82,17 +82,21 @@ Para Docker Compose se usan además estas variables, que puede definir en un arc
 
 Para detener la base de datos: `docker compose down` (agregue `-v` para borrar también los datos).
 
-### Pasar de MySQL local a Azure Database for MySQL
+### Base de datos en Railway
 
-La base de datos es intercambiable por configuración, sin cambiar código ni migraciones (el proveedor sigue siendo MySQL):
+La base de datos de producción es la plantilla MySQL de Railway. Se conecta por configuración, sin cambiar código ni migraciones:
 
-1. Cree el servidor Flexible Server y una base de datos `bmadplatform`.
-2. Agregue una regla de firewall para la IP desde la que se conectará (o la del servidor IIS).
-3. Use una cadena de conexión con TLS: `Server=<servidor>.mysql.database.azure.com;Port=3306;Database=bmadplatform;User=<usuario>;Password=<contraseña>;SslMode=Required`.
-4. Defina `Database__MySqlServerVersion` con la versión elegida en Azure.
-5. Aplique las migraciones con la misma cadena de conexión (`dotnet ef database update`, ver sección anterior).
+1. Agregue el servicio MySQL desde la plantilla de Railway.
+2. En el servicio de la aplicación, defina `ConnectionStrings__DefaultConnection` con variables de referencia. El nombre del servicio en la referencia debe coincidir con el del servicio MySQL (aquí, `MySQL`):
 
-Antes del lanzamiento a producción hay que revisar si la cuenta de Azure califica para la oferta gratuita de MySQL (12 meses para usuarios nuevos) y qué costo tendrá después.
+   ```
+   Server=${{MySQL.MYSQLHOST}};Port=${{MySQL.MYSQLPORT}};Database=${{MySQL.MYSQLDATABASE}};User=${{MySQL.MYSQLUSER}};Password=${{MySQL.MYSQLPASSWORD}}
+   ```
+
+3. Defina `Database__MySqlServerVersion` con la versión de MySQL que ejecute el servicio. Debe coincidir con la imagen.
+4. Las migraciones se aplicarán como comando previo al despliegue (pendiente de implementar; ver `AGENTS.md` §6).
+
+`MYSQL_URL` de Railway tiene formato de URL y no sirve directamente como cadena de conexión de .NET.
 
 ## Ejecutar
 

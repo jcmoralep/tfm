@@ -6,7 +6,7 @@ namespace BmadPlatform.Infrastructure.Persistence;
 /// MySQL settings shared by the runtime registration and the design-time factory.
 /// The server version is explicit so neither startup nor migration authoring needs to query the server.
 /// This is the only place that knows which database engine is used, so switching hosts
-/// (local Docker, Azure Database for MySQL) is a configuration change.
+/// (local Docker, Railway MySQL) is a configuration change.
 /// </summary>
 public static class MySqlDatabase
 {
@@ -15,7 +15,7 @@ public static class MySqlDatabase
     /// <summary>
     /// Configuration key for the MySQL server version (environment variable: Database__MySqlServerVersion).
     /// It must match the server the app connects to: the docker-compose.yml image locally,
-    /// or the engine version selected for Azure Database for MySQL.
+    /// or the image version of the MySQL service on Railway.
     /// </summary>
     public const string ServerVersionKey = "Database:MySqlServerVersion";
 
