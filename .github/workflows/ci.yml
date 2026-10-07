@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A new push to the same branch or pull request cancels the run that is still in progress.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      # The SDK version comes from global.json so CI and local development use the same one.
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'Directory.Packages.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore BmadPlatform.slnx
+
+      # Warnings are errors (Directory.Build.props), so any warning fails this step.
+      # The build also downloads the pinned Tailwind CLI and generates the CSS.
+      - name: Build
+        run: dotnet build BmadPlatform.slnx --no-restore --configuration Release
+
+      # No database is needed: the current tests are unit and architecture tests.
+      - name: Test
+        run: dotnet test BmadPlatform.slnx --no-build --configuration Release
