@@ -61,11 +61,11 @@ Every commit MUST build with 0 warnings (warnings are errors) and pass `dotnet t
 
 ## Commit (c): Wizard UI
 
-- [ ] 3.1 Create `Web/Components/Initiatives/UserMessages.cs` (`TryGet`: validation, not-found, domain to Spanish) and `InitiativeLabels.cs` (status, mode, depth names; RF-27 deliverables). Covers: Status labels; Level descriptions.
-- [ ] 3.2 Create `Web.Tests/Initiatives/{UserMessagesTests,InitiativeLabelsTests}.cs`. Dep: 3.1.
-- [ ] 3.3 Create `Components/Initiatives/{DepthSelector,ErrorAlert}.razor` and modify `_Imports.razor`. Covers: Selector shows deliverables [UI].
-- [ ] 3.4 Create `Pages/Initiatives/InitiativeWizard.razor` at `/iniciativas/nueva` and `/iniciativas/{Id:guid}/crear`, `[Authorize]`, only `IMediator` and `NavigationManager`; Siguiente / Guardar borrador / Atrás (no persist) / Finalizar; redirect to detail when not Draft; not-found state. Dep: 3.1, 3.3.
-- [ ] 3.5 Verify: build, tests, then Chrome: create, leave, resume. Commit.
+- [x] 3.1 Create `Web/Components/Initiatives/UserMessages.cs` (`TryGet`: validation, not-found, domain to Spanish) and `InitiativeLabels.cs` (status, mode, depth names; RF-27 deliverables). Covers: Status labels; Level descriptions.
+- [x] 3.2 Create `Web.Tests/Initiatives/{UserMessagesTests,InitiativeLabelsTests}.cs`. Dep: 3.1.
+- [x] 3.3 Create `Components/Initiatives/{DepthSelector,ErrorAlert}.razor` and modify `_Imports.razor`. Covers: Selector shows deliverables [UI].
+- [x] 3.4 Create `Pages/Initiatives/InitiativeWizard.razor` at `/iniciativas/nueva` and `/iniciativas/{Id:guid}/crear`, `[Authorize]`, only `IMediator` and `NavigationManager`; Siguiente / Guardar borrador / Atrás (no persist) / Finalizar; redirect to detail when not Draft; not-found state. Dep: 3.1, 3.3.
+- [x] 3.5 Verify: build, tests, then Chrome: create, leave, resume. Commit.
 
 ## Commit (d): List/detail/edit/delete UI
 

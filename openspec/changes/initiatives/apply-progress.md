@@ -56,3 +56,23 @@ Repository SQL behavior (owner predicate, ordering, filters, soft delete on real
 
 ### Notes
 - `UpdateAsync` uses `Update` on a detached entity read with `AsNoTracking` (all columns written, last write wins).
+
+## Batch 3 (commit c: Wizard UI + Web helpers) - tasks 3.1 to 3.5 DONE
+
+Mode: Standard (strict TDD off). Tests: 142 before, 165 after (Web 13 -> 36; others unchanged). Build: 0 warnings, 0 errors (Release). Browser verification of the flow (3.5) is done by the orchestrator.
+
+### Created
+- `Web/Components/Initiatives/{UserMessages.cs,InitiativeLabels.cs,DepthSelector.razor,ErrorAlert.razor}`.
+- `Web/Components/Pages/Initiatives/InitiativeWizard.razor` (`/iniciativas/nueva`, `/iniciativas/{Id:guid}/crear`, `[Authorize]`, injects only `IMediator` and `NavigationManager`).
+- Tests: `Web.Tests/Initiatives/{UserMessagesTests,InitiativeLabelsTests}.cs`.
+
+### Modified
+- `Web/Components/_Imports.razor` (`@using BmadPlatform.Web.Components.Initiatives`).
+
+### Decisions
+- One component instance serves both routes. Its load runs on every change of `Id` (`OnParametersSetAsync`), because the first save of a new initiative navigates from `/nueva` to `/{id}/crear` with `replace: true`.
+- Resume of an initiative that is not a Draft shows the same "La iniciativa no existe." state (per the batch brief; design.md said redirect to the detail page, which does not exist until commit d).
+- After "Finalizar" the wizard navigates to `/iniciativas/{id}`; that page arrives in commit d, so until then it renders the generic not-found page.
+- "Atrás" only changes the local step; the Review step is reachable only through a saved "Siguiente", so the summary always reflects saved data.
+- `DepthSelector` clears the level when switching to Automatic; the domain still enforces it.
+- Radios are plain inputs (no `InputRadioGroup`) to avoid nullable-enum binding. Step heading receives focus on step change (`ElementReference.FocusAsync`, no custom JS).
