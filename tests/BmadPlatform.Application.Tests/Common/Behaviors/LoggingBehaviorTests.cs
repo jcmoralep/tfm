@@ -1,5 +1,7 @@
 using BmadPlatform.Application.Common.Behaviors;
+using BmadPlatform.Application.Common.Exceptions;
 using BmadPlatform.Application.Tests.TestDoubles;
+using BmadPlatform.Domain.Common;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -68,6 +70,26 @@ public sealed class LoggingBehaviorTests : IDisposable
         var failure = Assert.Single(logs.Entries, entry => entry.Level == LogLevel.Warning);
         Assert.Contains(nameof(ValidationException), failure.Message);
     }
+
+    [Theory]
+    [MemberData(nameof(ExpectedFailures))]
+    public async Task Not_found_and_domain_failures_are_logged_as_warning_not_error(Exception expected)
+    {
+        var behavior = CreateBehavior();
+        var request = new SensitiveCommand(SensitiveValue, Description: string.Empty);
+
+        await Assert.ThrowsAsync(expected.GetType(), () => behavior.Handle(
+            request,
+            _ => throw expected,
+            CancellationToken.None));
+
+        Assert.DoesNotContain(logs.Entries, entry => entry.Level >= LogLevel.Error);
+        var failure = Assert.Single(logs.Entries, entry => entry.Level == LogLevel.Warning);
+        Assert.Contains(expected.GetType().Name, failure.Message);
+    }
+
+    public static TheoryData<Exception> ExpectedFailures() =>
+        new() { new NotFoundException("La iniciativa no existe."), new DomainException("Regla de dominio.") };
 
     public void Dispose() => loggerFactory.Dispose();
 

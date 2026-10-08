@@ -1,6 +1,7 @@
 using BmadPlatform.Application.Common.Behaviors;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace BmadPlatform.Application;
 
@@ -20,6 +21,9 @@ public static class DependencyInjection
         });
 
         services.AddValidatorsFromAssembly(assembly, includeInternalTypes: true);
+
+        // Handlers read the clock through TimeProvider so tests can fix it.
+        services.TryAddSingleton(TimeProvider.System);
 
         return services;
     }
