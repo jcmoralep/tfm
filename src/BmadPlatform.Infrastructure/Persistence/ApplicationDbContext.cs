@@ -12,4 +12,11 @@ namespace BmadPlatform.Infrastructure.Persistence;
 public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
     : IdentityUserContext<ApplicationUser>(options)
 {
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        // Each module keeps its own IEntityTypeConfiguration next to its entities; the context only applies them.
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+    }
 }

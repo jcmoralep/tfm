@@ -51,13 +51,13 @@ Every commit MUST build with 0 warnings (warnings are errors) and pass `dotnet t
 
 ## Commit (b): Infrastructure + migration
 
-- [ ] 2.1 Create `Infrastructure/Initiatives/InitiativeConfiguration.cs`: table `ini_initiatives`, enums as `varchar(20)`, `CreatedByUserId varchar(255)` no FK, `Name` collation `utf8mb4_0900_ai_ci`, index `(CreatedByUserId, UpdatedAt)`, `HasQueryFilter(DeletedAt == null)`, lengths from domain constants. Dep: 1.2.
-- [ ] 2.2 Create `Infrastructure/Initiatives/LikePattern.cs` (escape `\`, `%`, `_`) and `LikePatternTests.cs`. Covers: Search by name.
-- [ ] 2.3 Create `Infrastructure/Initiatives/InitiativeRepository.cs` over `IDbContextFactory`: one context per call, owner predicate, `AsNoTracking` projections, `OrderByDescending(UpdatedAt)`, trimmed search, `Update` + `SaveChanges`. Dep: 1.5, 2.1, 2.2.
-- [ ] 2.4 Modify `Persistence/ApplicationDbContext.cs` (`base.OnModelCreating` then `ApplyConfigurationsFromAssembly`) and `Infrastructure/DependencyInjection.cs` (`AddScoped<IInitiativeRepository, InitiativeRepository>`).
-- [ ] 2.5 Generate migration `AddInitiatives` with `dotnet ef migrations add`; inspect it adds only `ini_initiatives` and the collation; no changes to Identity tables.
-- [ ] 2.6 Update `ApplicationDbContextModelTests`: rename the table-list test (Identity tables plus `ini_initiatives`, no role tables); add tests for query filter, collation, index, string enums, and `AddInitiatives` migration present; every non-Identity table carries an `xxx_` prefix. Dep: 2.4, 2.5.
-- [ ] 2.7 Verify: build 0 warnings, full test run, architecture rules pass. Commit.
+- [x] 2.1 Create `Infrastructure/Initiatives/InitiativeConfiguration.cs`: table `ini_initiatives`, enums as `varchar(20)`, `CreatedByUserId varchar(255)` no FK, `Name` collation `utf8mb4_0900_ai_ci`, index `(CreatedByUserId, UpdatedAt)`, `HasQueryFilter(DeletedAt == null)`, lengths from domain constants. Dep: 1.2.
+- [x] 2.2 Create `Infrastructure/Initiatives/LikePattern.cs` (escape `\`, `%`, `_`) and `LikePatternTests.cs`. Covers: Search by name.
+- [x] 2.3 Create `Infrastructure/Initiatives/InitiativeRepository.cs` over `IDbContextFactory`: one context per call, owner predicate, `AsNoTracking` projections, `OrderByDescending(UpdatedAt)`, trimmed search, `Update` + `SaveChanges`. Dep: 1.5, 2.1, 2.2.
+- [x] 2.4 Modify `Persistence/ApplicationDbContext.cs` (`base.OnModelCreating` then `ApplyConfigurationsFromAssembly`) and `Infrastructure/DependencyInjection.cs` (`AddScoped<IInitiativeRepository, InitiativeRepository>`).
+- [x] 2.5 Generate migration `AddInitiatives` with `dotnet ef migrations add`; inspect it adds only `ini_initiatives` and the collation; no changes to Identity tables.
+- [x] 2.6 Update `ApplicationDbContextModelTests`: rename the table-list test (Identity tables plus `ini_initiatives`, no role tables); add tests for query filter, collation, index, string enums, and `AddInitiatives` migration present; every non-Identity table carries an `xxx_` prefix. Dep: 2.4, 2.5.
+- [x] 2.7 Verify: build 0 warnings, full test run, architecture rules pass. Commit.
 
 ## Commit (c): Wizard UI
 

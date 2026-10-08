@@ -1,6 +1,8 @@
 using BmadPlatform.Application.Abstractions.Authentication;
+using BmadPlatform.Application.Features.Initiatives;
 using BmadPlatform.Infrastructure.Identity;
 using BmadPlatform.Infrastructure.Identity.Seeding;
+using BmadPlatform.Infrastructure.Initiatives;
 using BmadPlatform.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -44,6 +46,8 @@ public static class DependencyInjection
 
         services.AddScoped<IAuthService, IdentityAuthService>();
         services.AddScoped<InitialUserSeeder>();
+
+        services.AddScoped<IInitiativeRepository, InitiativeRepository>();
 
         return services;
     }
