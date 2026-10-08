@@ -139,7 +139,8 @@ Reglas de dependencia: Web → Application → Domain; Infrastructure → Applic
 1. Construir **en el orden de `PROPUESTA-MVP.md` §7**, un paso a la vez. Cada paso entrega una funcionalidad completa, de interfaz a base de datos.
 2. Al terminar cada paso: compilar, correr pruebas, y resumir qué se hizo y qué queda.
 3. Si algo no está decidido (ver §6), **preguntar** en lugar de asumir.
-4. No inventar estructura de BMAD: la forma exacta de los artefactos debe validarse contra la documentación oficial (https://docs.bmad-method.org/) y probando BMAD en un repositorio de prueba.
+4. Al terminar cada implementación con interfaz, **recorrer el flujo real en Chrome** con Chrome DevTools MCP para comprobar que tiene sentido de principio a fin, además de compilar y correr las pruebas (no hay bUnit, así que el navegador es la única verificación de las pantallas). Levantar MySQL con `docker compose` y credenciales temporales, aplicar migraciones, ejecutar la app con el usuario semilla, revisar `Logs/` y desmontar todo al terminar.
+5. No inventar estructura de BMAD: la forma exacta de los artefactos debe validarse contra la documentación oficial (https://docs.bmad-method.org/) y probando BMAD en un repositorio de prueba.
 
 ## 6. Decisiones pendientes
 
