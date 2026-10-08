@@ -1,5 +1,6 @@
 using BmadPlatform.Application.Common.Behaviors;
 using BmadPlatform.Application.Tests.TestDoubles;
+using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -47,9 +48,25 @@ public sealed class LoggingBehaviorTests : IDisposable
         Assert.Contains(SensitiveValue, thrown.Message);
         Assert.All(logs.Entries, entry => Assert.DoesNotContain(SensitiveValue, entry.AllText));
 
-        var failure = Assert.Single(logs.Entries, entry => entry.Level == LogLevel.Warning);
+        var failure = Assert.Single(logs.Entries, entry => entry.Level == LogLevel.Error);
         Assert.Contains(nameof(InvalidOperationException), failure.Message);
         Assert.Null(failure.Exception);
+    }
+
+    [Fact]
+    public async Task Validation_failure_is_logged_as_warning_not_error()
+    {
+        var behavior = CreateBehavior();
+        var request = new SensitiveCommand(SensitiveValue, Description: string.Empty);
+
+        await Assert.ThrowsAsync<ValidationException>(() => behavior.Handle(
+            request,
+            _ => throw new ValidationException("Invalid input"),
+            CancellationToken.None));
+
+        Assert.DoesNotContain(logs.Entries, entry => entry.Level >= LogLevel.Error);
+        var failure = Assert.Single(logs.Entries, entry => entry.Level == LogLevel.Warning);
+        Assert.Contains(nameof(ValidationException), failure.Message);
     }
 
     public void Dispose() => loggerFactory.Dispose();

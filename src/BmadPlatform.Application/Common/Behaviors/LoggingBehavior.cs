@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -35,8 +36,10 @@ public sealed class LoggingBehavior<TRequest, TResponse>(ILogger<LoggingBehavior
         }
         catch (Exception exception)
         {
+            // A validation failure is expected user input handled by the UI (warning); anything else is a defect (error).
             // Only the exception type is logged here: messages may echo request data.
-            logger.LogWarning(
+            logger.Log(
+                exception is ValidationException ? LogLevel.Warning : LogLevel.Error,
                 "{RequestName} failed after {ElapsedMilliseconds:0.0} ms with {ExceptionType}",
                 requestName,
                 Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds,

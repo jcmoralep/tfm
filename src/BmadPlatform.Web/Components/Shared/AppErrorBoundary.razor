@@ -1,28 +1,33 @@
-<ErrorBoundary @ref="boundary">
-    <ChildContent>@ChildContent</ChildContent>
-    <ErrorContent>
-        <section role="alert" class="rounded-card border border-danger-line bg-danger-surface p-8">
-            <h1 class="text-xl font-semibold text-danger">Algo salió mal</h1>
-            <p class="mt-3 text-ink-muted">
-                No fue posible mostrar esta sección. Su información no se ha perdido.
-                Puede reintentar o volver al inicio.
-            </p>
-            <div class="mt-6 flex items-center gap-4">
-                <button type="button" @onclick="Recover"
-                        class="rounded-control border border-line bg-surface-raised px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface">
-                    Reintentar
-                </button>
-                <a href="" data-enhanced-nav="false" class="text-sm font-semibold text-ink underline">Volver al inicio</a>
-            </div>
-        </section>
-    </ErrorContent>
-</ErrorBoundary>
+@inherits ErrorBoundary
+@inject ILogger<AppErrorBoundary> Logger
+
+@if (CurrentException is null)
+{
+    @ChildContent
+}
+else
+{
+    <section role="alert" class="rounded-card border border-danger-line bg-danger-surface p-8">
+        <h1 class="text-xl font-semibold text-danger">Algo salió mal</h1>
+        <p class="mt-3 text-ink-muted">
+            No fue posible mostrar esta sección. Su información no se ha perdido.
+            Puede reintentar o volver al inicio.
+        </p>
+        <div class="mt-6 flex items-center gap-4">
+            <button type="button" @onclick="Recover"
+                    class="rounded-control border border-line bg-surface-raised px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface">
+                Reintentar
+            </button>
+            <a href="" data-enhanced-nav="false" class="text-sm font-semibold text-ink underline">Volver al inicio</a>
+        </div>
+    </section>
+}
 
 @code {
-    private ErrorBoundary? boundary;
-
-    [Parameter]
-    public RenderFragment? ChildContent { get; set; }
-
-    private void Recover() => boundary?.Recover();
+    // The default boundary logs at Warning, which would hide real defects when filtering by Error.
+    protected override Task OnErrorAsync(Exception exception)
+    {
+        Logger.LogError(exception, "Unhandled exception rendering component");
+        return Task.CompletedTask;
+    }
 }
