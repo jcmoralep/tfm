@@ -20,8 +20,17 @@ Cada requisito es verificable. Etiquetas: **[CONFIRMADO]** decidido por el equip
 - **RF-05** El usuario puede crear una iniciativa con nombre y descripción corta. [CONFIRMADO]
 - **RF-06** Al crearla, el usuario elige si la profundidad la define él o la sugiere el asistente. [CONFIRMADO]
 - **RF-07** Una iniciativa pasa a *Lista para construir* cuando sus artefactos están aprobados. [SUPUESTO]
-- **RF-08** El usuario puede listar, ver y editar iniciativas; los estados son *Aclarando*, *Planificando* y *Lista para construir*. [CONFIRMADO]
+- **RF-08** El usuario puede listar, ver y editar iniciativas; los estados son *Borrador*, *Aclarando*, *Planificando* y *Lista para construir*. [CONFIRMADO]
 - **RF-09** El detalle de la iniciativa muestra Conversación, Artefactos y Contexto. [CONFIRMADO]
+- **RF-26** Cada usuario ve, edita y elimina únicamente sus propias iniciativas. Abrir la de otro usuario responde como "no encontrada", sin revelar que existe. La iniciativa guarda el identificador de quien la creó. [CONFIRMADO]
+- **RF-27** La profundidad tiene tres niveles y el selector indica con claridad qué se obtiene en cada uno: *Pequeña* (una especificación corta), *Estándar* (Brief y PRD) y *Grande* (PRD, Arquitectura y Épicas e historias). [CONFIRMADO]
+- **RF-28** En modo automático la profundidad queda vacía ("Pendiente de sugerencia") hasta que el asistente la sugiera. [CONFIRMADO]
+- **RF-29** El modo y el nivel de profundidad se pueden cambiar solo mientras la iniciativa está en *Borrador* o *Aclarando*; desde *Planificando* quedan fijos. [CONFIRMADO]
+- **RF-30** La creación es un asistente paso a paso con borrador: cada paso guarda lo que el usuario ya eligió, y al retomar la iniciativa vuelve al mismo paso con sus selecciones. Para guardar un borrador basta el nombre. Al terminar el último paso la iniciativa pasa a *Aclarando*. [CONFIRMADO]
+- **RF-31** La lista permite buscar por nombre y filtrar por estado y por nivel de profundidad, y se ordena por última modificación, la más reciente primero. Sin paginación en el MVP. [CONFIRMADO]
+- **RF-32** Eliminar una iniciativa es un borrado lógico: el registro permanece en la base de datos marcado como eliminado y deja de mostrarse. No hay papelera ni pantalla para ver lo eliminado. [CONFIRMADO]
+- **RF-33** El nombre es obligatorio (hasta 120 caracteres) y puede repetirse; la descripción es opcional (hasta 1000 caracteres). [CONFIRMADO]
+- **RF-34** El estado de la iniciativa no se cambia a mano: avanza con los pasos de creación, el asistente y la aprobación de artefactos. [CONFIRMADO]
 
 ### Asistente guiado
 - **RF-10** El asistente conversa con el usuario y guía el recorrido por las fases Aclarar y Planificar, mostrándolo de forma visible. [CONFIRMADO]

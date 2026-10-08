@@ -1,0 +1,42 @@
+schema: spec-driven
+
+context: |
+  Project: tfm (BMAD Platform) - internal MVP for non-technical product people to take an idea to dev-ready artifacts.
+  Stack: .NET 10, Blazor Web App (Interactive Server), Tailwind standalone CLI, MediatR 12.5.0 CQRS, FluentValidation,
+  EF Core 9.0.20 + Pomelo MySQL 8.4, Serilog, ASP.NET Core Identity (no roles).
+  Architecture: Clean Architecture (Domain/Application/Infrastructure/Web), modular monolith, single ApplicationDbContext.
+  Rules: see AGENTS.md. Spanish UI and generated docs; English identifiers. Warnings are errors.
+  Build order: PROPUESTA-MVP.md section 7.
+
+strict_tdd: false
+
+testing:
+  strict_tdd: false
+  runner:
+    command: dotnet test BmadPlatform.slnx --configuration Release
+    framework: xUnit 2.9.3
+  layers:
+    unit: { available: true, tool: xunit }
+    integration: { available: false, tool: "WebApplicationFactory + Testcontainers planned, not present" }
+    e2e: { available: false, tool: null }
+  coverage: { available: false, command: null }
+  quality:
+    linter: { available: false, command: null }
+    type_checker: { available: true, command: "dotnet build BmadPlatform.slnx --configuration Release (TreatWarningsAsErrors)" }
+    formatter: { available: false, command: "dotnet format (SDK built-in, no .editorconfig present)" }
+
+rules:
+  proposal:
+    - Keep changes aligned with one step of PROPUESTA-MVP.md section 7.
+  specs:
+    - Use Given/When/Then; requirements trace to REQUISITOS.md.
+  design:
+    - Respect dependency rules Web -> Application -> Domain; Infrastructure -> Application -> Domain.
+  tasks:
+    - Review budget 400 changed lines; delivery_strategy single-pr.
+  apply:
+    - Tests with xUnit only (no FluentAssertions, NSubstitute, bUnit). Spanish validation messages.
+  verify:
+    - Run dotnet build and dotnet test in Release; both must pass with zero warnings.
+  archive:
+    - Merge delta specs into openspec/specs before archiving.
