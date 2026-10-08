@@ -146,12 +146,13 @@ Reglas de dependencia: Web → Application → Domain; Infrastructure → Applic
 1. Versión de .NET (sugerida: última LTS, .NET 10).
 2. Librería para generar PDF.
 3. Estructura exacta y nombres de archivo/carpeta que BMAD espera para sus artefactos (validar en repositorio sandbox).
-4. Almacenamiento de adjuntos en producción: local o S3.
+4. Almacenamiento de adjuntos en producción: en Railway el disco del contenedor es efímero, por lo que apunta a S3 (Railway Buckets, compatible con S3). Confirmar al llegar al paso 7.
 5. Qué tipos de contenido del adjunto puede interpretar el modelo elegido.
 6. Cómo revisa desarrollo Arquitectura e historias: ¿dentro de la plataforma o fuera, al recibir el `.md`?
 7. Valores exactos del azul de acento y de los neutros: la maqueta aprobada define el estilo, pero no los códigos hexadecimales. Fijarlos al construir el archivo de tema.
-8. Base de datos en producción: se usará Azure Database for MySQL (Flexible Server) tras el MVP local con MySQL en Docker. Antes del lanzamiento, revisar si la cuenta califica para la oferta gratuita (12 meses para usuarios nuevos; no verificados los límites exactos) y el costo posterior. Si el costo lo exige, la alternativa es Azure SQL (capa gratuita permanente), lo que requeriría un selector de proveedor y migraciones por proveedor.
-9. Tipografía: Saans es propietaria. La maqueta usa una sans geométrica; elegir una fuente libre de reemplazo (por ejemplo Inter) hasta contar con licencia.
+8. Backups de MySQL en Railway: el despliegue y la base de datos van en **Railway** (decidido; reemplazan a IIS local y a Azure) y la versión es **MySQL 8.4**, igual que en local (decidido). La plantilla MySQL de Railway despliega `mysql:9` por defecto (según su página), así que al crear el servicio hay que fijar la imagen en `mysql:8.4` y definir `Database__MySqlServerVersion=8.4.0`. Pendiente: la plantilla arranca con `--disable-log-bin` y la guía de Railway menciona recuperación a un punto en el tiempo; verificar en Railway cómo funcionan realmente las copias de seguridad antes de depender de ellas.
+9. Preparación para Railway (por hacer en un cambio propio): Dockerfile multi-etapa para .NET 10; puerto desde la variable `PORT`; cabeceras reenviadas porque el HTTPS termina en el proxy; claves de Data Protection persistentes (el sistema de archivos del contenedor es efímero); registros por consola además del archivo; migraciones como comando previo al despliegue (`pre-deploy command`, que corre en un contenedor aparte y sin volúmenes).
+10. Tipografía: Saans es propietaria. La maqueta usa una sans geométrica; elegir una fuente libre de reemplazo (por ejemplo Inter) hasta contar con licencia.
 
 ## 7. Obtener `DESIGN.md` (Intercom)
 

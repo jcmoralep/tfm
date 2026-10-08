@@ -1,0 +1,26 @@
+/* Tailwind entry point. Built by Tailwind.targets into wwwroot/css/app.css (do not edit the output). */
+@import "tailwindcss" source(none);
+@import "./theme.css";
+
+@source "../Components/**/*.razor";
+
+@layer base {
+  html {
+    @apply bg-surface font-sans text-ink antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-focus;
+  }
+
+  /* Blazor's FocusOnNavigate focuses the page heading (tabindex="-1") so screen readers announce
+     the new page; that heading is not interactive, so it should not draw a focus ring. */
+  [tabindex="-1"]:focus-visible {
+    outline: none;
+  }
+}
+
+/* Shown by Blazor (inline display: block) when an unhandled error occurs in the circuit. */
+#blazor-error-ui {
+  display: none;
+}

@@ -1,0 +1,107 @@
+<Project>
+  <!--
+    Tailwind CSS through the official standalone CLI (no Node.js).
+
+    - The CLI version is pinned below. When the executable is missing, it is downloaded once from
+      the tailwindlabs GitHub release into <repo>/.tools/tailwindcss/<version>/ (gitignored) and its
+      SHA-256 is checked against the checksum published in that release (sha256sums.txt).
+    - Every build scans the .razor files and writes wwwroot/css/app.css (a build output, gitignored).
+    - To use a CLI that is already installed, pass /p:TailwindExecutable=<path>.
+    - To upgrade: change TailwindVersion and all TailwindSha256 values together.
+  -->
+
+  <PropertyGroup>
+    <TailwindVersion>4.3.3</TailwindVersion>
+    <TailwindToolsDirectory>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', '..', '.tools', 'tailwindcss', '$(TailwindVersion)'))</TailwindToolsDirectory>
+    <TailwindInputFile>$(MSBuildThisFileDirectory)Styles\app.css</TailwindInputFile>
+    <TailwindOutputRelativePath>wwwroot\css\app.css</TailwindOutputRelativePath>
+    <TailwindOutputFile>$(MSBuildThisFileDirectory)$(TailwindOutputRelativePath)</TailwindOutputFile>
+    <_TailwindOSArchitecture>$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)</_TailwindOSArchitecture>
+  </PropertyGroup>
+
+  <!-- Release assets and checksums for TailwindVersion. -->
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows')) And '$(_TailwindOSArchitecture)' == 'X64'">
+    <TailwindAssetName>tailwindcss-windows-x64.exe</TailwindAssetName>
+    <TailwindSha256>e0e260ce048014e9268f6237ff18f8ccf02cef521cbd0ae04e82c2cdf7aa3955</TailwindSha256>
+  </PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux')) And '$(_TailwindOSArchitecture)' == 'X64'">
+    <TailwindAssetName>tailwindcss-linux-x64</TailwindAssetName>
+    <TailwindSha256>dc61b3ac6b8c9ca874c0cc4c57b2409791a64c5540404ca5f5367360babc313a</TailwindSha256>
+  </PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux')) And '$(_TailwindOSArchitecture)' == 'Arm64'">
+    <TailwindAssetName>tailwindcss-linux-arm64</TailwindAssetName>
+    <TailwindSha256>55fd0b241214eff3de1e8ee4f22796662f2d2e7a49bcfca7477cfd0bac398195</TailwindSha256>
+  </PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('OSX')) And '$(_TailwindOSArchitecture)' == 'X64'">
+    <TailwindAssetName>tailwindcss-macos-x64</TailwindAssetName>
+    <TailwindSha256>7922e0953f2110c05976e3bf58f14e643d90427575e766b7d433f5f80cbee7e1</TailwindSha256>
+  </PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('OSX')) And '$(_TailwindOSArchitecture)' == 'Arm64'">
+    <TailwindAssetName>tailwindcss-macos-arm64</TailwindAssetName>
+    <TailwindSha256>cdf646702987a743464dff4d9c60fd4480d1c1e73dd819a9a67f1078815dce9d</TailwindSha256>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <_TailwindUseManagedExecutable Condition="'$(TailwindExecutable)' == ''">true</_TailwindUseManagedExecutable>
+    <TailwindExecutable Condition="'$(TailwindExecutable)' == '' And '$(TailwindAssetName)' != ''">$(TailwindToolsDirectory)$(TailwindAssetName)</TailwindExecutable>
+    <TailwindDownloadUrl>https://github.com/tailwindlabs/tailwindcss/releases/download/v$(TailwindVersion)/$(TailwindAssetName)</TailwindDownloadUrl>
+    <TailwindMinify Condition="'$(TailwindMinify)' == '' And '$(Configuration)' == 'Release'">true</TailwindMinify>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <TailwindInputs Include="Styles\**\*.css;Components\**\*.razor" />
+  </ItemGroup>
+
+  <Target Name="TailwindInstall"
+          Condition="'$(DesignTimeBuild)' != 'true' And '$(_TailwindUseManagedExecutable)' == 'true' And !Exists('$(TailwindExecutable)')">
+    <Error Condition="'$(TailwindAssetName)' == ''"
+           Text="No pinned Tailwind CLI for this platform ($(_TailwindOSArchitecture)). Install the Tailwind CSS v$(TailwindVersion) standalone CLI and pass /p:TailwindExecutable=&lt;path&gt;." />
+
+    <Message Importance="high" Text="Downloading Tailwind CSS CLI v$(TailwindVersion) ($(TailwindAssetName))..." />
+    <DownloadFile SourceUrl="$(TailwindDownloadUrl)"
+                  DestinationFolder="$(TailwindToolsDirectory)"
+                  DestinationFileName="$(TailwindAssetName).download"
+                  Retries="2" />
+
+    <GetFileHash Files="$(TailwindToolsDirectory)$(TailwindAssetName).download" Algorithm="SHA256">
+      <Output TaskParameter="Hash" PropertyName="_TailwindActualSha256" />
+    </GetFileHash>
+
+    <Delete Files="$(TailwindToolsDirectory)$(TailwindAssetName).download"
+            Condition="'$(_TailwindActualSha256.ToLowerInvariant())' != '$(TailwindSha256)'" />
+    <Error Condition="'$(_TailwindActualSha256.ToLowerInvariant())' != '$(TailwindSha256)'"
+           Text="Checksum mismatch for $(TailwindAssetName): expected $(TailwindSha256), got $(_TailwindActualSha256). The download was discarded." />
+
+    <Move SourceFiles="$(TailwindToolsDirectory)$(TailwindAssetName).download" DestinationFiles="$(TailwindExecutable)" />
+    <Exec Condition="!$([MSBuild]::IsOSPlatform('Windows'))" Command="chmod +x &quot;$(TailwindExecutable)&quot;" />
+  </Target>
+
+  <Target Name="TailwindBuild"
+          BeforeTargets="BeforeBuild;ResolveProjectStaticWebAssets"
+          DependsOnTargets="TailwindInstall"
+          Condition="'$(DesignTimeBuild)' != 'true'"
+          Inputs="@(TailwindInputs);$(MSBuildThisFileFullPath)"
+          Outputs="$(TailwindOutputFile)">
+    <Error Condition="!Exists('$(TailwindExecutable)')" Text="Tailwind CLI not found at '$(TailwindExecutable)'." />
+
+    <PropertyGroup>
+      <_TailwindMinifyArgument Condition="'$(TailwindMinify)' == 'true'"> --minify</_TailwindMinifyArgument>
+    </PropertyGroup>
+
+    <Exec Command="&quot;$(TailwindExecutable)&quot; --input &quot;$(TailwindInputFile)&quot; --output &quot;$(TailwindOutputFile)&quot;$(_TailwindMinifyArgument)"
+          WorkingDirectory="$(MSBuildThisFileDirectory)" />
+  </Target>
+
+  <!-- The generated file may not exist when wwwroot is globbed, so register it as content explicitly. -->
+  <Target Name="TailwindRegisterOutput" AfterTargets="TailwindBuild" Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <Content Remove="$(TailwindOutputRelativePath)" />
+      <Content Include="$(TailwindOutputRelativePath)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="TailwindClean" AfterTargets="Clean">
+    <Delete Files="$(TailwindOutputFile)" />
+  </Target>
+
+</Project>

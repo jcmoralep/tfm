@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\BmadPlatform.Domain\BmadPlatform.Domain.csproj" />
+    <ProjectReference Include="..\..\src\BmadPlatform.Application\BmadPlatform.Application.csproj" />
+    <ProjectReference Include="..\..\src\BmadPlatform.Infrastructure\BmadPlatform.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
