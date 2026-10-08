@@ -12,10 +12,12 @@ internal sealed class IdentityAuthService(SignInManager<ApplicationUser> signInM
     public async Task<AuthenticationResult> SignInAsync(
         string email,
         string password,
+        bool rememberMe,
         CancellationToken cancellationToken = default)
     {
-        // Seeded users use their email as user name.
-        var result = await signInManager.PasswordSignInAsync(email, password, isPersistent: false, lockoutOnFailure: true);
+        // Seeded users use their email as user name. A persistent cookie survives closing the browser
+        // (it still expires after the configured ExpireTimeSpan).
+        var result = await signInManager.PasswordSignInAsync(email, password, isPersistent: rememberMe, lockoutOnFailure: true);
 
         if (result.Succeeded)
         {

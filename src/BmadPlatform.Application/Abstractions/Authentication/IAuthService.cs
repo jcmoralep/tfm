@@ -6,7 +6,7 @@ namespace BmadPlatform.Application.Abstractions.Authentication;
 /// </summary>
 public interface IAuthService
 {
-    Task<AuthenticationResult> SignInAsync(string email, string password, CancellationToken cancellationToken = default);
+    Task<AuthenticationResult> SignInAsync(string email, string password, bool rememberMe, CancellationToken cancellationToken = default);
 
     Task SignOutAsync(CancellationToken cancellationToken = default);
 }

@@ -1,0 +1,24 @@
+<li class="flex items-start gap-4">
+    <span class="grid size-12 shrink-0 place-items-center rounded-control bg-surface-raised text-primary">
+        <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            @Icon
+        </svg>
+    </span>
+    <div>
+        <h3 class="text-base font-semibold">@Title</h3>
+        <p class="mt-1 text-sm leading-relaxed text-on-brand-muted">@Description</p>
+    </div>
+</li>
+
+@code {
+    /// <summary>SVG child elements (paths) drawn inside a 24x24 viewBox.</summary>
+    [Parameter, EditorRequired]
+    public RenderFragment Icon { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string Description { get; set; } = string.Empty;
+}

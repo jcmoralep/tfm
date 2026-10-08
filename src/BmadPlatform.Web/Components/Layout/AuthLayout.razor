@@ -1,7 +1,6 @@
 @inherits LayoutComponentBase
 
-<main class="flex min-h-screen items-center justify-center px-4 py-12">
-    <div class="w-full max-w-sm">
-        <AppErrorBoundary>@Body</AppErrorBoundary>
-    </div>
+@* Full-bleed: pages using this layout (the login) own the whole viewport for their split layout. *@
+<main class="min-h-screen">
+    <AppErrorBoundary>@Body</AppErrorBoundary>
 </main>
