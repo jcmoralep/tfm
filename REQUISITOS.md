@@ -39,6 +39,8 @@ Cada requisito es verificable. Etiquetas: **[CONFIRMADO]** decidido por el equip
 - **RF-40** En el nivel Pequeña se entrega **solo la especificación** (`SPEC.md`); no se genera el plan técnico de `bmad-build`, porque requiere conocer el código del producto, que la plataforma no tiene. Los casos límite que se puedan deducir se incluyen como criterios de éxito dentro de la especificación. [CONFIRMADO]
 - **RF-41** El asistente **guía**; no examina. Los usuarios incluirán perfiles junior, así que debe: usar lenguaje de negocio sin jerga (sin "spine", "épica", "invariantes" ni "slug" sin explicarlos), dar un **ejemplo** o una opción sugerida en cada pregunta, ofrecer respuestas rápidas concretas, aceptar "no sé" sin presionar (queda como pregunta pendiente con un responsable propuesto, RF-35), explicar brevemente por qué pregunta y cuánto falta, y decidir por la persona lo que no necesita decidir (modo, punto de entrada, nombre interno de archivos, idioma). [CONFIRMADO]
 - **RF-42** En el nivel Pequeña, cuando la idea llega con muy poca información (por ejemplo "mejorar el reporte de ventas, está feo"), el asistente **nunca manda a la persona a otro nivel**: hace tres preguntas básicas con ejemplos (qué parte cambia, quién lo usa, por qué ahora) y continúa con la especificación. Lo que siga sin saberse queda como suposición o pregunta pendiente con responsable. [CONFIRMADO]
+- **RF-43** Cada artefacto tiene un **índice estructurado** (modelo híbrido) con los elementos que la plataforma debe seguir: requisitos, suposiciones y preguntas pendientes, y, cuando existan, decisiones de arquitectura, épicas e historias. El índice se **reconstruye leyendo el Markdown** con un formato estricto y se actualiza en cada guardado. Los datos que no viven en el texto (responsable y estado de una pregunta pendiente, estado de una suposición) se guardan en el índice y la exportación los muestra. Si una edición manual rompe el formato, la plataforma **avisa** y no pierde el texto. [CONFIRMADO]
+
 ### Asistente guiado
 - **RF-10** El asistente conversa con el usuario y guía el recorrido por las fases Aclarar y Planificar, mostrándolo de forma visible. [CONFIRMADO]
 - **RF-11** Un cambio pequeño genera solo una especificación corta, sin planificación completa. La especificación es la de cinco partes de `bmad-spec` (Por qué, Capacidades con intención y condición de éxito, Restricciones, No objetivos, Señal de éxito). Nota: en BMAD un cambio pequeño también puede construirse directamente con un plan escrito, sin especificación formal; la plataforma ofrece la especificación porque su fin es entregar a desarrollo algo verificable. [VALIDADO EN BMAD 6.12.1, mapeo aproximado]
@@ -52,7 +54,7 @@ Cada requisito es verificable. Etiquetas: **[CONFIRMADO]** decidido por el equip
 - **RF-17** El usuario puede editar un artefacto y pedir al asistente que lo regenere. [CONFIRMADO]
 - **RF-18** Cada artefacto tiene número de versión; el historial completo y la comparación entre versiones quedan fuera del MVP. [SUPUESTO]
 - **RF-19** El usuario aprueba manualmente cada artefacto antes de marcarlo como final. [CONFIRMADO]
-- **RF-20** El contenido se guarda como Markdown (fuente única de verdad). [CONFIRMADO]
+- **RF-20** El contenido se guarda como Markdown, que es la fuente única de verdad **del texto** de cada documento. La plataforma mantiene además un índice estructurado, derivado del Markdown, para lo que necesita seguir (ver RF-43). [CONFIRMADO]
 - **RF-21** Exportación a `.md` (para developers) y `.pdf` (para el usuario), con descarga; el `.md` también se puede copiar. [CONFIRMADO]
 
 ### Contexto adjunto
@@ -65,7 +67,7 @@ Cada requisito es verificable. Etiquetas: **[CONFIRMADO]** decidido por el equip
 
 - **RN-01** Ningún artefacto es final sin aprobación manual del usuario.
 - **RN-02** Arquitectura y Épicas/historias son borradores sujetos a revisión del equipo de desarrollo.
-- **RN-03** El Markdown es la única fuente de verdad; el PDF se genera bajo demanda.
+- **RN-03** El Markdown es la única fuente de verdad del texto; el índice estructurado se reconstruye a partir de él y el PDF se genera bajo demanda. Nunca se guarda una copia del texto en otro formato.
 - **RN-04** El adjunto de contexto nunca es obligatorio.
 - **RN-05** Mientras se use la capa gratuita de Gemini, solo se usan datos de ejemplo o no sensibles.
 
