@@ -146,7 +146,7 @@ Reglas de dependencia: Web → Application → Domain; Infrastructure → Applic
 
 1. Versión de .NET (sugerida: última LTS, .NET 10).
 2. Librería para generar PDF.
-3. Estructura exacta y nombres de archivo/carpeta que BMAD espera para sus artefactos (validar en repositorio sandbox).
+3. Estructura exacta y nombres de archivo/carpeta que BMAD espera para sus artefactos: **validada en una instalación real de BMAD 6.12.1** (ver `docs/bmad-referencia.md`). Pendiente: el formato de los requisitos no funcionales (el PRD no define identificador y el paso de épicas espera `NFR1:`), y no existen `bmad-ticket` ni `tickets.toml` en esta versión. Revisar el documento cuando salga una versión nueva.
 4. Almacenamiento de adjuntos en producción: en Railway el disco del contenedor es efímero, por lo que apunta a S3 (Railway Buckets, compatible con S3). Confirmar al llegar al paso 7.
 5. Qué tipos de contenido del adjunto puede interpretar el modelo elegido.
 6. Cómo revisa desarrollo Arquitectura e historias: ¿dentro de la plataforma o fuera, al recibir el `.md`?
