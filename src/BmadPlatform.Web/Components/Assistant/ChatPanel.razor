@@ -150,7 +150,7 @@ else
         errors = [];
         announcement = "";
         queue.Abort();
-        draft.Text = "";
+        draft.Replace("");
 
         view = await Mediator.Send(new GetConversationQuery(InitiativeId));
         loading = false;
@@ -313,6 +313,9 @@ else
         {
             starting = false;
             focusComposer = true;
+
+            // Started from OnAfterRenderAsync, which does not re-render by itself.
+            StateHasChanged();
         }
 
         if (queue.IsPaused && view is { NeedsResume: false })

@@ -18,6 +18,33 @@ public sealed class ChatDraftTests
     }
 
     [Fact]
+    public void Typing_does_not_change_the_revision_but_replacing_the_text_does()
+    {
+        var draft = new ChatDraft();
+
+        draft.Text = "Hola";
+        Assert.Equal(0, draft.Revision);
+
+        draft.Replace("");
+        Assert.Equal(1, draft.Revision);
+        Assert.Equal("", draft.Text);
+    }
+
+    [Fact]
+    public void Submitting_and_restoring_change_the_revision()
+    {
+        var queue = new SendQueue();
+        var draft = new ChatDraft { Text = "Una idea" };
+
+        draft.TrySubmit(queue);
+        var afterSubmit = draft.Revision;
+        draft.Restore(queue.Abort());
+
+        Assert.Equal(1, afterSubmit);
+        Assert.Equal(2, draft.Revision);
+    }
+
+    [Fact]
     public void A_double_submit_stores_the_answer_once()
     {
         var queue = new SendQueue();

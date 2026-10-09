@@ -22,6 +22,19 @@ public sealed class ChatDraft
 
     public string Text { get; set; } = "";
 
+    /// <summary>
+    /// Changes only when the code replaces the text (clear, restore), never while the person types. The box uses it
+    /// to rebuild itself, so a render never writes an outdated value over what is being typed.
+    /// </summary>
+    public int Revision { get; private set; }
+
+    /// <summary>Replaces the text from code, as opposed to typing.</summary>
+    public void Replace(string text)
+    {
+        Text = text;
+        Revision++;
+    }
+
     public string Counter => $"{Text.Length} / {MaxLengthText}";
 
     public bool HasContent => !string.IsNullOrWhiteSpace(Text);
@@ -47,7 +60,7 @@ public sealed class ChatDraft
         }
 
         queue.Enqueue(QueuedAnswer.ForText(trimmed));
-        Text = "";
+        Replace("");
 
         return DraftSubmission.Queued;
     }
@@ -60,6 +73,6 @@ public sealed class ChatDraft
             .Append(string.IsNullOrWhiteSpace(Text) ? null : Text.Trim())
             .Where(text => !string.IsNullOrEmpty(text));
 
-        Text = string.Join("\n\n", texts);
+        Replace(string.Join("\n\n", texts));
     }
 }

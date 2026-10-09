@@ -102,26 +102,26 @@ Decisions embedded:
 
 - [x] 6.1 Create `Components/Assistant/ConversationCard.razor`; replace the placeholder in `Pages/Initiatives/InitiativeDetail.razor` (Draft text, "Abrir asistente", progress + "Continuar conversación", ReadyToBuild "Ver conversación"). Test: `AssistantLabelsTests.cs` (card text/action per status) and Chrome. (C6 code done: card fed by the detail page, tolerant to a failed query; Chrome pending)
 - [x] 6.2 `README.md`: demo-data privacy section (AGENTS 4.8).
-- [ ] 6.3 Final gate: `dotnet build`, `dotnet test` (all projects), then the Chrome checklist with docker MySQL 8.4, migrations, seed user, review `Logs/`, tear down. (build 0 warnings and tests 505/505 done in C6; Chrome part pending)
+- [x] 6.3 Final gate: `dotnet build`, `dotnet test` (all projects), then the Chrome checklist with docker MySQL 8.4, migrations, seed user, review `Logs/`, tear down. (build 0 warnings; 507 tests pass; Chrome walkthrough done on 2026-10-09)
 
 ## Manual Chrome checklist (chat flow)
 
-- [ ] 1 Unauthenticated `/iniciativas/{id}/asistente` redirects to login.
-- [ ] 2 Draft initiative: card says to finish creating; no action.
-- [ ] 3 Clarifying, "Abrir asistente": opening question (idea) with example, reason, "No sé" reply; privacy note visible and not dismissible.
-- [ ] 4 Journey panel: Aclarar / Planificar / Lista para construir, current phase marked, progress text; Small omits Planificar; no fast-mode control.
-- [ ] 5 Answer with text and with a quick reply; one question per turn; textarea refocused; 2000 counter; Ctrl+Enter sends.
-- [ ] 6 Click "No sé": topic covered, not re-asked. Type "no sé" alone: same behavior.
-- [ ] 7 Double click Enviar: one answer. Send twice while "El asistente está escribiendo…": second is queued and sent in order; Undo disabled during the queue.
-- [ ] 8 Undo repeatedly until "No hay ninguna respuesta que deshacer."; announced in the status region.
-- [ ] 9 Leave midway and return: history, panel and last question intact, no duplicate opening question.
-- [ ] 10 Automatic with no level: size question, suggestion, "Elegir otro nivel" shows three levels, choice gives Manual + level (detail shows Manual); accepted level not undoable.
-- [ ] 11 Edit level in Clarifying, return: history kept, progress and next question reflect the new level.
-- [ ] 12 Confirmation: "Quiero añadir algo" keeps Clarifying and re-offers; "Sí, pasar a Planificar" moves to Planning, level locked, not undoable; Small shows "lista para redactar".
-- [ ] 13 Two tabs: answer in tab A, then in stale tab B: conflict message, typed text kept.
-- [ ] 14 Detail card per status (Clarifying with/without conversation, Planning, ReadyToBuild read-only).
-- [ ] 15 Screen-reader roles: log, status, group "Respuestas rápidas", labelled textarea.
-- [ ] 16 `Logs/` contains no message text.
+- [x] 1 Unauthenticated `/iniciativas/{id}/asistente` redirects to login.
+- [x] 2 Draft initiative: card says to finish creating; no action.
+- [x] 3 Clarifying, "Abrir asistente": opening question (idea) with example, reason, "No sé" reply; privacy note visible and not dismissible.
+- [x] 4 Journey panel: Aclarar / Planificar / Lista para construir, current phase marked, progress text; Small omits Planificar; no fast-mode control.
+- [x] 5 Answer with text and with a quick reply; one question per turn; textarea refocused; 2000 counter; Ctrl+Enter sends.
+- [x] 6 Click "No sé": topic covered, not re-asked. Type "no sé" alone: same behavior.
+- [x] 7 Double click Enviar: one answer. (NOT OBSERVED: the second half, two sends while it is typing; the fake replies instantly, so the queue is covered only by SendQueue unit tests.) Send twice while "El asistente está escribiendo…": second is queued and sent in order; Undo disabled during the queue.
+- [x] 8 Undo repeatedly until "No hay ninguna respuesta que deshacer."; announced in the status region.
+- [x] 9 Leave midway and return: history, panel and last question intact, no duplicate opening question.
+- [x] 10 Automatic with no level: size question, suggestion, "Elegir otro nivel" shows three levels, choice gives Manual + level (detail shows Manual); accepted level not undoable.
+- [x] 11 Edit level in Clarifying, return: history kept, progress and next question reflect the new level.
+- [x] 12 Confirmation: "Quiero añadir algo" keeps Clarifying and re-offers; "Sí, pasar a Planificar" moves to Planning, level locked, not undoable; Small shows "lista para redactar".
+- [x] 13 Two tabs: answer in tab A, then in stale tab B: conflict message, typed text kept.
+- [x] 14 Detail card per status (Clarifying with/without conversation, Planning, ReadyToBuild read-only). (NOT OBSERVED: ReadyToBuild, unreachable from the UI until artifacts exist; covered by AssistantLabels and handler unit tests.)
+- [x] 15 Screen-reader roles: log, status, group "Respuestas rápidas", labelled textarea.
+- [x] 16 `Logs/` contains no message text.
 
 ## Follow-ups: spec/design lines to adjust (not edited)
 

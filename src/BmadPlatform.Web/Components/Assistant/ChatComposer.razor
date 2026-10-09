@@ -1,8 +1,10 @@
 @* Free-text answer box. The parent owns the draft and the send queue; this box only edits Draft.Text. *@
 <form @onsubmit="SubmitAsync" @onsubmit:preventDefault class="space-y-2">
     <label for="@TextAreaId" class="block text-sm font-medium text-ink">@AssistantLabels.ComposerLabel</label>
-    <textarea id="@TextAreaId" @ref="textArea" rows="3" maxlength="@ChatDraft.MaxLength" disabled="@Disabled"
-              value="@Draft.Text" @oninput="OnInput" @onkeydown="OnKeyDownAsync"
+    @* The value is set only when the box is built (see Draft.Revision): re-sending it on every keystroke would
+       overwrite what the person typed while the previous keystroke was still travelling to the server. *@
+    <textarea @key="seenRevision" id="@TextAreaId" @ref="textArea" rows="3" maxlength="@ChatDraft.MaxLength" disabled="@Disabled"
+              value="@initialValue" @oninput="OnInput" @onkeydown="OnKeyDownAsync"
               aria-describedby="@(DescribedBy is null ? $"{TextAreaId}-hint" : $"{TextAreaId}-hint {DescribedBy}")"
               class="block w-full resize-y rounded-control border border-line bg-surface-raised px-3 py-2 text-base text-ink disabled:opacity-60"></textarea>
     <div class="flex flex-wrap items-center justify-between gap-3">
@@ -21,6 +23,8 @@
     private const string TextAreaId = "chat-answer";
 
     private ElementReference textArea;
+    private int seenRevision = -1;
+    private string initialValue = "";
 
     /// <summary>The draft edited by the box; the counter and the limit warning read from it.</summary>
     [Parameter, EditorRequired]
@@ -35,6 +39,15 @@
 
     [Parameter]
     public EventCallback OnSubmit { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (Draft.Revision != seenRevision)
+        {
+            seenRevision = Draft.Revision;
+            initialValue = Draft.Text;
+        }
+    }
 
     /// <summary>Puts the cursor back in the box, without scrolling the page.</summary>
     public async ValueTask FocusAsync()
