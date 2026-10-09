@@ -33,7 +33,7 @@ Config conflict: `openspec/config.yaml` line 36 says `delivery_strategy single-p
 
 ## Task 0: Reconcile topic lists (blocks C2)
 
-- [ ] 0.1 Adopt the "Reconciled topic lists" section below as the single source for `AssistantScript` and the tests (`AssistantScriptTests`, `ConversationJourneyTests`). Do not edit spec/design; apply follows this table.
+- [x] 0.1 Adopt the "Reconciled topic lists" section below as the single source for `AssistantScript` and the tests (`AssistantScriptTests`, `ConversationJourneyTests`). Do not edit spec/design; apply follows this table.
 
 ## Reconciled topic lists
 
@@ -64,11 +64,11 @@ Decisions embedded:
 
 ## Commit 2: Domain and script (~550)
 
-- [ ] 2.1 Create `Domain/Assistant/{MessageRole,AnswerKind,QuickReply}.cs` (`AnswerKind { FreeText, QuickReply, Unknown }`).
-- [ ] 2.2 Create `Domain/Assistant/Message.cs` (limits 4000/50, soft `UndoneAt`, `AppliedToInitiative`, `QuickReplyKey`, `QuickReplies` snapshot with label+key).
-- [ ] 2.3 Create `Domain/Assistant/Conversation.cs`: `Start`, `AddAssistantMessage`, `AddUserAnswer` (guard: last visible is assistant; trimmed; 1-2000), `UndoLastAnswer` (repeated, stops at applied answer or opening), `Version` bump on every mutator, monotonic `Sequence`. Test: `Domain/ConversationTests.cs` (sequence with undone rows, undo chain A1-A3, undo after first answer, repeated undo then empty, applied/confirmation refused, answer after confirmation undoable once, pending-reply undo, guard on pending reply, trimming 2000 with spaces, version).
-- [ ] 2.4 Create `Features/Assistant/Script/{TopicKind,AssistantTopic,AssistantScript}.cs` with the Reconciled topic lists, Spanish "usted", example + reason per topic, "No sé" (`unknown`) on every Question/Choice. Test: `AssistantScriptTests.cs` (counts 6/8/10, unique keys, "No sé" present, example/reason non-empty, forbidden jargon spine/épica/invariante/slug).
-- [ ] 2.5 Create `Script/{JourneySnapshot,ConversationJourney}.cs`: required set per mode/depth, next topic, per-phase progress, `PendingTransition`, sizing only Automatic + empty depth, confirmation withheld without depth, coverage by key ignoring undone. Test: `ConversationJourneyTests.cs` (orders per level, thin Small idea not redirected, sizing only in (a), Small accept adds capabilities, Standard to Large adds only missing, Large to Small, back and forth, extra answers excluded, "No sé" counts, progress text "2 de 8 temas cubiertos", quick-reply `confirm:add` does not cover confirmation).
+- [x] 2.1 Create `Domain/Assistant/{MessageRole,AnswerKind,QuickReply}.cs` (`AnswerKind { FreeText, QuickReply, Unknown }`).
+- [x] 2.2 Create `Domain/Assistant/Message.cs` (limits 4000/50, soft `UndoneAt`, `AppliedToInitiative`, `QuickReplyKey`, `QuickReplies` snapshot with label+key).
+- [x] 2.3 Create `Domain/Assistant/Conversation.cs`: `Start`, `AddAssistantMessage`, `AddUserAnswer` (guard: last visible is assistant; trimmed; 1-2000), `UndoLastAnswer` (repeated, stops at applied answer or opening), `Version` bump on every mutator, monotonic `Sequence`. Test: `Domain/ConversationTests.cs` (sequence with undone rows, undo chain A1-A3, undo after first answer, repeated undo then empty, applied/confirmation refused, answer after confirmation undoable once, pending-reply undo, guard on pending reply, trimming 2000 with spaces, version).
+- [x] 2.4 Create `Features/Assistant/Script/{TopicKind,AssistantTopic,AssistantScript}.cs` with the Reconciled topic lists, Spanish "usted", example + reason per topic, "No sé" (`unknown`) on every Question/Choice. Test: `AssistantScriptTests.cs` (counts 6/8/10, unique keys, "No sé" present, example/reason non-empty, forbidden jargon spine/épica/invariante/slug).
+- [x] 2.5 Create `Script/{JourneySnapshot,ConversationJourney}.cs`: required set per mode/depth, next topic, per-phase progress, `PendingTransition`, sizing only Automatic + empty depth, confirmation withheld without depth, coverage by key ignoring undone. Test: `ConversationJourneyTests.cs` (orders per level, thin Small idea not redirected, sizing only in (a), Small accept adds capabilities, Standard to Large adds only missing, Large to Small, back and forth, extra answers excluded, "No sé" counts, progress text "2 de 8 temas cubiertos", quick-reply `confirm:add` does not cover confirmation).
 
 ## Commit 3: Use cases and fake service (~900)
 
