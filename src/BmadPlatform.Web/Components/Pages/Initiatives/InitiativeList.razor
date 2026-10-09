@@ -117,8 +117,8 @@ else if (items.Count > 0)
             <thead class="border-b border-line text-xs font-medium uppercase tracking-wide text-ink-muted">
                 <tr>
                     <th scope="col" class="px-4 py-3">Nombre</th>
-                    <th scope="col" class="px-4 py-3">Estado</th>
                     <th scope="col" class="px-4 py-3">Profundidad</th>
+                    <th scope="col" class="px-4 py-3">Estado</th>
                     <th scope="col" class="px-4 py-3">Modificada</th>
                     <th scope="col" class="px-4 py-3"><span class="sr-only">Acción</span></th>
                 </tr>
@@ -131,8 +131,8 @@ else if (items.Count > 0)
                         <th scope="row" class="px-4 py-3 font-medium text-ink">
                             <a href="@ItemHref(item)" class="hover:underline">@item.Name</a>
                         </th>
-                        <td class="px-4 py-3"><StatusBadge Status="item.Status" /></td>
                         <td class="px-4 py-3 text-ink">@InitiativeLabels.DepthSummary(item.DepthMode, item.Depth)</td>
+                        <td class="px-4 py-3"><StatusBadge Status="item.Status" /></td>
                         <td class="px-4 py-3 text-ink-muted"><time datetime="@item.UpdatedAt.ToString("O")">@InitiativeLabels.Date(item.UpdatedAt)</time></td>
                         <td class="px-4 py-3 text-right">
                             @if (isDraft)
