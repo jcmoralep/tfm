@@ -78,7 +78,7 @@ The script MUST be data of the platform (BMAD-inspired, not BMAD-verbatim). The 
 | Standard | idea, users, problem, success, out of scope, [sizing], confirmation | capabilities, constraints, priorities |
 | Large | same Aclarar as Standard | capabilities, constraints, priorities, integrations and teams, non-functional qualities |
 
-The sizing step is in the required set only while mode is Automatic and depth is empty; until then the Aclarar part of the Standard list is used. Counts including the confirmation: Small 7 (about 6), Standard 9 (10 with sizing), Large 11. Each topic MUST be asked on its own turn, with a short plain explanation of why it is asked, an example, and quick replies. Question topics MUST offer "No sé" as a quick reply. No question MUST redirect the user to another level (RF-42): for a thin idea the assistant continues with the next Small topic.
+The sizing step is in the required set only while mode is Automatic and depth is empty; until then the Aclarar part of the Standard list is used. Counts exclude the confirmation, which is a separate step shown when the total is reached: Small 6, Standard 8, Large 10. Each topic MUST be asked on its own turn, with a short plain explanation of why it is asked, an example, and quick replies. Question topics MUST offer "No sé" as a quick reply. No question MUST redirect the user to another level (RF-42): for a thin idea the assistant continues with the next Small topic.
 
 #### Scenario: Small asks six topics, no Planificar [UNIT]
 - GIVEN a Small initiative
@@ -93,7 +93,7 @@ The sizing step is in the required set only while mode is Automatic and depth is
 #### Scenario: Large order [UNIT]
 - GIVEN a Large initiative
 - WHEN every topic is answered in turn
-- THEN the Planificar part adds integrations and teams, then non-functional qualities after priorities, for 11 topics in total
+- THEN the Planificar part adds integrations and teams, then non-functional qualities after priorities, for 10 questions in total, not counting the confirmation
 
 #### Scenario: One question per turn with example [UNIT]
 - GIVEN any topic of any level
@@ -352,7 +352,7 @@ The assistant MUST offer only the guided, step-by-step mode. The UI MUST NOT sho
 
 ### Requirement: Privacy note
 
-The chat MUST always show the note "Modo demostración: use solo datos de ejemplo". The deterministic fake MUST NOT send data outside the process.
+The chat MUST always show the note "Modo de demostración: escriba solo datos de ejemplo, no información real de la empresa ni datos personales.". The deterministic fake MUST NOT send data outside the process.
 
 #### Scenario: Note visible [UI]
 - GIVEN any state of the chat page, including an empty conversation
@@ -397,10 +397,15 @@ The user message MUST be persisted before the service is called. If the service 
 - WHEN both complete
 - THEN exactly one reply is stored
 
-#### Scenario: Send while pending [UNIT]
-- GIVEN a pending reply
+#### Scenario: Send while a reply is in flight is queued [UI]
+- GIVEN the assistant is still producing a reply
 - WHEN the user sends another answer
-- THEN it is rejected with the pending-reply message and nothing is stored
+- THEN the answer is queued in the chat and sent only after the previous reply is stored, in the order typed, and an accidental double submit stores it once
+
+#### Scenario: Send with a stored pending reply [UNIT]
+- GIVEN the last visible message is a user answer with no reply stored (service failed)
+- WHEN a new answer arrives at the domain
+- THEN the domain rejects it and nothing is stored; the UI first retries the pending reply
 
 #### Scenario: Confirmation with failing service [UNIT]
 - GIVEN the service fails on the confirmation reply
@@ -480,12 +485,13 @@ All assistant text, quick replies, labels and errors MUST be Spanish, without te
 ## Assumptions
 
 - Small's six topics are idea, users, problem, capabilities, out of scope, success (the three basic questions of RF-42 are idea/users/problem); the RF-46 list in the exploration included constraints, left out to keep Small at about 6.
-- Counts include the confirmation; Small is 7 including it.
+- Counts exclude the confirmation (confirmed): Small 6, Standard 8, Large 10; the progress text reaches "6 de 6" before the confirmation button appears.
 - Progress text wording "{covered} de {total} temas cubiertos" and the extra Spanish messages (draft, ready, undo, pending, incomplete confirmation, unavailable, invalid quick reply) are proposals; design may adjust wording but not semantics.
 - Repeated undo walks back one answer per call; "single" means one answer per invocation.
 - An accepted depth answer is treated as having changed the initiative and is not undoable.
 - Only the "No sé" quick reply carries the don't-know marker.
-- Sending while a reply is pending is rejected rather than queued.
+- Sending while a reply is in flight is queued in the chat (confirmed), not rejected; the domain still requires the last visible message to be from the assistant, so the queue lives in the UI and drains in order.
+- Confirmed with the user: typed "no sé"/"no se"/"ni idea"/"no lo sé" as the whole message counts as the "No sé" button; sizing step only in Automatic with empty depth; a rejected suggestion shows the three levels; a stale confirmation is rejected; repeated undo; trimmed free text; ReadyToBuild read-only; repeated StartPlanning does not refresh UpdatedAt; stale tab send is rejected keeping the typed text; quick replies are fixed script options, not model suggestions.
 - Read-only viewing of a ReadyToBuild conversation is optional (MAY).
 - When a quick reply is chosen, its label is the stored content.
 

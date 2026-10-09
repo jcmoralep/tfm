@@ -105,6 +105,7 @@ public sealed record AssistantReply(string Text, InitiativeDepth? SuggestedDepth
   - after `confirm:add`: "Claro, escriba lo que quiera añadir."
   - No praise (RF-35).
 - `SuggestedDepth` is filled only for `depth-proposal`. It comes from the `size` key: small → Small, feature → Standard, product → Large. Otherwise it is Standard. Level names and deliverables come from `InitiativeTexts`, which this change moves out of `InitiativeLabels` (DRY).
+- Queue (confirmed): a send while a reply is in flight is queued in `ConversationView` and drained in order after the previous reply is stored; the domain guard (last visible message must be from the assistant) is unchanged, and Undo is disabled while the queue is not empty.
 - Failure: the real implementation throws `AssistantUnavailableException`. The user message is already saved, so the conversation is left with a "reply pending". The UI shows "Reintentar", which sends `StartConversationCommand`.
 
 ## Use cases (`Application/Features/Assistant`)
