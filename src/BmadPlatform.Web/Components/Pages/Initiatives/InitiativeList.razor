@@ -90,7 +90,28 @@ else if (items.Count > 0)
 {
     <p class="mt-6 text-sm text-ink-muted" role="status">@(items.Count == 1 ? "1 iniciativa" : $"{items.Count} iniciativas")</p>
 
-    <div class="mt-2 overflow-x-auto rounded-card border border-line bg-surface-raised shadow-card">
+    @* Below md each initiative is a stacked card; the table takes over from md. "hidden" removes the inactive layout from the accessibility tree. *@
+    <ul class="mt-2 space-y-3 md:hidden" aria-label="Sus iniciativas, de la modificada más recientemente a la más antigua">
+        @foreach (var item in items)
+        {
+            var isDraft = item.Status == InitiativeStatus.Draft;
+            <li class="rounded-card border border-line bg-surface-raised p-4 shadow-card">
+                <a href="@ItemHref(item)" class="break-words font-medium text-ink hover:underline">@item.Name</a>
+                <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                    <StatusBadge Status="item.Status" />
+                    <span class="text-ink">@InitiativeLabels.DepthSummary(item.DepthMode, item.Depth)</span>
+                </div>
+                <p class="mt-2 text-sm text-ink-muted">Modificada: <time datetime="@item.UpdatedAt.ToString("O")">@InitiativeLabels.Date(item.UpdatedAt)</time></p>
+                @if (isDraft)
+                {
+                    <a href="@ItemHref(item)" class="mt-3 inline-block text-sm font-semibold text-primary-ink hover:underline">Continuar<span class="sr-only"> con @item.Name</span></a>
+                }
+            </li>
+        }
+    </ul>
+
+    @* "relative" makes the wrapper the containing block of the table's sr-only (absolute) text, so it is clipped here instead of widening the page. *@
+    <div class="relative mt-2 hidden overflow-x-auto rounded-card border border-line bg-surface-raised shadow-card md:block">
         <table class="w-full min-w-[40rem] text-left text-sm">
             <caption class="sr-only">Sus iniciativas, de la modificada más recientemente a la más antigua</caption>
             <thead class="border-b border-line text-xs font-medium uppercase tracking-wide text-ink-muted">
@@ -108,7 +129,7 @@ else if (items.Count > 0)
                     var isDraft = item.Status == InitiativeStatus.Draft;
                     <tr>
                         <th scope="row" class="px-4 py-3 font-medium text-ink">
-                            <a href="@(isDraft ? $"/iniciativas/{item.Id}/crear" : $"/iniciativas/{item.Id}")" class="hover:underline">@item.Name</a>
+                            <a href="@ItemHref(item)" class="hover:underline">@item.Name</a>
                         </th>
                         <td class="px-4 py-3"><StatusBadge Status="item.Status" /></td>
                         <td class="px-4 py-3 text-ink">@InitiativeLabels.DepthSummary(item.DepthMode, item.Depth)</td>
@@ -116,7 +137,7 @@ else if (items.Count > 0)
                         <td class="px-4 py-3 text-right">
                             @if (isDraft)
                             {
-                                <a href="/iniciativas/@item.Id/crear" class="font-semibold text-primary-ink hover:underline">Continuar<span class="sr-only"> con @item.Name</span></a>
+                                <a href="@ItemHref(item)" class="font-semibold text-primary-ink hover:underline">Continuar<span class="sr-only"> con @item.Name</span></a>
                             }
                         </td>
                     </tr>
@@ -184,6 +205,10 @@ else if (items.Count > 0)
             loaded = true;
         }
     }
+
+    // Drafts resume the creation wizard; everything else opens the detail.
+    private static string ItemHref(InitiativeSummary item) =>
+        item.Status == InitiativeStatus.Draft ? $"/iniciativas/{item.Id}/crear" : $"/iniciativas/{item.Id}";
 
     private Task ApplyAsync()
     {
