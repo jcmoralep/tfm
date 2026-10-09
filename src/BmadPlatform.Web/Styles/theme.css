@@ -24,6 +24,12 @@
   --color-primary-ink: #2a4ec2;
   --color-focus: #2f5be7;
 
+  /* Brand panel (login): deep blue gradient with light text. Contrast of on-brand-muted on both stops is above 7:1. */
+  --color-brand-deep: #0a2260;
+  --color-brand-mid: #1d4bbd;
+  --color-on-brand-muted: #d3def8;
+  --color-brand-rule: #8fb0ff;
+
   /* Surfaces and text */
   --color-surface: #f3f5fb;
   --color-surface-raised: #ffffff;
