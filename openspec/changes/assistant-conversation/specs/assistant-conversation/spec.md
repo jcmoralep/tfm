@@ -173,7 +173,7 @@ Choosing the "No sé" quick reply MUST be accepted as a valid answer, MUST cover
 
 ### Requirement: Derived progress and visible coverage (RF-10, RF-50)
 
-Progress MUST be derived on read from visible messages and MUST NOT depend on stored counters. A topic is covered when a visible user answer exists for it: for question topics any valid answer including "No sé"; for the confirmation only "Sí, pasar a Planificar"; for the sizing step only once the depth is set. "Quiero añadir algo" does not cover the confirmation. Answers to topics outside the current required set MUST be kept but MUST NOT count. The progress value is covered required topics out of required topics, and the visible text MUST be "{covered} de {total} temas cubiertos" (assumption on wording). Total includes the confirmation and, in Planning, the Planificar topics.
+Progress MUST be derived on read from visible messages and MUST NOT depend on stored counters. A topic is covered when a visible user answer exists for it: for question topics any valid answer including "No sé"; for the confirmation only "Sí, pasar a Planificar"; for the sizing step only once the depth is set. "Quiero añadir algo" does not cover the confirmation. Answers to topics outside the current required set MUST be kept but MUST NOT count. The progress value is covered required topics out of required topics, and the visible text MUST be "{covered} de {total} temas cubiertos" (assumption on wording). Total excludes the confirmation and, in Planning, includes the Planificar topics.
 
 #### Scenario: Progress after answers [UNIT]
 - GIVEN a Standard conversation with the idea and users answered
