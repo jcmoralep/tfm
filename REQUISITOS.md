@@ -49,6 +49,7 @@ Cada requisito es verificable. Etiquetas: **[CONFIRMADO]** decidido por el equip
 - **RF-13** El historial de la conversación se guarda por iniciativa. [CONFIRMADO]
 - **RF-14** El asistente usa el contexto adjunto cuando el modelo pueda interpretarlo. [CONFIRMADO]
 - **RF-15** El proveedor de IA es Gemini (capa gratuita) detrás de `IAssistantService`, reemplazable. [CONFIRMADO]
+- **RF-45** La iniciativa pasa de *Aclarando* a *Planificando* **solo cuando la persona lo confirma** de forma explícita (por ejemplo "Sí, pasar a Planificar"), nunca de forma automática, porque desde *Planificando* el nivel de profundidad queda bloqueado (RF-29). El asistente ofrece la confirmación cuando las preguntas de aclarar están cubiertas, y la persona puede elegir "Quiero añadir algo" y seguir conversando. **La confirmación no vence:** la iniciativa permanece en *Aclarando* el tiempo que haga falta y, al volver, la conversación retoma en ese punto. [CONFIRMADO]
 
 ### Artefactos
 - **RF-16** La plataforma genera Brief, PRD, Arquitectura y Épicas e historias. Los dos últimos son borradores para revisión de desarrollo. Con el formato de BMAD: Brief (`brief.md`), PRD (`prd.md`), Arquitectura (`ARCHITECTURE-SPINE.md`) y Épicas e historias (un solo `epics.md`), con las secciones de `docs/bmad-referencia.md`. [CONFIRMADO; formato VALIDADO EN BMAD 6.12.1]
