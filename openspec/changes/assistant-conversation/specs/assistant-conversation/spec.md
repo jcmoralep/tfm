@@ -178,7 +178,7 @@ Progress MUST be derived on read from visible messages and MUST NOT depend on st
 #### Scenario: Progress after answers [UNIT]
 - GIVEN a Standard conversation with the idea and users answered
 - WHEN progress is derived
-- THEN it is 2 of 9 and the text is "2 de 9 temas cubiertos"
+- THEN it is 2 of 8 and the text is "2 de 8 temas cubiertos"
 
 #### Scenario: No sé counts [UNIT]
 - GIVEN a "No sé" answer to the problem topic

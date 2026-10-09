@@ -53,7 +53,7 @@ Rejected: storing `Phase`; using a Gemini-style "model decides the next topic" (
 | out-of-scope | Question | "¿Qué queda fuera, al menos por ahora?" | Nada por ahora |
 | integrations | Question | "¿Qué otros sistemas o equipos participan?" | Ninguno |
 | size | Choice | "¿Qué tan grande le parece?" | Un ajuste pequeño · Una funcionalidad completa · Un producto o varias áreas |
-| depth-proposal | DepthProposal | phrased by the service with the suggestion | Sí, usar el nivel X · Prefiero Y · Prefiero Z (keys `depth:{level}`) |
+| depth-proposal | DepthProposal | phrased by the service with the suggestion | Sí, usar el nivel X · Elegir otro nivel, then the three levels (keys `depth:{level}`, `depth:other`) |
 | confirm-planning | Confirmation | "Ya tenemos lo necesario… Al pasar a Planificar el nivel queda fijo." | Sí, pasar a Planificar (`confirm:yes`) · Quiero añadir algo (`confirm:add`) |
 | capabilities | Question | "¿Qué debe poder hacer una persona con esto?" | none |
 | constraints | Question | "¿Hay límites o reglas que debamos respetar?" | Ninguno que yo sepa |
@@ -65,9 +65,9 @@ Every topic also has an example ("Por ejemplo: …") and a reason ("Por qué lo 
 
 | Level | Clarify (in order) | Plan |
 |---|---|---|
-| Small (6 questions) | idea, users, problem, constraints, out-of-scope, success, confirm | none, so it goes straight to closing |
+| Small (6 questions) | idea, users, problem, capabilities, out-of-scope, success, confirm | none, so it goes straight to closing |
 | Standard (8) | idea, users, problem, success, out-of-scope, confirm | capabilities, constraints, priorities |
-| Large (10) | Standard plus integrations, confirm | capabilities, constraints, qualities, priorities |
+| Large (10) | same as Standard | capabilities, constraints, priorities, integrations, qualities |
 | Automatic, no level | Standard clarify, size, depth-proposal, confirm | unknown ("Se define al elegir el nivel") |
 
 Small covers the three basic questions of RF-42 and never redirects to another level.

@@ -170,6 +170,16 @@ public sealed class UndoLastAnswerTests
     }
 
     [Fact]
+    public async Task Without_a_current_user_it_fails()
+    {
+        var id = await context.Initiatives.CreateClarifying("App");
+        await context.Start(id);
+        context.User.UserId = null;
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => context.Undo(id, 1));
+    }
+
+    [Fact]
     public async Task Undoing_before_the_conversation_exists_is_not_found()
     {
         var id = await context.Initiatives.CreateClarifying("App");
