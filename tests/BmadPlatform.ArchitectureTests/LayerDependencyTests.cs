@@ -88,18 +88,5 @@ public sealed class LayerDependencyTests
             .ToArray();
 
     private static XDocument LoadProject(string project) =>
-        XDocument.Load(Path.Combine(RepositoryRoot.Value, "src", project, $"{project}.csproj"));
-
-    private static readonly Lazy<string> RepositoryRoot = new(() =>
-    {
-        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, "BmadPlatform.slnx")))
-            {
-                return directory.FullName;
-            }
-        }
-
-        throw new InvalidOperationException("Repository root (BmadPlatform.slnx) not found.");
-    });
+        XDocument.Load(Path.Combine(RepositoryRoot.FullName, "src", project, $"{project}.csproj"));
 }

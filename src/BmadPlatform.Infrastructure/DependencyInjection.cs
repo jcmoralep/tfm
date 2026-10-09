@@ -50,6 +50,7 @@ public static class DependencyInjection
         services.AddScoped<InitialUserSeeder>();
 
         services.AddScoped<IInitiativeRepository, InitiativeRepository>();
+        services.AddScoped<IConversationRepository, ConversationRepository>();
 
         // Deterministic stand-in until the Gemini implementation arrives (PROPUESTA-MVP step 5).
         services.AddSingleton<IAssistantService, FakeAssistantService>();

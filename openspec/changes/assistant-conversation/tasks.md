@@ -85,10 +85,10 @@ Decisions embedded:
 
 ## Commit 4: Persistence and boundary (~450 + generated)
 
-- [ ] 4.1 Create `Infrastructure/Assistant/{ConversationConfiguration,MessageConfiguration}.cs` (`asi_` prefix, unique InitiativeId, unique (ConversationId, Sequence), `Version` concurrency token, string enums, JSON `QuickReplies` with converter + `ValueComparer`, no FK to `ini_`/AspNet). Test: `ApplicationDbContextModelTests.cs` (rename table-list test to `Model_contains_identity_user_tables_the_module_tables_and_no_role_tables`).
-- [ ] 4.2 Create `Persistence/DbErrors.cs` (`IsUniqueViolation`) and `Assistant/ConversationRepository.cs` (owner-scoped `GetAsync` with `AsNoTracking`, `SaveAsync` maps `DbUpdateConcurrencyException` and duplicate key to `ConflictException`). Test: model test for JSON round trip; repository covered by Chrome run.
-- [ ] 4.3 Add migration `*_AddAssistantConversations` and snapshot; register in `Infrastructure/DependencyInjection.cs`. Test: `PendingMigrationsGuardTests.cs` plus migration-present test.
-- [ ] 4.4 Create `ArchitectureTests/ModuleBoundaryTests.cs` (data-driven `Module(Name, Folders, PrivateTokens)`, both directions, at least one file per module). Test: itself, plus a negative-case helper test proving a forbidden token fails.
+- [x] 4.1 Create `Infrastructure/Assistant/{ConversationConfiguration,MessageConfiguration}.cs` (`asi_` prefix, unique InitiativeId, unique (ConversationId, Sequence), `Version` concurrency token, string enums, JSON `QuickReplies` with converter + `ValueComparer`, no FK to `ini_`/AspNet). Test: `ApplicationDbContextModelTests.cs` (rename table-list test to `Model_contains_identity_user_tables_the_module_tables_and_no_role_tables`).
+- [x] 4.2 Create `Persistence/DbErrors.cs` (`IsUniqueViolation`) and `Assistant/ConversationRepository.cs` (owner-scoped `GetAsync` with `AsNoTracking`, `SaveAsync` maps `DbUpdateConcurrencyException` and duplicate key to `ConflictException`). Test: model test for JSON round trip; repository covered by Chrome run.
+- [x] 4.3 Add migration `*_AddAssistantConversations` and snapshot; register in `Infrastructure/DependencyInjection.cs`. Test: `PendingMigrationsGuardTests.cs` plus migration-present test.
+- [x] 4.4 Create `ArchitectureTests/ModuleBoundaryTests.cs` (data-driven `Module(Name, Folders, PrivateTokens)`, both directions, at least one file per module). Test: itself, plus a negative-case helper test proving a forbidden token fails.
 
 ## Commit 5: Chat UI (~600)
 
