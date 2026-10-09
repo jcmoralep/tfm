@@ -88,7 +88,7 @@ At creation the user MUST be able to choose Manual (the user picks the level) or
 #### Scenario: Automatic mode leaves depth empty [UNIT]
 - GIVEN an initiative with Automatic mode
 - WHEN the wizard is completed
-- THEN depth is empty and the initiative detail model exposes the text "Pendiente de sugerencia" for depth
+- THEN depth is empty and the depth label shown for the initiative is "Pendiente de sugerencia"
 
 #### Scenario: Switching to Automatic clears depth [UNIT]
 - GIVEN a Draft initiative in Manual mode with depth Large
