@@ -8,7 +8,7 @@ public sealed record UpdateInitiativeCommand(
     Guid Id,
     string Name,
     string? Description,
-    DepthMode DepthMode,
+    DepthMode? DepthMode,
     InitiativeDepth? Depth) : IRequest
 {
     // Records print every property by default; the name and description may hold initiative content.

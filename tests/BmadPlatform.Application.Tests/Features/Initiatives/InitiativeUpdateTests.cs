@@ -21,6 +21,20 @@ public sealed class InitiativeUpdateTests
     }
 
     [Fact]
+    public async Task Draft_without_a_depth_choice_can_be_renamed_keeping_mode_and_depth_empty()
+    {
+        var id = await context.SaveDetails(null, "Portal");
+
+        await context.Update(id, "Portal v2", "Texto", null, null);
+
+        var details = await context.Get(id);
+        Assert.Equal("Portal v2", details!.Name);
+        Assert.Null(details.DepthMode);
+        Assert.Null(details.Depth);
+        Assert.Equal(InitiativeStatus.Draft, details.Status);
+    }
+
+    [Fact]
     public async Task Depth_can_change_while_clarifying()
     {
         var id = await context.CreateClarifying("Portal");

@@ -34,7 +34,7 @@ public sealed class InitiativeTestContext
     public Task Complete(Guid id) =>
         new CompleteInitiativeCommandHandler(Repository, User, Clock).Handle(new CompleteInitiativeCommand(id), default);
 
-    public Task Update(Guid id, string name, string? description, DepthMode mode, InitiativeDepth? depth) =>
+    public Task Update(Guid id, string name, string? description, DepthMode? mode, InitiativeDepth? depth) =>
         new UpdateInitiativeCommandHandler(Repository, User, Clock)
             .Handle(new UpdateInitiativeCommand(id, name, description, mode, depth), default);
 

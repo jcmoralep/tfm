@@ -76,3 +76,22 @@ Mode: Standard (strict TDD off). Tests: 142 before, 165 after (Web 13 -> 36; oth
 - "Atrás" only changes the local step; the Review step is reachable only through a saved "Siguiente", so the summary always reflects saved data.
 - `DepthSelector` clears the level when switching to Automatic; the domain still enforces it.
 - Radios are plain inputs (no `InputRadioGroup`) to avoid nullable-enum binding. Step heading receives focus on step change (`ElementReference.FocusAsync`, no custom JS).
+
+## Batch 4 (commit d: list, detail, edit, delete UI) - tasks 4.1 to 4.5 DONE
+
+Mode: Standard (strict TDD off). Tests: 165 before, 192 after (Web 36 -> 62; Application 86 -> 87; Architecture 12, Infrastructure 31 unchanged). Build: 0 warnings, 0 errors (Release). The manual Chrome checklist is left to the orchestrator.
+
+### Created
+- `Web/Components/Initiatives/{StatusBadge.razor,InitiativeNotFound.razor,InitiativeListCriteria.cs}`; `Web/Components/Layout/{MainNav.razor,NavSection.cs}`.
+- Pages: `Pages/Initiatives/{InitiativeList,InitiativeDetail,InitiativeEdit}.razor` at `/iniciativas`, `/iniciativas/{Id:guid}`, `/iniciativas/{Id:guid}/editar` (all `[Authorize]`, inject only `IMediator` and `NavigationManager`).
+- Tests: `Web.Tests/Initiatives/{InitiativeListCriteriaTests,InitiativeDisplayTests,NavSectionTests}.cs`; one new test in `InitiativeUpdateTests`.
+
+### Modified
+- `InitiativeLabels` (+`DepthSummary`, +`Date`), `MainLayout.razor` (nav), `Home.razor` (copy and links), `InitiativeWizard.razor` (shared not-found component; redirect of non-Draft to the detail with `replace: true`).
+- `UpdateInitiativeCommand.DepthMode` is now nullable (`DepthMode?`) and `InitiativeTestContext.Update` accepts it. Reason: a Draft may still have no mode, and without this the edit page could not rename it. The handler already compared against the stored value, so no handler change was needed.
+
+### Decisions
+- List state lives in the query string (`q`, `estado`, `nivel`, enum names); invalid values are ignored. Search applies on Enter or "Buscar"; the selects apply on change (no per-keystroke round trip).
+- Draft rows link (name and "Continuar") to `/crear`; other rows link to the detail. Dates are shown in the server's local time, `dd/MM/yyyy HH:mm`.
+- Delete uses an inline confirmation group (focus moves to its heading); a NotFound on delete or save switches the page to the shared not-found state.
+- Nav active state is computed by `NavSection.IsActive` and refreshed on `LocationChanged`; the link has `aria-current="page"`.

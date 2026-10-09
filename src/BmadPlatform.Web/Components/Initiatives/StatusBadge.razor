@@ -1,0 +1,16 @@
+@using BmadPlatform.Domain.Initiatives
+
+@* The status is always written out, so color is never the only signal. *@
+<span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold @CssClass">@InitiativeLabels.Status(Status)</span>
+
+@code {
+    [Parameter, EditorRequired]
+    public InitiativeStatus Status { get; set; }
+
+    private string CssClass => Status switch
+    {
+        InitiativeStatus.Draft => "bg-bubble text-ink-muted",
+        InitiativeStatus.ReadyToBuild => "bg-primary text-on-primary",
+        _ => "bg-primary-soft text-primary-ink",
+    };
+}

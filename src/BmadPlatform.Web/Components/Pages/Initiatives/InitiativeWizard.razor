@@ -19,11 +19,7 @@
 }
 else if (notFound)
 {
-    <section class="rounded-card border border-line bg-surface-raised p-8 shadow-card">
-        <h1 class="text-2xl font-semibold text-ink">@InitiativeTexts.NotFound</h1>
-        <p class="mt-3 text-ink-muted">Es posible que se haya eliminado o que ya no esté en borrador.</p>
-        <a href="" class="mt-6 inline-block text-sm font-semibold text-ink underline">Volver al inicio</a>
-    </section>
+    <InitiativeNotFound />
 }
 else
 {
@@ -221,11 +217,18 @@ else
         loading = true;
         var details = await Mediator.Send(new GetInitiativeQuery(Id.Value));
 
-        // A deleted, foreign, unknown or already finished initiative has no wizard to resume.
-        if (details is null || details.Status != InitiativeStatus.Draft)
+        // A deleted, foreign or unknown initiative has no wizard to resume.
+        if (details is null)
         {
             notFound = true;
             loading = false;
+            return;
+        }
+
+        // An initiative that was already finished is managed from its detail page; stay on "Cargando…" meanwhile.
+        if (details.Status != InitiativeStatus.Draft)
+        {
+            Navigation.NavigateTo($"/iniciativas/{details.Id}", replace: true);
             return;
         }
 

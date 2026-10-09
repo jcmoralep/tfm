@@ -1,0 +1,19 @@
+@implements IDisposable
+@inject NavigationManager Navigation
+
+<nav aria-label="Principal">
+    <a href="/iniciativas" aria-current="@(IsActive ? "page" : null)"
+       class="rounded-full px-4 py-1.5 text-sm font-medium @(IsActive ? "bg-primary-soft font-semibold text-primary-ink" : "text-ink-muted hover:bg-surface hover:text-ink")">
+        Iniciativas
+    </a>
+</nav>
+
+@code {
+    private bool IsActive => NavSection.IsActive(Navigation.ToBaseRelativePath(Navigation.Uri), "iniciativas");
+
+    protected override void OnInitialized() => Navigation.LocationChanged += OnLocationChanged;
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+}

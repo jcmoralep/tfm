@@ -1,3 +1,5 @@
+using System.Globalization;
+using BmadPlatform.Application.Features.Initiatives;
 using BmadPlatform.Domain.Initiatives;
 
 namespace BmadPlatform.Web.Components.Initiatives;
@@ -35,6 +37,19 @@ public static class InitiativeLabels
         InitiativeDepth.Large => "Grande",
         _ => throw new ArgumentOutOfRangeException(nameof(depth), depth, null),
     };
+
+    /// <summary>
+    /// What a list row or the detail shows for the depth: the level, "Pendiente de sugerencia" while the
+    /// assistant has not suggested one, or "Sin definir" for a draft that has not reached that choice.
+    /// </summary>
+    public static string DepthSummary(DepthMode? mode, InitiativeDepth? depth) =>
+        depth is { } level ? Depth(level)
+        : mode == DepthMode.Automatic ? InitiativeTexts.DepthPending
+        : "Sin definir";
+
+    /// <summary>Day, month, year and time, for example "08/10/2026 14:30". The server's local time is used.</summary>
+    public static string Date(DateTimeOffset value) =>
+        value.ToLocalTime().ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture);
 
     /// <summary>The documents each depth level produces, in the order they are delivered.</summary>
     public static IReadOnlyList<string> Deliverables(InitiativeDepth depth) => depth switch

@@ -69,11 +69,11 @@ Every commit MUST build with 0 warnings (warnings are errors) and pass `dotnet t
 
 ## Commit (d): List/detail/edit/delete UI
 
-- [ ] 4.1 Create `Components/Initiatives/StatusBadge.razor`.
-- [ ] 4.2 Create `Pages/Initiatives/InitiativeList.razor` at `/iniciativas`: search, status and depth selects, "Pendiente de sugerencia", Spanish empty state, drafts link to `/crear`.
-- [ ] 4.3 Create `InitiativeDetail.razor` (placeholders Conversación, Artefactos, Contexto; inline delete confirmation; shared not-found state) and `InitiativeEdit.razor` (mode/depth disabled outside Draft/Clarifying).
-- [ ] 4.4 Modify `Layout/MainLayout.razor` (pill nav "Iniciativas") and `Pages/Home.razor` (copy and link).
-- [ ] 4.5 Verify: build 0 warnings, `dotnet test BmadPlatform.slnx --configuration Release`, then the manual checklist. Commit.
+- [x] 4.1 Create `Components/Initiatives/StatusBadge.razor`.
+- [x] 4.2 Create `Pages/Initiatives/InitiativeList.razor` at `/iniciativas`: search, status and depth selects, "Pendiente de sugerencia", Spanish empty state, drafts link to `/crear`.
+- [x] 4.3 Create `InitiativeDetail.razor` (placeholders Conversación, Artefactos, Contexto; inline delete confirmation; shared not-found state) and `InitiativeEdit.razor` (mode/depth disabled outside Draft/Clarifying).
+- [x] 4.4 Modify `Layout/MainLayout.razor` (pill nav "Iniciativas") and `Pages/Home.razor` (copy and link).
+- [x] 4.5 Verify: build 0 warnings, `dotnet test BmadPlatform.slnx --configuration Release`, then the manual checklist. Commit.
 
 ## Final manual verification (Chrome, [UI] scenarios)
 
