@@ -268,8 +268,8 @@ else
         catch (Exception exception) when (UserMessages.TryGet(exception, out var messages))
         {
             // Nothing was stored (conflict, validation, a rule): give every unsent text back to the composer.
-            draft.Restore(queue.Abort());
-            errors = messages;
+            var restoration = draft.Restore(queue.Abort());
+            errors = [.. messages, .. AssistantLabels.RestoreNotes(restoration)];
             await ReloadAsync();
         }
     }

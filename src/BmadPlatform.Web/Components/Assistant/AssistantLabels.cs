@@ -58,6 +58,31 @@ public static class AssistantLabels
 
     public const string ViewAction = "Ver conversación";
 
+    /// <summary>
+    /// Notes shown when unsent answers were given back to the composer: the buttons that were not sent (they
+    /// cannot go into the box) and a text that grew past the limit. Empty when nothing needs saying.
+    /// </summary>
+    public static IReadOnlyList<string> RestoreNotes(DraftRestoration restoration)
+    {
+        List<string> notes = [];
+
+        if (restoration.DroppedChoices.Count > 0)
+        {
+            var labels = string.Join(", ", restoration.DroppedChoices.Select(label => $"«{label}»"));
+
+            notes.Add(restoration.DroppedChoices.Count == 1
+                ? $"Su elección {labels} no se envió; vuelva a elegirla."
+                : $"Sus elecciones {labels} no se enviaron; vuelva a elegirlas.");
+        }
+
+        if (restoration.TooLong)
+        {
+            notes.Add(AssistantTexts.AnswerTooLong);
+        }
+
+        return notes;
+    }
+
     public static string StepName(JourneyStep step) => step switch
     {
         JourneyStep.Clarify => "Aclarar",

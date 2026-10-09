@@ -233,4 +233,30 @@ public sealed class AssistantScriptTests
     {
         Assert.False(AssistantScript.IsUnknownPhrase(text));
     }
+
+    [Theory]
+    [InlineData(InitiativeDepth.Small)]
+    [InlineData(InitiativeDepth.Standard)]
+    [InlineData(InitiativeDepth.Large)]
+    public void A_depth_key_reads_back_into_its_level(InitiativeDepth depth)
+    {
+        var parsed = AssistantScript.ReplyKeys.TryParseDepth(AssistantScript.ReplyKeys.Depth(depth), out var result);
+
+        Assert.True(parsed);
+        Assert.Equal(depth, result);
+    }
+
+    [Theory]
+    [InlineData("depth:other")]
+    [InlineData("depth:huge")]
+    [InlineData("depth:")]
+    [InlineData("Depth:Standard")]
+    [InlineData("standard")]
+    [InlineData("unknown")]
+    [InlineData("")]
+    [InlineData(null)]
+    public void Any_other_key_is_not_a_depth(string? key)
+    {
+        Assert.False(AssistantScript.ReplyKeys.TryParseDepth(key, out _));
+    }
 }

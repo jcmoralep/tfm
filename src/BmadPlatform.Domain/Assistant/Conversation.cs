@@ -37,10 +37,13 @@ public sealed class Conversation
     /// <summary>Every message ever stored, including undone ones, in sequence order.</summary>
     public IReadOnlyList<Message> Messages => _messages;
 
-    /// <summary>The messages the user sees: not undone, in sequence order.</summary>
-    public IReadOnlyList<Message> VisibleMessages => [.. _messages.Where(m => m.UndoneAt is null).OrderBy(m => m.Sequence)];
+    /// <summary>
+    /// The messages the user sees: not undone, in sequence order. Messages are only ever appended with the next
+    /// sequence and stored in that order, so the list is already ordered and needs no sorting.
+    /// </summary>
+    public IReadOnlyList<Message> VisibleMessages => [.. _messages.Where(m => m.UndoneAt is null)];
 
-    public Message? LastVisible => VisibleMessages.LastOrDefault();
+    public Message? LastVisible => LastVisibleOf(null);
 
     /// <summary>True when the last visible answer exists and did not change the initiative.</summary>
     public bool CanUndo => LastVisibleAnswer() is { AppliedToInitiative: false };
@@ -116,7 +119,23 @@ public sealed class Conversation
         Touch(now);
     }
 
-    private Message? LastVisibleAnswer() => VisibleMessages.LastOrDefault(m => m.Role == MessageRole.User);
+    /// <summary>The newest visible message of a role (any role when null), found by scanning from the end.</summary>
+    public Message? LastVisibleOf(MessageRole? role)
+    {
+        for (var index = _messages.Count - 1; index >= 0; index--)
+        {
+            var message = _messages[index];
+
+            if (message.UndoneAt is null && (role is null || message.Role == role))
+            {
+                return message;
+            }
+        }
+
+        return null;
+    }
+
+    private Message? LastVisibleAnswer() => LastVisibleOf(MessageRole.User);
 
     // Counts undone rows too, so a sequence is never reused after an undo.
     private int NextSequence() => _messages.Count + 1;

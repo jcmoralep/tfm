@@ -45,6 +45,27 @@ public static class AssistantScript
 
         /// <summary>The key that picks a depth level, for example <c>depth:standard</c>.</summary>
         public static string Depth(InitiativeDepth depth) => "depth:" + depth.ToString().ToLowerInvariant();
+
+        /// <summary>
+        /// Reads a key built by <see cref="Depth"/> back into its level. False for anything else, including
+        /// <see cref="DepthOther"/>, so the caller decides what an unknown key means.
+        /// </summary>
+        public static bool TryParseDepth(string? key, out InitiativeDepth depth)
+        {
+            foreach (var candidate in Enum.GetValues<InitiativeDepth>())
+            {
+                if (key == Depth(candidate))
+                {
+                    depth = candidate;
+
+                    return true;
+                }
+            }
+
+            depth = default;
+
+            return false;
+        }
     }
 
     public const string UnknownLabel = "No sé";

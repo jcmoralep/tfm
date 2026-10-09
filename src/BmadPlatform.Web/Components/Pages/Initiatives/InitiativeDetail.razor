@@ -9,6 +9,7 @@
 @using BmadPlatform.Domain.Initiatives
 @inject IMediator Mediator
 @inject NavigationManager Navigation
+@inject ILogger<InitiativeDetail> Logger
 
 <PageTitle>@(details?.Name ?? "Iniciativa") · Plataforma BMAD</PageTitle>
 
@@ -175,6 +176,9 @@ else
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
+            // Type and id only: the exception message could echo conversation content.
+            Logger.LogWarning("The assistant card could not load the conversation of initiative {InitiativeId} ({ExceptionType}).", Id, exception.GetType().Name);
+
             return null;
         }
     }

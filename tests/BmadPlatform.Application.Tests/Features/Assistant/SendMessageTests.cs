@@ -1,4 +1,5 @@
 using BmadPlatform.Application.Common.Exceptions;
+using BmadPlatform.Application.Features.Assistant;
 using BmadPlatform.Application.Features.Assistant.Script;
 using BmadPlatform.Application.Features.Assistant.SendMessage;
 using BmadPlatform.Application.Features.Initiatives.SetInitiativeDepth;
@@ -351,6 +352,7 @@ public sealed class SendMessageTests
         context.Assistant.SuggestedDepth = InitiativeDepth.Standard;
         var proposal = await context.AnswerUntilDecision(id);
         Assert.Equal(AssistantScript.Keys.DepthProposal, proposal.Journey.NextTopic!.Key);
+        Assert.False(context.Assistant.Requests.Last().OffersLevelChoice);
         Assert.Equal(
             [AssistantScript.ReplyKeys.Depth(InitiativeDepth.Standard), AssistantScript.ReplyKeys.DepthOther],
             proposal.QuickReplies.Select(r => r.Key));
@@ -578,5 +580,59 @@ public sealed class SendMessageTests
         Assert.Single(context.Sender.Sent.OfType<SetInitiativeDepthCommand>());
         Assert.Equal(updates + 1, context.Initiatives.Repository.UpdateCount);
         Assert.Equal(InitiativeDepth.Standard, context.Initiatives.Repository.Stored.Single(i => i.Id == id).Depth);
+    }
+
+    // ---- A failed depth change must not leave a stored answer ----
+
+    [Fact]
+    public async Task A_failing_depth_change_stores_no_answer_and_the_choice_can_be_made_again()
+    {
+        var id = await context.CreateAutomatic("App");
+        var proposal = await context.AnswerUntilDecision(id);
+        var messages = context.StoredMessages(id).Count;
+        context.Sender.BeforeHandle = request =>
+        {
+            if (request is SetInitiativeDepthCommand)
+            {
+                throw new InvalidOperationException("boom");
+            }
+        };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => context.Send(id, proposal.Version, quickReplyKey: "depth:standard"));
+
+        Assert.Equal(messages, context.StoredMessages(id).Count);
+        Assert.DoesNotContain(context.StoredMessages(id), m => m.AppliedToInitiative);
+        Assert.Null((await context.Details(id)).Depth);
+        var current = await context.Current(id);
+        Assert.Equal(proposal.Version, current.Version);
+        Assert.True(current.CanSend);
+        Assert.False(current.NeedsResume);
+
+        context.Sender.BeforeHandle = null;
+        var view = await context.Send(id, current.Version, quickReplyKey: "depth:standard");
+
+        Assert.Equal(InitiativeDepth.Standard, (await context.Details(id)).Depth);
+        Assert.Equal(AssistantScript.Keys.ConfirmPlanning, view.Journey.NextTopic!.Key);
+        Assert.Single(context.StoredMessages(id), m => m.QuickReplyKey == "depth:standard");
+    }
+
+    [Fact]
+    public async Task A_depth_key_the_script_does_not_know_is_rejected_without_changing_anything()
+    {
+        var id = await context.CreateAutomatic("App");
+        var proposal = await context.AnswerUntilDecision(id);
+        var question = context.StoredMessages(id)[^1];
+        typeof(Message).GetProperty(nameof(Message.QuickReplies))!
+            .SetValue(question, (IReadOnlyList<QuickReply>)[new QuickReply("depth:huge", "Enorme")]);
+        var messages = context.StoredMessages(id).Count;
+
+        var error = await Assert.ThrowsAsync<DomainException>(
+            () => context.Send(id, proposal.Version, quickReplyKey: "depth:huge"));
+
+        Assert.Equal(AssistantTexts.InvalidQuickReply, error.Message);
+        Assert.Equal(messages, context.StoredMessages(id).Count);
+        Assert.Empty(context.Sender.Sent.OfType<SetInitiativeDepthCommand>());
+        Assert.Null((await context.Details(id)).Depth);
     }
 }

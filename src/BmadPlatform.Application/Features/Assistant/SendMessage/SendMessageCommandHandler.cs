@@ -10,9 +10,11 @@ using MediatR;
 namespace BmadPlatform.Application.Features.Assistant.SendMessage;
 
 /// <summary>
-/// Stores the answer first (that is the user's consent for any change to the initiative), then applies the effect
-/// through Initiatives, then asks the advancer for the assistant's turn. If a later step fails, the answer stays
-/// and the next start completes it.
+/// Validates the answer, applies a depth change through Initiatives, stores the answer, then asks the advancer for
+/// the assistant's turn. The depth goes first so a failed change leaves nothing stored: a stored answer that
+/// changed the initiative cannot be undone, so it must never exist without its effect. A confirmation is the
+/// exception: its effect (starting planning) belongs to the advancer, so the answer is stored first and a failed
+/// start is completed by the next start. If the reply fails, the answer stays and the next start produces it.
 /// </summary>
 public sealed class SendMessageCommandHandler(
     ISender sender,
@@ -46,13 +48,14 @@ public sealed class SendMessageCommandHandler(
             answer.QuickReplyKey,
             answer.AppliesToInitiative,
             timeProvider.GetUtcNow());
-        await repository.SaveAsync(conversation, request.ExpectedVersion, cancellationToken);
 
         if (answer.Depth is { } depth)
         {
             await sender.Send(new SetInitiativeDepthCommand(initiative.Id, depth), cancellationToken);
             initiative = await ConversationGuards.GetInitiativeAsync(sender, request.InitiativeId, cancellationToken);
         }
+
+        await repository.SaveAsync(conversation, request.ExpectedVersion, cancellationToken);
 
         // A confirmation needs no command here: the stored answer makes the journey report a pending transition,
         // and the advancer sends StartPlanningCommand, which is also what a later resume does.
@@ -96,17 +99,12 @@ public sealed class SendMessageCommandHandler(
 
         if (chosen is not null)
         {
-            var depth = Enum.GetValues<InitiativeDepth>()
-                .Where(d => next.Kind == TopicKind.DepthProposal && AssistantScript.ReplyKeys.Depth(d) == chosen.Key)
-                .Select(d => (InitiativeDepth?)d)
-                .FirstOrDefault();
-
             return new ResolvedAnswer(
                 next.Key,
                 chosen.Label,
                 chosen.Key == AssistantScript.ReplyKeys.Unknown ? AnswerKind.Unknown : AnswerKind.QuickReply,
                 chosen.Key,
-                depth,
+                ChosenDepth(next, chosen),
                 chosen.Key == AssistantScript.ReplyKeys.ConfirmYes);
         }
 
@@ -116,6 +114,19 @@ public sealed class SendMessageCommandHandler(
         var kind = next.Kind == TopicKind.Question && AssistantScript.IsUnknownPhrase(text) ? AnswerKind.Unknown : AnswerKind.FreeText;
 
         return new ResolvedAnswer(next.Key, text, kind, null, null, false);
+    }
+
+    // Only the depth proposal carries levels. "Elegir otro nivel" chooses none yet; any other key there is a mistake.
+    private static InitiativeDepth? ChosenDepth(AssistantTopic topic, QuickReply chosen)
+    {
+        if (topic.Kind != TopicKind.DepthProposal || chosen.Key == AssistantScript.ReplyKeys.DepthOther)
+        {
+            return null;
+        }
+
+        return AssistantScript.ReplyKeys.TryParseDepth(chosen.Key, out var depth)
+            ? depth
+            : throw new DomainException(AssistantTexts.InvalidQuickReply);
     }
 
     private sealed record ResolvedAnswer(

@@ -65,14 +65,27 @@ public sealed class ChatDraft
         return DraftSubmission.Queued;
     }
 
-    /// <summary>Puts text that was not stored back in the composer, ahead of whatever was typed meanwhile.</summary>
-    public void Restore(IEnumerable<QueuedAnswer> answers)
+    /// <summary>
+    /// Puts text that was not stored back in the composer, ahead of whatever was typed meanwhile. A chosen button
+    /// has no text to put back, so its label is reported instead of being lost silently, and the joined text is
+    /// kept even when it passes the limit: the counter turns red and the person shortens it.
+    /// </summary>
+    public DraftRestoration Restore(IEnumerable<QueuedAnswer> answers)
     {
-        var texts = answers
+        var all = answers.ToList();
+
+        var texts = all
             .Select(answer => answer.Text)
             .Append(string.IsNullOrWhiteSpace(Text) ? null : Text.Trim())
             .Where(text => !string.IsNullOrEmpty(text));
 
         Replace(string.Join("\n\n", texts));
+
+        return new DraftRestoration([.. all.Where(answer => answer.Text is null).Select(answer => answer.Display)], IsTooLong);
     }
 }
+
+/// <summary>What <see cref="ChatDraft.Restore"/> could not give back as text.</summary>
+/// <param name="DroppedChoices">Labels of the quick replies that were not sent; the person must choose them again.</param>
+/// <param name="TooLong">The restored text is over the limit and cannot be sent as it is.</param>
+public sealed record DraftRestoration(IReadOnlyList<string> DroppedChoices, bool TooLong);

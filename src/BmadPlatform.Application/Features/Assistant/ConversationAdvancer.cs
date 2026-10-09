@@ -6,19 +6,23 @@ using BmadPlatform.Application.Features.Initiatives.StartPlanning;
 using BmadPlatform.Domain.Assistant;
 using BmadPlatform.Domain.Initiatives;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace BmadPlatform.Application.Features.Assistant;
 
 /// <summary>
 /// The shared "apply the effect, then produce the assistant's turn" step used by start and send. It is safe to
 /// run on any state: it completes a stored confirmation, then adds a message only when the last visible one is
-/// not already the question the journey expects, so resuming never duplicates anything.
+/// not already the question the journey expects, so resuming never duplicates anything. Two tabs resuming at the
+/// same time are settled by the version: one re-check before the model call skips the work when the other tab was
+/// already done, and the save still keeps only one reply when both got that far.
 /// </summary>
 public sealed class ConversationAdvancer(
     ISender sender,
     IAssistantService assistant,
     IConversationRepository repository,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    ILogger<ConversationAdvancer> logger)
 {
     public async Task<ConversationView> AdvanceAsync(
         Conversation conversation,
@@ -43,8 +47,17 @@ public sealed class ConversationAdvancer(
         {
             var loadedVersion = conversation.Version;
 
+            // A cheap read before the model call: if another tab already stored a turn, show it and spend nothing.
+            var current = await repository.GetAsync(initiative.Id, conversation.OwnerId, cancellationToken)
+                ?? throw new NotFoundException(InitiativeTexts.NotFound);
+
+            if (current.Version != loadedVersion)
+            {
+                return ConversationViewBuilder.Build(initiative, current);
+            }
+
             var offersLevels = OffersLevelChoice(conversation, next);
-            var reply = await assistant.ReplyAsync(BuildRequest(conversation, initiative, next, offersLevels), cancellationToken);
+            var reply = await ReplyAsync(BuildRequest(conversation, initiative, next, offersLevels), initiative.Id, cancellationToken);
 
             conversation.AddAssistantMessage(next.Key, reply.Text, RepliesFor(next, reply, offersLevels), timeProvider.GetUtcNow());
 
@@ -63,6 +76,25 @@ public sealed class ConversationAdvancer(
         return ConversationViewBuilder.Build(initiative, conversation);
     }
 
+    // Only the initiative id and the topic are logged: the conversation text can hold initiative information.
+    private async Task<AssistantReply> ReplyAsync(AssistantRequest request, Guid initiativeId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await assistant.ReplyAsync(request, cancellationToken);
+        }
+        catch (AssistantUnavailableException exception)
+        {
+            logger.LogWarning(
+                "The assistant could not reply for initiative {InitiativeId} on topic {TopicKey} ({CauseType}).",
+                initiativeId,
+                request.NextTopic.Key,
+                exception.InnerException?.GetType().Name ?? exception.GetType().Name);
+
+            throw;
+        }
+    }
+
     private static AssistantRequest BuildRequest(
         Conversation conversation,
         InitiativeDetails initiative,
@@ -76,21 +108,17 @@ public sealed class ConversationAdvancer(
 
     // The proposal turns into the three levels after "Elegir otro nivel", and stays that way if the user types
     // instead of picking one.
-    private static bool OffersLevelChoice(Conversation conversation, AssistantTopic next)
-    {
-        if (next.Kind != TopicKind.DepthProposal)
-        {
-            return false;
-        }
+    private static bool OffersLevelChoice(Conversation conversation, AssistantTopic next) =>
+        next.Kind == TopicKind.DepthProposal
+        && (UserAskedForAnotherLevel(conversation) || LevelListIsShown(conversation));
 
-        var visible = conversation.VisibleMessages;
+    private static bool UserAskedForAnotherLevel(Conversation conversation) =>
+        conversation.LastVisibleOf(MessageRole.User) is { QuickReplyKey: AssistantScript.ReplyKeys.DepthOther };
 
-        return visible.LastOrDefault(m => m.Role == MessageRole.User)?.QuickReplyKey == AssistantScript.ReplyKeys.DepthOther
-            || visible.LastOrDefault(m => m.Role == MessageRole.Assistant) is
-            {
-                TopicKey: AssistantScript.Keys.DepthProposal,
-            } lastQuestion && lastQuestion.QuickReplies.All(r => r.Key != AssistantScript.ReplyKeys.DepthOther);
-    }
+    // The level list is the depth question whose buttons are only levels; the first proposal also has "Elegir otro nivel".
+    private static bool LevelListIsShown(Conversation conversation) =>
+        conversation.LastVisibleOf(MessageRole.Assistant) is { TopicKey: AssistantScript.Keys.DepthProposal, QuickReplies: { Count: > 0 } replies }
+        && replies.All(reply => AssistantScript.ReplyKeys.TryParseDepth(reply.Key, out _));
 
     private static IReadOnlyList<QuickReply> RepliesFor(AssistantTopic topic, AssistantReply reply, bool offersLevels)
     {

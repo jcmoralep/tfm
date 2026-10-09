@@ -9,6 +9,7 @@ using BmadPlatform.Application.Tests.Features.Initiatives;
 using BmadPlatform.Application.Tests.TestDoubles;
 using BmadPlatform.Domain.Assistant;
 using BmadPlatform.Domain.Initiatives;
+using Microsoft.Extensions.Logging;
 
 namespace BmadPlatform.Application.Tests.Features.Assistant;
 
@@ -24,8 +25,15 @@ public sealed class AssistantTestContext
     public AssistantTestContext()
     {
         Sender = new InitiativesSender(Initiatives.Repository, Initiatives.User, Initiatives.Clock);
-        Advancer = new ConversationAdvancer(Sender, Assistant, Conversations, Initiatives.Clock);
+        Advancer = new ConversationAdvancer(
+            Sender,
+            Assistant,
+            Conversations,
+            Initiatives.Clock,
+            LoggerFactory.Create(builder => builder.AddProvider(Logs)).CreateLogger<ConversationAdvancer>());
     }
+
+    public CapturingLoggerProvider Logs { get; } = new();
 
     public InitiativeTestContext Initiatives { get; } = new();
 

@@ -124,12 +124,36 @@ public sealed class ChatDraftTests
     }
 
     [Fact]
-    public void Restore_ignores_quick_replies()
+    public void Restore_reports_the_quick_replies_it_cannot_put_in_the_box()
     {
         var draft = new ChatDraft();
 
-        draft.Restore([QueuedAnswer.ForQuickReply("unknown", "No sé")]);
+        var restoration = draft.Restore([QueuedAnswer.ForQuickReply("unknown", "No sé"), QueuedAnswer.ForText("texto")]);
 
-        Assert.Equal("", draft.Text);
+        Assert.Equal("texto", draft.Text);
+        Assert.Equal(["No sé"], restoration.DroppedChoices);
+        Assert.False(restoration.TooLong);
+    }
+
+    [Fact]
+    public void Restore_reports_nothing_when_only_text_comes_back()
+    {
+        var restoration = new ChatDraft().Restore([QueuedAnswer.ForText("uno")]);
+
+        Assert.Empty(restoration.DroppedChoices);
+        Assert.False(restoration.TooLong);
+    }
+
+    [Fact]
+    public void Restore_keeps_the_joined_text_editable_and_flags_it_when_it_passes_the_limit()
+    {
+        var draft = new ChatDraft { Text = new string('b', 1500) };
+
+        var restoration = draft.Restore([QueuedAnswer.ForText(new string('a', 1000))]);
+
+        Assert.Equal(1000 + 2 + 1500, draft.Text.Length);
+        Assert.True(draft.IsTooLong);
+        Assert.True(restoration.TooLong);
+        Assert.Equal(DraftSubmission.TooLong, draft.TrySubmit(new SendQueue()));
     }
 }

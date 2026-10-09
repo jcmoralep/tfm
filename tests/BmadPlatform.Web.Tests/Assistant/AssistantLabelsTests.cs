@@ -180,4 +180,28 @@ public sealed class AssistantLabelsTests
             "Modo de demostración: escriba solo datos de ejemplo, no información real de la empresa ni datos personales.",
             AssistantLabels.DemoNotice);
     }
+
+    [Fact]
+    public void Restore_notes_name_the_choice_that_was_not_sent()
+    {
+        var notes = AssistantLabels.RestoreNotes(new DraftRestoration(["No sé"], false));
+
+        Assert.Equal(["Su elección «No sé» no se envió; vuelva a elegirla."], notes);
+    }
+
+    [Fact]
+    public void Restore_notes_use_the_plural_and_add_the_limit_warning()
+    {
+        var notes = AssistantLabels.RestoreNotes(new DraftRestoration(["Clientes", "Ambos"], true));
+
+        Assert.Equal(
+            ["Sus elecciones «Clientes», «Ambos» no se enviaron; vuelva a elegirlas.", AssistantTexts.AnswerTooLong],
+            notes);
+    }
+
+    [Fact]
+    public void Restore_notes_are_empty_when_nothing_needs_saying()
+    {
+        Assert.Empty(AssistantLabels.RestoreNotes(new DraftRestoration([], false)));
+    }
 }

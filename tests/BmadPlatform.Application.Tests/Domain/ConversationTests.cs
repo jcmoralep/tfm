@@ -342,4 +342,33 @@ public sealed class ConversationTests
         Answer(conversation, "idea");
         Assert.True(conversation.CanUndo);
     }
+
+    [Fact]
+    public void Visible_messages_keep_sequence_order_after_undoing_and_asking_again()
+    {
+        var conversation = WithThreeAnswers();
+
+        conversation.UndoLastAnswer(T1);
+        conversation.UndoLastAnswer(T1);
+        Ask(conversation, "problem");
+
+        Assert.Equal([1, 2, 3, 8], conversation.VisibleMessages.Select(m => m.Sequence));
+        Assert.Equal(8, conversation.LastVisible!.Sequence);
+        Assert.Equal(2, conversation.LastVisibleOf(MessageRole.User)!.Sequence);
+    }
+
+    [Fact]
+    public void The_last_visible_message_of_a_role_skips_undone_messages_and_is_null_when_none()
+    {
+        var conversation = Opened();
+
+        Assert.Null(conversation.LastVisibleOf(MessageRole.User));
+        Assert.Equal(1, conversation.LastVisibleOf(MessageRole.Assistant)!.Sequence);
+
+        Answer(conversation, "idea", "A1");
+        conversation.UndoLastAnswer(T1);
+
+        Assert.Null(conversation.LastVisibleOf(MessageRole.User));
+        Assert.Equal(1, conversation.LastVisible!.Sequence);
+    }
 }

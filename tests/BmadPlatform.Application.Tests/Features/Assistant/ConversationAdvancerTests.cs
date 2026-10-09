@@ -3,6 +3,7 @@ using BmadPlatform.Application.Features.Assistant.Script;
 using BmadPlatform.Application.Features.Initiatives.StartPlanning;
 using BmadPlatform.Domain.Assistant;
 using BmadPlatform.Domain.Initiatives;
+using Microsoft.Extensions.Logging;
 
 namespace BmadPlatform.Application.Tests.Features.Assistant;
 
@@ -153,5 +154,55 @@ public sealed class ConversationAdvancerTests
         Assert.Equal(3, view.Messages.Count);
         Assert.Equal(AssistantScript.Keys.Users, view.Journey.NextTopic!.Key);
         Assert.True(view.CanSend);
+    }
+
+    [Fact]
+    public async Task A_resume_that_finds_the_reply_already_stored_does_not_call_the_assistant()
+    {
+        var id = await context.Initiatives.CreateClarifying("App");
+        var opened = await context.Start(id);
+        context.Assistant.FailuresRemaining = 1;
+        await Assert.ThrowsAsync<AssistantUnavailableException>(() => context.Send(id, opened.Version, "Idea"));
+
+        // This tab loaded the pending state; the other tab then finished the reply.
+        var stale = await context.Conversations.GetAsync(id, AssistantTestContext.UserA, default);
+        await context.Start(id);
+        var calls = context.Assistant.Requests.Count;
+
+        var view = await context.Advancer.AdvanceAsync(stale!, await context.Details(id), default);
+
+        Assert.Equal(calls, context.Assistant.Requests.Count);
+        Assert.Equal(3, view.Messages.Count);
+        Assert.Equal(AssistantScript.Keys.Users, context.StoredMessages(id)[^1].TopicKey);
+    }
+
+    [Fact]
+    public async Task An_unavailable_assistant_is_logged_as_a_warning_without_any_conversation_text()
+    {
+        var id = await context.Initiatives.CreateClarifying("App");
+        var opened = await context.Start(id);
+        context.Assistant.FailuresRemaining = 1;
+
+        await Assert.ThrowsAsync<AssistantUnavailableException>(() => context.Send(id, opened.Version, "texto-secreto-77"));
+
+        var entry = Assert.Single(context.Logs.Entries, e => e.Level == LogLevel.Warning);
+        Assert.Contains(id.ToString(), entry.AllText, StringComparison.Ordinal);
+        Assert.Contains(AssistantScript.Keys.Users, entry.AllText, StringComparison.Ordinal);
+        Assert.DoesNotContain("texto-secreto-77", entry.AllText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Undoing_the_choice_of_another_level_brings_the_proposal_back_with_its_two_buttons()
+    {
+        var id = await context.CreateAutomatic("App");
+        var proposal = await context.AnswerUntilDecision(id);
+        var levels = await context.Send(id, proposal.Version, quickReplyKey: AssistantScript.ReplyKeys.DepthOther);
+        Assert.True(context.Assistant.Requests.Last().OffersLevelChoice);
+
+        var undone = await context.Undo(id, levels.Version);
+
+        Assert.Equal(
+            [AssistantScript.ReplyKeys.Depth(InitiativeDepth.Standard), AssistantScript.ReplyKeys.DepthOther],
+            undone.QuickReplies.Select(r => r.Key));
     }
 }
