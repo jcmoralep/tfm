@@ -125,7 +125,7 @@ else
                         </div>
                         <div class="px-4 py-3">
                             <dt class="text-xs font-medium uppercase tracking-wide text-ink-muted">Modo de profundidad</dt>
-                            <dd class="mt-1 text-ink">@(mode is { } selectedMode ? InitiativeLabels.Mode(selectedMode) : "Sin elegir")</dd>
+                            <dd class="mt-1 text-ink">@InitiativeLabels.ModeSummary(mode)</dd>
                         </div>
                         <div class="px-4 py-3">
                             <dt class="text-xs font-medium uppercase tracking-wide text-ink-muted">Nivel de profundidad</dt>
@@ -141,7 +141,7 @@ else
                                 }
                                 else
                                 {
-                                    <span>Sin elegir</span>
+                                    <span>@InitiativeTexts.LevelUnset</span>
                                 }
                             </dd>
                         </div>
@@ -172,6 +172,8 @@ else
         new(CreationStep.Depth, "Profundidad"),
         new(CreationStep.Review, "Revisión"),
     ];
+
+    private const string DraftSavedNotice = "Borrador guardado.";
 
     private ElementReference stepHeading;
     private bool focusHeading;
@@ -254,15 +256,15 @@ else
     {
         var id = await Mediator.Send(new SaveInitiativeDetailsCommand(Id, name, description, advance));
 
+        notice = advance ? null : DraftSavedNotice;
+
         if (Id is null)
         {
             // The draft exists now; continue on the resume route (replacing /nueva so Back cannot create a second one).
-            notice = advance ? null : "Borrador guardado.";
             Navigation.NavigateTo($"/iniciativas/{id}/crear", replace: true);
             return;
         }
 
-        notice = advance ? null : "Borrador guardado.";
         MoveTo(advance ? CreationStep.Depth : CreationStep.Details, focus: advance);
     });
 
@@ -270,7 +272,7 @@ else
     {
         await Mediator.Send(new SaveInitiativeDepthCommand(Id!.Value, mode, depth, advance));
 
-        notice = advance ? null : "Borrador guardado.";
+        notice = advance ? null : DraftSavedNotice;
         MoveTo(advance ? CreationStep.Review : CreationStep.Depth, focus: advance);
     });
 
@@ -297,6 +299,12 @@ else
     // Business failures become Spanish messages; anything else propagates to the error boundary.
     private async Task RunAsync(Func<Task> action)
     {
+        // A double click or a double Enter must not send the same command twice (two drafts on the first save).
+        if (busy)
+        {
+            return;
+        }
+
         busy = true;
         errors = [];
         notice = null;

@@ -93,7 +93,7 @@ public sealed class InitiativeWizardHandlerTests
     }
 
     [Fact]
-    public async Task Automatic_mode_leaves_depth_empty_and_exposes_the_pending_text()
+    public async Task Automatic_mode_leaves_depth_empty()
     {
         var id = await context.CreateDraft("App");
         await context.SaveDepth(id, DepthMode.Automatic, null, advance: true);
@@ -102,8 +102,8 @@ public sealed class InitiativeWizardHandlerTests
         var details = await context.Get(id);
 
         Assert.NotNull(details);
+        Assert.Equal(DepthMode.Automatic, details.DepthMode);
         Assert.Null(details.Depth);
-        Assert.Equal("Pendiente de sugerencia", details.DepthPendingText);
     }
 
     [Fact]
@@ -141,6 +141,24 @@ public sealed class InitiativeWizardHandlerTests
 
         Assert.Empty(context.Repository.Stored);
         Assert.Equal(0, context.Repository.UpdateCount);
+    }
+
+    [Fact]
+    public async Task Update_save_depth_and_complete_also_fail_without_a_current_user_and_persist_nothing()
+    {
+        var id = await context.CreateDraft("App");
+        var updatesBefore = context.Repository.UpdateCount;
+        context.User.UserId = null;
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => context.Update(id, "Otra", null, DepthMode.Automatic, null));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => context.SaveDepth(id, DepthMode.Automatic, null));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => context.Complete(id));
+
+        Assert.Equal(updatesBefore, context.Repository.UpdateCount);
+        var stored = Assert.Single(context.Repository.Stored);
+        Assert.Equal("App", stored.Name);
+        Assert.Null(stored.DepthMode);
+        Assert.Equal(InitiativeStatus.Draft, stored.Status);
     }
 
     [Fact]

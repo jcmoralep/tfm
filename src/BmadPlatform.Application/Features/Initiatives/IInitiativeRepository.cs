@@ -17,5 +17,10 @@ public interface IInitiativeRepository
 
     Task AddAsync(Initiative initiative, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Persists the changes of an aggregate loaded with <see cref="GetAsync"/>.
+    /// Throws <see cref="Common.Exceptions.NotFoundException"/> when the record was deleted (or removed) in the meantime,
+    /// so a stale edit never brings a deleted initiative back.
+    /// </summary>
     Task UpdateAsync(Initiative initiative, CancellationToken cancellationToken);
 }

@@ -1,10 +1,22 @@
 using BmadPlatform.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace BmadPlatform.Infrastructure.Tests.Persistence;
 
 public sealed class MySqlDatabaseTests
 {
+    [Fact]
+    public void UseApplicationMySql_SetsAnExplicitCommandTimeout()
+    {
+        var builder = new DbContextOptionsBuilder()
+            .UseApplicationMySql("Server=localhost;Database=test", new MySqlServerVersion(new Version(8, 4, 0)));
+
+        var relational = builder.Options.Extensions.OfType<RelationalOptionsExtension>().Single();
+
+        Assert.Equal(MySqlDatabase.CommandTimeoutSeconds, relational.CommandTimeout);
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]

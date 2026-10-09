@@ -1,3 +1,4 @@
+using BmadPlatform.Application.Common.Exceptions;
 using BmadPlatform.Application.Features.Initiatives;
 using BmadPlatform.Domain.Initiatives;
 using BmadPlatform.Infrastructure.Persistence;
@@ -40,6 +41,7 @@ internal sealed class InitiativeRepository(IDbContextFactory<ApplicationDbContex
 
         return await query
             .OrderByDescending(initiative => initiative.UpdatedAt)
+            .ThenByDescending(initiative => initiative.Id)
             .Select(initiative => new InitiativeSummary(
                 initiative.Id,
                 initiative.Name,
@@ -92,7 +94,15 @@ internal sealed class InitiativeRepository(IDbContextFactory<ApplicationDbContex
     {
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
 
-        context.Set<Initiative>().Update(initiative);
+        // Loaded through the global filter, so a record deleted in the meantime (for example from another tab)
+        // is not found and a stale edit can never clear its DeletedAt.
+        var tracked = await context.Set<Initiative>()
+            .SingleOrDefaultAsync(
+                stored => stored.Id == initiative.Id && stored.CreatedByUserId == initiative.CreatedByUserId,
+                cancellationToken)
+            ?? throw new NotFoundException(InitiativeTexts.NotFound);
+
+        context.Entry(tracked).CurrentValues.SetValues(initiative);
         await context.SaveChangesAsync(cancellationToken);
     }
 }

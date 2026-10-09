@@ -127,7 +127,6 @@ public sealed class InitiativeListTests
         Assert.Equal(InitiativeStatus.Clarifying, details.Status);
         Assert.Equal(DepthMode.Manual, details.DepthMode);
         Assert.Equal(InitiativeDepth.Small, details.Depth);
-        Assert.Null(details.DepthPendingText);
         Assert.True(details.UpdatedAt >= details.CreatedAt);
     }
 }

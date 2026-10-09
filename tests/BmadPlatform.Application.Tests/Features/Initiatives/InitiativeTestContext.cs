@@ -50,6 +50,11 @@ public sealed class InitiativeTestContext
         InitiativeDepth? depth = null) =>
         new ListInitiativesQueryHandler(Repository, User).Handle(new ListInitiativesQuery(search, status, depth), default);
 
+    /// <summary>Forces a status the handlers cannot reach yet (Planning, ReadyToBuild) on the stored record.</summary>
+    public void ForceStatus(Guid id, InitiativeStatus status) =>
+        typeof(Initiative).GetProperty(nameof(Initiative.Status))!
+            .SetValue(Repository.Stored.Single(initiative => initiative.Id == id), status);
+
     /// <summary>Creates a draft and moves the clock forward so ordering by update time is deterministic.</summary>
     public async Task<Guid> CreateDraft(string name)
     {

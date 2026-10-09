@@ -88,7 +88,7 @@ else
             </div>
             <div class="px-4 py-3">
                 <dt class="text-xs font-medium uppercase tracking-wide text-ink-muted">Modo de profundidad</dt>
-                <dd class="mt-1 text-ink">@(details.DepthMode is { } mode ? InitiativeLabels.Mode(mode) : "Sin elegir")</dd>
+                <dd class="mt-1 text-ink">@InitiativeLabels.ModeSummary(details.DepthMode)</dd>
             </div>
             <div class="px-4 py-3">
                 <dt class="text-xs font-medium uppercase tracking-wide text-ink-muted">Nivel de profundidad</dt>
@@ -184,6 +184,11 @@ else
 
     private async Task DeleteAsync()
     {
+        if (busy)
+        {
+            return;
+        }
+
         busy = true;
         errors = [];
 

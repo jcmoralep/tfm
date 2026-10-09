@@ -9,11 +9,20 @@ public sealed class InitiativeDisplayTests
     [InlineData(DepthMode.Manual, InitiativeDepth.Small, "Pequeña")]
     [InlineData(DepthMode.Automatic, InitiativeDepth.Large, "Grande")]
     [InlineData(DepthMode.Automatic, null, "Pendiente de sugerencia")]
-    [InlineData(DepthMode.Manual, null, "Sin definir")]
-    [InlineData(null, null, "Sin definir")]
+    [InlineData(DepthMode.Manual, null, "Sin elegir")]
+    [InlineData(null, null, "Sin elegir")]
     public void Depth_summary_covers_level_pending_and_undefined(DepthMode? mode, InitiativeDepth? depth, string expected)
     {
         Assert.Equal(expected, InitiativeLabels.DepthSummary(mode, depth));
+    }
+
+    [Theory]
+    [InlineData(DepthMode.Manual, "Manual")]
+    [InlineData(DepthMode.Automatic, "Automático")]
+    [InlineData(null, "Sin elegir")]
+    public void Mode_summary_covers_chosen_and_unset(DepthMode? mode, string expected)
+    {
+        Assert.Equal(expected, InitiativeLabels.ModeSummary(mode));
     }
 
     [Fact]

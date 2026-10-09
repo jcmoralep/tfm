@@ -16,6 +16,6 @@
         InitiativeStatus.Clarifying => "bg-warning-soft text-warning-ink",
         InitiativeStatus.Planning => "bg-primary-soft text-primary-ink",
         InitiativeStatus.ReadyToBuild => "bg-success-soft text-success-ink",
-        _ => "bg-bubble text-ink-muted",
+        _ => throw new ArgumentOutOfRangeException(nameof(Status), Status, null),
     };
 }

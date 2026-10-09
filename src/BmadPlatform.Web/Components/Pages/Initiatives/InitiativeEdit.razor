@@ -61,7 +61,7 @@ else
                     <dl id="depth-locked" class="mt-2 divide-y divide-line rounded-control border border-line text-sm">
                         <div class="px-4 py-3">
                             <dt class="text-xs font-medium uppercase tracking-wide text-ink-muted">Modo</dt>
-                            <dd class="mt-1 text-ink">@(mode is { } lockedMode ? InitiativeLabels.Mode(lockedMode) : "Sin elegir")</dd>
+                            <dd class="mt-1 text-ink">@InitiativeLabels.ModeSummary(mode)</dd>
                         </div>
                         <div class="px-4 py-3">
                             <dt class="text-xs font-medium uppercase tracking-wide text-ink-muted">Nivel</dt>
@@ -135,6 +135,11 @@ else
 
     private async Task SaveAsync()
     {
+        if (busy)
+        {
+            return;
+        }
+
         busy = true;
         errors = [];
 

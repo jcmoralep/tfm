@@ -40,12 +40,15 @@ public static class InitiativeLabels
 
     /// <summary>
     /// What a list row or the detail shows for the depth: the level, "Pendiente de sugerencia" while the
-    /// assistant has not suggested one, or "Sin definir" for a draft that has not reached that choice.
+    /// assistant has not suggested one, or "Sin elegir" for a draft that has not reached that choice.
     /// </summary>
     public static string DepthSummary(DepthMode? mode, InitiativeDepth? depth) =>
         depth is { } level ? Depth(level)
         : mode == DepthMode.Automatic ? InitiativeTexts.DepthPending
-        : "Sin definir";
+        : InitiativeTexts.LevelUnset;
+
+    /// <summary>The mode name, or "Sin elegir" while the user has not chosen one.</summary>
+    public static string ModeSummary(DepthMode? mode) => mode is { } value ? Mode(value) : InitiativeTexts.ModeUnset;
 
     /// <summary>Day, month, year and time, for example "08/10/2026 14:30". The server's local time is used.</summary>
     public static string Date(DateTimeOffset value) =>
