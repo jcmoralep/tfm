@@ -11,6 +11,9 @@ public sealed class Conversation
 {
     public const int UserAnswerMaxLength = 2000;
 
+    public const string ReplyPendingMessage =
+        "El asistente aún debe responder a su mensaje anterior. Vuelva a abrir la conversación para reintentar.";
+
     private readonly List<Message> _messages = [];
 
     // Required by EF Core to materialize the entity.
@@ -71,7 +74,7 @@ public sealed class Conversation
     {
         if (LastVisible is not { Role: MessageRole.Assistant })
         {
-            throw new DomainException("El asistente aún debe responder a su mensaje anterior. Vuelva a abrir la conversación para reintentar.");
+            throw new DomainException(ReplyPendingMessage);
         }
 
         var trimmed = content?.Trim() ?? string.Empty;

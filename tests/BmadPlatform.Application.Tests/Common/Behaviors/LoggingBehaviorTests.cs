@@ -89,7 +89,13 @@ public sealed class LoggingBehaviorTests : IDisposable
     }
 
     public static TheoryData<Exception> ExpectedFailures() =>
-        new() { new NotFoundException("La iniciativa no existe."), new DomainException("Regla de dominio.") };
+        new()
+        {
+            new NotFoundException("La iniciativa no existe."),
+            new DomainException("Regla de dominio."),
+            new ConflictException(),
+            new AssistantUnavailableException(),
+        };
 
     public void Dispose() => loggerFactory.Dispose();
 
