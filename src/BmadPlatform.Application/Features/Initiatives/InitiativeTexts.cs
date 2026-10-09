@@ -1,3 +1,5 @@
+using BmadPlatform.Domain.Initiatives;
+
 namespace BmadPlatform.Application.Features.Initiatives;
 
 /// <summary>User-facing texts shared by the initiatives use cases and pages.</summary>
@@ -12,4 +14,31 @@ public static class InitiativeTexts
     public const string LevelUnset = "Sin elegir";
 
     public const string NotFound = "La iniciativa no existe.";
+
+    public static string LevelName(InitiativeDepth depth) => depth switch
+    {
+        InitiativeDepth.Small => "Pequeña",
+        InitiativeDepth.Standard => "Estándar",
+        InitiativeDepth.Large => "Grande",
+        _ => throw new ArgumentOutOfRangeException(nameof(depth), depth, null),
+    };
+
+    /// <summary>The documents each depth level produces, in the order they are delivered (RF-27).</summary>
+    public static IReadOnlyList<string> Deliverables(InitiativeDepth depth) => depth switch
+    {
+        InitiativeDepth.Small => ["Una especificación breve"],
+        InitiativeDepth.Standard => ["Brief", "PRD"],
+        InitiativeDepth.Large => ["PRD", "Arquitectura", "Épicas e historias"],
+        _ => throw new ArgumentOutOfRangeException(nameof(depth), depth, null),
+    };
+
+    /// <summary>The deliverables as one sentence fragment, for example "PRD, Arquitectura y Épicas e historias".</summary>
+    public static string DeliverablesSummary(InitiativeDepth depth)
+    {
+        var items = Deliverables(depth);
+
+        return items.Count == 1
+            ? items[0]
+            : string.Join(", ", items.Take(items.Count - 1)) + " y " + items[^1];
+    }
 }

@@ -56,11 +56,11 @@ Decisions embedded:
 
 ## Commit 1: Initiatives transitions (~250)
 
-- [ ] 1.1 `Domain/Initiatives/Initiative.cs`: add `StartPlanning(now)`; no-op if Planning (UpdatedAt untouched); Domain errors "La iniciativa debe estar en Aclarando para pasar a Planificando." and "Elija un nivel de profundidad antes de pasar a Planificando." Test: `Domain/InitiativeTests.cs` (Clarifying+depth, idempotent, Draft/ReadyToBuild, empty depth, locks mode/depth).
-- [ ] 1.2 Create `Features/Initiatives/StartPlanning/StartPlanningCommand.cs` and `StartPlanningCommandHandler.cs` (id only, owner-resolved, not found for foreign/deleted). Test: `Features/Initiatives/InitiativeTransitionTests.cs` (owner only, deleted, no status member via reflection).
-- [ ] 1.3 Create `Features/Initiatives/SetInitiativeDepth/{SetInitiativeDepthCommand,CommandHandler,CommandValidator}.cs` (`SetDepth(Manual, depth)`, Draft/Clarifying only, `IsInEnum`). Test: `InitiativeTransitionTests.cs` (Automatic empty to Manual, replace, Planning/ReadyToBuild rejected, undefined level, other user).
-- [ ] 1.4 `InitiativeTexts.cs`: add level names and deliverables moved from `Web/Components/Initiatives/InitiativeLabels.cs`, which delegates. Test: existing `Web.Tests/Initiatives/InitiativeLabelsTests.cs` stays green.
-- [ ] 1.5 Test: edit depth Standard to Large in Clarifying touches no conversation data; "only two status transitions" in `InitiativeTransitionTests.cs`.
+- [x] 1.1 `Domain/Initiatives/Initiative.cs`: add `StartPlanning(now)`; no-op if Planning (UpdatedAt untouched); Domain errors "La iniciativa debe estar en Aclarando para pasar a Planificando." and "Elija un nivel de profundidad antes de pasar a Planificando." Test: `Domain/InitiativeTests.cs` (Clarifying+depth, idempotent, Draft/ReadyToBuild, empty depth, locks mode/depth).
+- [x] 1.2 Create `Features/Initiatives/StartPlanning/StartPlanningCommand.cs` and `StartPlanningCommandHandler.cs` (id only, owner-resolved, not found for foreign/deleted). Test: `Features/Initiatives/InitiativeTransitionTests.cs` (owner only, deleted, no status member via reflection).
+- [x] 1.3 Create `Features/Initiatives/SetInitiativeDepth/{SetInitiativeDepthCommand,CommandHandler,CommandValidator}.cs` (`SetDepth(Manual, depth)`, Draft/Clarifying only, `IsInEnum`). Test: `InitiativeTransitionTests.cs` (Automatic empty to Manual, replace, Planning/ReadyToBuild rejected, undefined level, other user).
+- [x] 1.4 `InitiativeTexts.cs`: add level names and deliverables moved from `Web/Components/Initiatives/InitiativeLabels.cs`, which delegates. Test: existing `Web.Tests/Initiatives/InitiativeLabelsTests.cs` stays green.
+- [x] 1.5 Test: edit depth Standard to Large in Clarifying touches no conversation data; "only two status transitions" in `InitiativeTransitionTests.cs`.
 
 ## Commit 2: Domain and script (~550)
 
