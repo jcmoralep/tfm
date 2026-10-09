@@ -95,3 +95,20 @@ Mode: Standard (strict TDD off). Tests: 165 before, 192 after (Web 36 -> 62; App
 - Draft rows link (name and "Continuar") to `/crear`; other rows link to the detail. Dates are shown in the server's local time, `dd/MM/yyyy HH:mm`.
 - Delete uses an inline confirmation group (focus moves to its heading); a NotFound on delete or save switches the page to the shared not-found state.
 - Nav active state is computed by `NavSection.IsActive` and refreshed on `LocationChanged`; the link has `aria-current="page"`.
+
+## Batch 5 (post-verification polish and code review fixes) - commits 03a658d, 791e202, 4209f18, 89f8932
+
+Mode: direct changes (not tasks of the original plan). Tests: 192 before, 212 after (Application 87 -> 103, Web 62 -> 65, Infrastructure 31 -> 32, Architecture 12). Build: 0 warnings, 0 errors (Release).
+
+- `03a658d` List is responsive: table from `md` up, cards below. Root cause of the page-level overflow was the `sr-only` "Continuar con ..." text, which is absolutely positioned and escaped the unpositioned `overflow-x-auto` wrapper.
+- `791e202` Status badges use a traffic-light palette (gray, amber, blue, green) with a dot and the text; tokens `warning-*` and `success-*` in `theme.css`.
+- `4209f18` The status column goes after depth in the list table.
+- `89f8932` Code review findings (four lenses; no security findings):
+  - The in-memory repository double stored the live instance, so removing any `UpdateAsync` call left every test green. It now stores and returns detached copies, and a persistence test exists per mutating handler. A mutation check (delete the persistence call in each of the five handlers) makes tests fail for every one.
+  - Double submit guard (`busy`) in the wizard, edit and delete actions.
+  - `InitiativeRepository.UpdateAsync` loads the tracked row through the global filter and applies `SetValues`; a row deleted meanwhile throws `NotFoundException` instead of being resurrected.
+  - `AppErrorBoundary` recovers on `LocationChanged` and its text no longer promises that nothing is lost.
+  - `MySqlDatabase` sets an explicit 30 s command timeout; no retry.
+  - List order has a `ThenByDescending(Id)` tie-break.
+  - Clean-ups: `DepthPendingText` removed, one copy for "not chosen" (`Sin elegir`), `StatusBadge` throws on an unknown status, handler no longer duplicates the validator rule, `InitiativeTexts` in its own file.
+- Not done on purpose: refactoring the duplicated page plumbing, a hard cap on the list, cancellation tokens tied to the circuit, route constants.

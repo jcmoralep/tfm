@@ -80,7 +80,8 @@ The owner comes from `ICurrentUser` through `CurrentUserExtensions.GetRequiredId
   - `Name` uses `UseCollation("utf8mb4_0900_ai_ci")`.
   - Index `(CreatedByUserId, UpdatedAt)`.
   - `HasQueryFilter(i => i.DeletedAt == null)`.
-- `InitiativeRepository`: creates one context per call. Reads use `AsNoTracking` plus a projection and `OrderByDescending(UpdatedAt)`. `UpdateAsync` uses `context.Update` followed by `SaveChanges`.
+- `InitiativeRepository`: creates one context per call. Reads use `AsNoTracking` plus a projection and `OrderByDescending(UpdatedAt)` then `ThenByDescending(Id)` as a deterministic tie-break. `UpdateAsync` (revised after code review) loads the tracked row through the global filter with the owner predicate, applies `CurrentValues.SetValues` and saves; a row deleted in the meantime throws `NotFoundException` instead of being resurrected by a stale edit.
+- Revision after code review, outside the module: `MySqlDatabase` sets an explicit 30 s command timeout (no retry); `AppErrorBoundary` recovers on navigation (`LocationChanged`) and its message no longer promises that no data is lost; `theme.css` has `warning-*` and `success-*` tokens for the traffic-light status badges.
 - `LikePattern.Contains(term)` escapes `\`, `%` and `_`, used with `EF.Functions.Like(name, pattern, "\\")`. Search is trimmed, and empty means no filter.
 - `ApplicationDbContext.OnModelCreating`: calls `base`, then `ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly)`.
 - Migration `AddInitiatives` is generated with `dotnet ef migrations add`.

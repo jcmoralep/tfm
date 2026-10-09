@@ -77,11 +77,11 @@ Every commit MUST build with 0 warnings (warnings are errors) and pass `dotnet t
 
 ## Final manual verification (Chrome, [UI] scenarios)
 
-- [ ] Unauthenticated visit to `/iniciativas`, `/iniciativas/nueva`, `/iniciativas/{id}` redirects to login.
-- [ ] Nav link to `/iniciativas` shows on every page.
-- [ ] List: empty state, search, filters, newest-first order, "Pendiente de sugerencia".
-- [ ] Wizard: save draft with name only, leave, reopen from list at the saved step with prefilled values; selector shows deliverables; Finalizar leads to Clarifying and the detail page.
-- [ ] Owner-only: user B opens A's `/iniciativas/{id}` and sees the same not-found message as for a random id.
-- [ ] Soft delete: confirm returns to the list without it; its URL shows not-found; row still in `ini_initiatives` with `DeletedAt` set.
-- [ ] Locked fields: in Planning, mode and depth are read-only (set status in the DB for testing); name and description still editable.
-- [ ] Detail shows the three placeholder sections.
+- [x] Unauthenticated visit to `/iniciativas`, `/iniciativas/nueva`, `/iniciativas/{id}` redirects to login. Verified in Chrome by the orchestrator (redirect to login with ReturnUrl, return after login); one shared AuthorizeRouteView mechanism covers every [Authorize] route.
+- [x] Nav link to `/iniciativas` shows on every page. Verified in Chrome (nav pill with aria-current). Shown to authenticated users only, as the spec requires.
+- [x] List: empty state, search, filters, newest-first order, "Pendiente de sugerencia". Verified in Chrome except newest-first order, which has no explicit Chrome evidence (covered by unit test on the in-memory double and the ORDER BY in the repository).
+- [x] Wizard: save draft with name only, leave, reopen from list at the saved step with prefilled values; selector shows deliverables; Finalizar leads to Clarifying and the detail page. Verified in Chrome (draft saved, resumed at saved step with selections, deliverables shown, Finalizar leads to Clarifying and the detail).
+- [x] Owner-only: user B opens A's `/iniciativas/{id}` and sees the same not-found message as for a random id. Verified in Chrome with a second user (same 'La iniciativa no existe.' for detail and edit).
+- [x] Soft delete: confirm returns to the list without it; its URL shows not-found; row still in `ini_initiatives` with `DeletedAt` set. Verified in Chrome and in MySQL 8.4 (row kept with DeletedAt; stale edit after delete stays not-found).
+- [x] Locked fields: in Planning, mode and depth are read-only (set status in the DB for testing); name and description still editable. Verified in Chrome (Planning forced in DB; mode and depth read-only with explanation, name editable).
+- [x] Detail shows the three placeholder sections. Verified in Chrome (three 'Disponible proximamente' placeholders).
