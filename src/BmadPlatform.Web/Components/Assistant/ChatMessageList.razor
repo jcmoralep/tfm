@@ -1,0 +1,70 @@
+@using BmadPlatform.Application.Features.Assistant
+@using BmadPlatform.Domain.Assistant
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+@* role="log" is a polite live region, so new messages are announced. It is focusable so the keyboard can scroll it. *@
+<div @ref="log" role="log" aria-label="@AssistantLabels.LogLabel" tabindex="0"
+     class="h-[50vh] min-h-64 overflow-y-auto rounded-control bg-surface p-3 sm:p-4">
+    <ol class="space-y-3">
+        @foreach (var message in Messages)
+        {
+            <ChatBubble @key="message.Sequence" Role="message.Role" Text="@message.Content" />
+        }
+        @foreach (var answer in Outstanding)
+        {
+            <ChatBubble Role="MessageRole.User" Text="@answer.Display" Pending="true" />
+        }
+    </ol>
+</div>
+
+@code {
+    private ElementReference log;
+    private IJSObjectReference? module;
+    private int scrolledFor = -1;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<MessageView> Messages { get; set; } = [];
+
+    /// <summary>Answers sent or waiting that are not stored yet; shown dimmed after the stored messages.</summary>
+    [Parameter]
+    public IReadOnlyList<QueuedAnswer> Outstanding { get; set; } = [];
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Runs only in the interactive render, so prerendering never touches JavaScript.
+        var count = Messages.Count + Outstanding.Count;
+        if (count == scrolledFor)
+        {
+            return;
+        }
+
+        try
+        {
+            module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./" + Assets["js/chat.js"]);
+            await module.InvokeVoidAsync("scrollToEnd", log);
+            scrolledFor = count;
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone; there is nothing left to scroll.
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (module is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone; the browser already released the module.
+        }
+    }
+}

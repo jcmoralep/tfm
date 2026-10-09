@@ -26,6 +26,14 @@ public static class UserMessages
                 messages = [notFound.Message];
                 return true;
 
+            case ConflictException conflict:
+                messages = [conflict.Message];
+                return true;
+
+            case AssistantUnavailableException unavailable:
+                messages = [unavailable.Message];
+                return true;
+
             case DomainException domain:
                 messages = [domain.Message];
                 return true;

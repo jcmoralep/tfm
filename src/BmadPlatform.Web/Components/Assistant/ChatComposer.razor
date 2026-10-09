@@ -1,0 +1,60 @@
+@* Free-text answer box. The parent owns the draft and the send queue; this box only edits Draft.Text. *@
+<form @onsubmit="SubmitAsync" @onsubmit:preventDefault class="space-y-2">
+    <label for="@TextAreaId" class="block text-sm font-medium text-ink">@AssistantLabels.ComposerLabel</label>
+    <textarea id="@TextAreaId" @ref="textArea" rows="3" maxlength="@ChatDraft.MaxLength" disabled="@Disabled"
+              value="@Draft.Text" @oninput="OnInput" @onkeydown="OnKeyDownAsync"
+              aria-describedby="@(DescribedBy is null ? $"{TextAreaId}-hint" : $"{TextAreaId}-hint {DescribedBy}")"
+              class="block w-full resize-y rounded-control border border-line bg-surface-raised px-3 py-2 text-base text-ink disabled:opacity-60"></textarea>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <p id="@TextAreaId-hint" class="text-xs text-ink-muted">
+            <span class="@(Draft.IsTooLong ? "font-semibold text-danger" : null)">@Draft.Counter</span>
+            · Ctrl+Enter para enviar
+        </p>
+        <button type="submit" disabled="@(Disabled || !Draft.HasContent)"
+                class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60">
+            @AssistantLabels.SendButton
+        </button>
+    </div>
+</form>
+
+@code {
+    private const string TextAreaId = "chat-answer";
+
+    private ElementReference textArea;
+
+    /// <summary>The draft edited by the box; the counter and the limit warning read from it.</summary>
+    [Parameter, EditorRequired]
+    public ChatDraft Draft { get; set; } = new();
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    /// <summary>Id of an element that should be read after the hint, for example the privacy note.</summary>
+    [Parameter]
+    public string? DescribedBy { get; set; }
+
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    /// <summary>Puts the cursor back in the box, without scrolling the page.</summary>
+    public async ValueTask FocusAsync()
+    {
+        try
+        {
+            await textArea.FocusAsync(preventScroll: true);
+        }
+        catch (Exception exception) when (exception is JSDisconnectedException or InvalidOperationException)
+        {
+            // The circuit ended or the box is not on the page: nothing to focus.
+        }
+    }
+
+    private void OnInput(ChangeEventArgs args) => Draft.Text = args.Value?.ToString() ?? "";
+
+    private Task SubmitAsync() => Disabled ? Task.CompletedTask : OnSubmit.InvokeAsync();
+
+    private Task OnKeyDownAsync(KeyboardEventArgs args) =>
+        args.Key == "Enter" && (args.CtrlKey || args.MetaKey)
+            ? SubmitAsync()
+            : Task.CompletedTask;
+}

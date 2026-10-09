@@ -92,11 +92,11 @@ Decisions embedded:
 
 ## Commit 5: Chat UI (~600)
 
-- [ ] 5.1 Create `Web/Components/Assistant/AssistantLabels.cs` (step names, progress "{covered} de {total} temas cubiertos", remaining text, card text/action, role prefix). Test: `Web.Tests/Assistant/AssistantLabelsTests.cs`.
-- [ ] 5.2 `UserMessages.cs`: map `ConflictException` and `AssistantUnavailableException` (spec wording). Test: `UserMessagesTests.cs`.
-- [ ] 5.3 Create `wwwroot/js/chat.js` (`scrollToEnd`, reduced motion).
-- [ ] 5.4 Create `Components/Assistant/{ChatMessageList,ChatBubble,QuickReplies,ChatComposer,JourneyPanel,DemoDataNotice}.razor` per design (roles/labels, sr-only prefixes, 2000 counter, Ctrl+Enter, hint about editing level). `DemoDataNotice` shows the full note, non-dismissible. Test: Chrome checklist.
-- [ ] 5.5 Create `Pages/Assistant/InitiativeAssistant.razor` (`[Authorize]`, query on parameters set, `StartConversation` on first interactive render when Clarifying/Planning, `busy` flag, UI send queue drained in order, Undo disabled while queue non-empty, "Reintentar" on unavailable, stale-version conflict reloads view but keeps the typed text, ReadyToBuild read-only, no fast-mode control). Test: Chrome checklist.
+- [x] 5.1 Create `Web/Components/Assistant/AssistantLabels.cs` (step names, progress "{covered} de {total} temas cubiertos", remaining text, card text/action, role prefix). Test: `Web.Tests/Assistant/AssistantLabelsTests.cs`.
+- [x] 5.2 `UserMessages.cs`: map `ConflictException` and `AssistantUnavailableException` (spec wording). Test: `UserMessagesTests.cs`.
+- [x] 5.3 Create `wwwroot/js/chat.js` (`scrollToEnd`, reduced motion).
+- [x] 5.4 Create `Components/Assistant/{ChatMessageList,ChatBubble,QuickReplies,ChatComposer,JourneyPanel,DemoDataNotice}.razor` per design (roles/labels, sr-only prefixes, 2000 counter, Ctrl+Enter, hint about editing level). `DemoDataNotice` shows the full note, non-dismissible. Test: Chrome checklist.
+- [ ] 5.5 (C5 delivered the container `Components/Assistant/ChatPanel.razor` with all behavior below, plus `SendQueue`/`ChatDraft`; C6 still owes the `Pages/Assistant/InitiativeAssistant.razor` route that hosts it, `[Authorize]`, title, back link, and the Chrome run) Create `Pages/Assistant/InitiativeAssistant.razor` (`[Authorize]`, query on parameters set, `StartConversation` on first interactive render when Clarifying/Planning, `busy` flag, UI send queue drained in order, Undo disabled while queue non-empty, "Reintentar" on unavailable, stale-version conflict reloads view but keeps the typed text, ReadyToBuild read-only, no fast-mode control). Test: Chrome checklist.
 
 ## Commit 6: Card and docs (~100)
 

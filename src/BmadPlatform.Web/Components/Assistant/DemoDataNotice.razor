@@ -1,0 +1,8 @@
+@* Persistent and not dismissible on purpose: there is no close button and no way to hide it (AGENTS 4.8). *@
+<p id="@Id" class="rounded-control bg-warning-soft px-3 py-2 text-sm text-warning-ink">@AssistantLabels.DemoNotice</p>
+
+@code {
+    /// <summary>Element id, so the composer can reference the note with <c>aria-describedby</c>.</summary>
+    [Parameter]
+    public string Id { get; set; } = "demo-note";
+}

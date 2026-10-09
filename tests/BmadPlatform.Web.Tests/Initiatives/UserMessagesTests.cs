@@ -46,6 +46,22 @@ public sealed class UserMessagesTests
         Assert.Equal(["Elige un nivel de profundidad antes de finalizar."], messages);
     }
 
+    [Fact]
+    public void Conflict_maps_to_its_message()
+    {
+        Assert.True(UserMessages.TryGet(new ConflictException(), out var messages));
+        Assert.Equal(["La conversación cambió en otra pestaña. Recargue la página."], messages);
+    }
+
+    [Fact]
+    public void Assistant_unavailable_maps_to_its_message()
+    {
+        Assert.True(UserMessages.TryGet(new AssistantUnavailableException(), out var messages));
+        Assert.Equal(
+            ["El asistente no está disponible en este momento. Su mensaje quedó guardado; inténtelo de nuevo en unos minutos."],
+            messages);
+    }
+
     [Theory]
     [InlineData(typeof(InvalidOperationException))]
     [InlineData(typeof(ArgumentException))]
