@@ -1,0 +1,27 @@
+@using BmadPlatform.Application.Features.Assistant
+@* The Conversación card of the initiative detail. It only shows what AssistantLabels.Card decides; when the
+   conversation could not be read it shows a neutral card without action instead of breaking the page. *@
+
+@{
+    var content = View is null ? null : AssistantLabels.Card(View);
+}
+
+<section aria-labelledby="section-conversation" class="rounded-card border border-line bg-surface-raised p-5">
+    <h2 id="section-conversation" class="text-base font-semibold text-ink">Conversación</h2>
+    <p class="mt-1 text-sm text-ink-muted">@(content?.Text ?? AssistantLabels.NoConversationCardText)</p>
+    @if (content?.ActionLabel is { } action)
+    {
+        <a href="/iniciativas/@InitiativeId/asistente"
+           class="mt-3 inline-block rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-on-primary hover:bg-primary-hover">
+            @action
+        </a>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public Guid InitiativeId { get; set; }
+
+    [Parameter]
+    public ConversationView? View { get; set; }
+}

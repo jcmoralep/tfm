@@ -96,13 +96,13 @@ Decisions embedded:
 - [x] 5.2 `UserMessages.cs`: map `ConflictException` and `AssistantUnavailableException` (spec wording). Test: `UserMessagesTests.cs`.
 - [x] 5.3 Create `wwwroot/js/chat.js` (`scrollToEnd`, reduced motion).
 - [x] 5.4 Create `Components/Assistant/{ChatMessageList,ChatBubble,QuickReplies,ChatComposer,JourneyPanel,DemoDataNotice}.razor` per design (roles/labels, sr-only prefixes, 2000 counter, Ctrl+Enter, hint about editing level). `DemoDataNotice` shows the full note, non-dismissible. Test: Chrome checklist.
-- [ ] 5.5 (C5 delivered the container `Components/Assistant/ChatPanel.razor` with all behavior below, plus `SendQueue`/`ChatDraft`; C6 still owes the `Pages/Assistant/InitiativeAssistant.razor` route that hosts it, `[Authorize]`, title, back link, and the Chrome run) Create `Pages/Assistant/InitiativeAssistant.razor` (`[Authorize]`, query on parameters set, `StartConversation` on first interactive render when Clarifying/Planning, `busy` flag, UI send queue drained in order, Undo disabled while queue non-empty, "Reintentar" on unavailable, stale-version conflict reloads view but keeps the typed text, ReadyToBuild read-only, no fast-mode control). Test: Chrome checklist.
+- [x] 5.5 (DONE in C6: page delivered; Chrome run pending) (C5 delivered the container `Components/Assistant/ChatPanel.razor` with all behavior below, plus `SendQueue`/`ChatDraft`; C6 still owes the `Pages/Assistant/InitiativeAssistant.razor` route that hosts it, `[Authorize]`, title, back link, and the Chrome run) Create `Pages/Assistant/InitiativeAssistant.razor` (`[Authorize]`, query on parameters set, `StartConversation` on first interactive render when Clarifying/Planning, `busy` flag, UI send queue drained in order, Undo disabled while queue non-empty, "Reintentar" on unavailable, stale-version conflict reloads view but keeps the typed text, ReadyToBuild read-only, no fast-mode control). Test: Chrome checklist.
 
 ## Commit 6: Card and docs (~100)
 
-- [ ] 6.1 Create `Components/Assistant/ConversationCard.razor`; replace the placeholder in `Pages/Initiatives/InitiativeDetail.razor` (Draft text, "Abrir asistente", progress + "Continuar conversación", ReadyToBuild "Ver conversación"). Test: `AssistantLabelsTests.cs` (card text/action per status) and Chrome.
-- [ ] 6.2 `README.md`: demo-data privacy section (AGENTS 4.8).
-- [ ] 6.3 Final gate: `dotnet build`, `dotnet test` (all projects), then the Chrome checklist with docker MySQL 8.4, migrations, seed user, review `Logs/`, tear down.
+- [x] 6.1 Create `Components/Assistant/ConversationCard.razor`; replace the placeholder in `Pages/Initiatives/InitiativeDetail.razor` (Draft text, "Abrir asistente", progress + "Continuar conversación", ReadyToBuild "Ver conversación"). Test: `AssistantLabelsTests.cs` (card text/action per status) and Chrome. (C6 code done: card fed by the detail page, tolerant to a failed query; Chrome pending)
+- [x] 6.2 `README.md`: demo-data privacy section (AGENTS 4.8).
+- [ ] 6.3 Final gate: `dotnet build`, `dotnet test` (all projects), then the Chrome checklist with docker MySQL 8.4, migrations, seed user, review `Logs/`, tear down. (build 0 warnings and tests 505/505 done in C6; Chrome part pending)
 
 ## Manual Chrome checklist (chat flow)
 
