@@ -1,0 +1,326 @@
+@page "/iniciativas/nueva"
+@page "/iniciativas/{Id:guid}/crear"
+@attribute [Authorize]
+@using BmadPlatform.Application.Common.Exceptions
+@using BmadPlatform.Application.Features.Initiatives
+@using BmadPlatform.Application.Features.Initiatives.CompleteInitiative
+@using BmadPlatform.Application.Features.Initiatives.GetInitiative
+@using BmadPlatform.Application.Features.Initiatives.SaveInitiativeDepth
+@using BmadPlatform.Application.Features.Initiatives.SaveInitiativeDetails
+@using BmadPlatform.Domain.Initiatives
+@inject IMediator Mediator
+@inject NavigationManager Navigation
+
+<PageTitle>@(Id is null ? "Nueva iniciativa" : "Completar iniciativa") · Plataforma BMAD</PageTitle>
+
+@if (loading)
+{
+    <p class="text-sm text-ink-muted" role="status">Cargando…</p>
+}
+else if (notFound)
+{
+    <InitiativeNotFound />
+}
+else
+{
+    <div class="lg:grid lg:grid-cols-[15rem_1fr] lg:gap-8">
+        <nav aria-label="Pasos de la creación" class="mb-6 lg:mb-0">
+            <h1 class="text-xl font-semibold text-ink">@(Id is null ? "Nueva iniciativa" : "Completar iniciativa")</h1>
+            <ol class="mt-4 flex gap-2 lg:flex-col lg:gap-3">
+                @foreach (var item in Steps)
+                {
+                    var isCurrent = item.Step == step;
+                    var isDone = item.Step < step;
+                    <li aria-current="@(isCurrent ? "step" : null)"
+                        class="flex flex-1 items-center gap-3 rounded-control px-3 py-2 text-sm lg:flex-none @(isCurrent ? "bg-primary-soft font-semibold text-primary-ink" : "text-ink-muted")">
+                        <span class="flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold @(isCurrent ? "bg-primary text-on-primary" : isDone ? "bg-primary-soft text-primary-ink" : "bg-bubble text-ink-muted")">@(isDone ? "✓" : ((int)item.Step + 1).ToString())</span>
+                        <span>@item.Label<span class="sr-only">@(isDone ? " (completado)" : null)</span></span>
+                    </li>
+                }
+            </ol>
+        </nav>
+
+        <section class="rounded-card border border-line bg-surface-raised p-6 shadow-card sm:p-8">
+            <h2 tabindex="-1" @ref="stepHeading" class="text-lg font-semibold text-ink">
+                Paso @((int)step + 1) de @Steps.Length · @CurrentLabel
+            </h2>
+
+            @if (notice is not null)
+            {
+                <p role="status" class="mt-4 rounded-control bg-primary-soft px-3 py-2 text-sm text-primary-ink">@notice</p>
+            }
+
+            @if (errors.Count > 0)
+            {
+                <div class="mt-4">
+                    <ErrorAlert Id="wizard-errors" Messages="errors" />
+                </div>
+            }
+
+            @if (step == CreationStep.Details)
+            {
+                <form @onsubmit="() => SaveDetailsAsync(advance: true)" @onsubmit:preventDefault class="mt-6 space-y-5">
+                    <div>
+                        <label for="initiative-name" class="block text-sm font-medium text-ink">Nombre</label>
+                        <input id="initiative-name" type="text" @bind="name" @bind:event="oninput" autocomplete="off"
+                               aria-required="true" aria-describedby="initiative-name-hint@(errors.Count > 0 ? " wizard-errors" : null)"
+                               class="mt-1.5 block w-full rounded-control border border-line bg-surface-raised px-3 py-2 text-sm text-ink" />
+                        <p id="initiative-name-hint" class="mt-1 text-xs text-ink-muted">Obligatorio, hasta @Initiative.NameMaxLength caracteres.</p>
+                    </div>
+
+                    <div>
+                        <label for="initiative-description" class="block text-sm font-medium text-ink">Descripción <span class="font-normal text-ink-muted">(opcional)</span></label>
+                        <textarea id="initiative-description" rows="5" @bind="description" @bind:event="oninput"
+                                  aria-describedby="initiative-description-hint"
+                                  class="mt-1.5 block w-full rounded-control border border-line bg-surface-raised px-3 py-2 text-sm text-ink"></textarea>
+                        <p id="initiative-description-hint" class="mt-1 text-xs text-ink-muted">Hasta @Initiative.DescriptionMaxLength caracteres.</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-end gap-3 pt-2">
+                        <button type="button" disabled="@busy" @onclick="() => SaveDetailsAsync(advance: false)"
+                                class="rounded-full border border-line bg-surface-raised px-5 py-2 text-sm font-medium text-ink hover:bg-surface disabled:opacity-60">
+                            Guardar borrador
+                        </button>
+                        <button type="submit" disabled="@busy"
+                                class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-60">
+                            Siguiente
+                        </button>
+                    </div>
+                </form>
+            }
+            else if (step == CreationStep.Depth)
+            {
+                <form @onsubmit="() => SaveDepthAsync(advance: true)" @onsubmit:preventDefault class="mt-6 space-y-5">
+                    <DepthSelector @bind-Mode="mode" @bind-Depth="depth" />
+
+                    <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+                        <button type="button" disabled="@busy" @onclick="() => GoTo(CreationStep.Details)"
+                                class="rounded-full border border-line bg-surface-raised px-5 py-2 text-sm font-medium text-ink hover:bg-surface disabled:opacity-60">
+                            Atrás
+                        </button>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <button type="button" disabled="@busy" @onclick="() => SaveDepthAsync(advance: false)"
+                                    class="rounded-full border border-line bg-surface-raised px-5 py-2 text-sm font-medium text-ink hover:bg-surface disabled:opacity-60">
+                                Guardar borrador
+                            </button>
+                            <button type="submit" disabled="@busy"
+                                    class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-60">
+                                Siguiente
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <form @onsubmit="CompleteAsync" @onsubmit:preventDefault class="mt-6 space-y-5">
+                    <dl class="divide-y divide-line rounded-control border border-line text-sm">
+                        <div class="px-4 py-3">
+                            <dt class="text-xs font-medium uppercase tracking-wide text-ink-muted">Nombre</dt>
+                            <dd class="mt-1 text-ink">@name</dd>
+                        </div>
+                        <div class="px-4 py-3">
+                            <dt class="text-xs font-medium uppercase tracking-wide text-ink-muted">Descripción</dt>
+                            <dd class="mt-1 whitespace-pre-line text-ink">@(string.IsNullOrWhiteSpace(description) ? "Sin descripción" : description)</dd>
+                        </div>
+                        <div class="px-4 py-3">
+                            <dt class="text-xs font-medium uppercase tracking-wide text-ink-muted">Modo de profundidad</dt>
+                            <dd class="mt-1 text-ink">@InitiativeLabels.ModeSummary(mode)</dd>
+                        </div>
+                        <div class="px-4 py-3">
+                            <dt class="text-xs font-medium uppercase tracking-wide text-ink-muted">Nivel de profundidad</dt>
+                            <dd class="mt-1 text-ink">
+                                @if (depth is { } selectedDepth)
+                                {
+                                    <span class="font-medium">@InitiativeLabels.Depth(selectedDepth)</span>
+                                    <span class="text-ink-muted"> · Entrega: @InitiativeLabels.DeliverablesSummary(selectedDepth)</span>
+                                }
+                                else if (mode == DepthMode.Automatic)
+                                {
+                                    @InitiativeTexts.DepthPending
+                                }
+                                else
+                                {
+                                    <span>@InitiativeTexts.LevelUnset</span>
+                                }
+                            </dd>
+                        </div>
+                    </dl>
+
+                    <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+                        <button type="button" disabled="@busy" @onclick="() => GoTo(CreationStep.Depth)"
+                                class="rounded-full border border-line bg-surface-raised px-5 py-2 text-sm font-medium text-ink hover:bg-surface disabled:opacity-60">
+                            Atrás
+                        </button>
+                        <button type="submit" disabled="@busy"
+                                class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-60">
+                            Finalizar
+                        </button>
+                    </div>
+                </form>
+            }
+        </section>
+    </div>
+}
+
+@code {
+    private sealed record StepItem(CreationStep Step, string Label);
+
+    private static readonly StepItem[] Steps =
+    [
+        new(CreationStep.Details, "Detalles"),
+        new(CreationStep.Depth, "Profundidad"),
+        new(CreationStep.Review, "Revisión"),
+    ];
+
+    private const string DraftSavedNotice = "Borrador guardado.";
+
+    private ElementReference stepHeading;
+    private bool focusHeading;
+    private bool initialized;
+    private Guid? loadedId;
+
+    private bool loading = true;
+    private bool notFound;
+    private bool busy;
+    private string? notice;
+    private IReadOnlyList<string> errors = [];
+
+    private CreationStep step = CreationStep.Details;
+    private string name = string.Empty;
+    private string? description;
+    private DepthMode? mode;
+    private InitiativeDepth? depth;
+
+    [Parameter]
+    public Guid? Id { get; set; }
+
+    private string CurrentLabel => Steps.First(item => item.Step == step).Label;
+
+    // /iniciativas/nueva and /iniciativas/{id}/crear share this instance when the first save navigates
+    // from one to the other, so the load runs on every change of Id and not only on initialization.
+    protected override async Task OnParametersSetAsync()
+    {
+        if (initialized && Id == loadedId)
+        {
+            return;
+        }
+
+        initialized = true;
+        loadedId = Id;
+        errors = [];
+
+        if (Id is null)
+        {
+            loading = false;
+            return;
+        }
+
+        loading = true;
+        var details = await Mediator.Send(new GetInitiativeQuery(Id.Value));
+
+        // A deleted, foreign or unknown initiative has no wizard to resume.
+        if (details is null)
+        {
+            notFound = true;
+            loading = false;
+            return;
+        }
+
+        // An initiative that was already finished is managed from its detail page; stay on "Cargando…" meanwhile.
+        if (details.Status != InitiativeStatus.Draft)
+        {
+            Navigation.NavigateTo($"/iniciativas/{details.Id}", replace: true);
+            return;
+        }
+
+        notFound = false;
+        name = details.Name;
+        description = details.Description;
+        mode = details.DepthMode;
+        depth = details.Depth;
+        step = details.CreationStep;
+        loading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (focusHeading)
+        {
+            focusHeading = false;
+            await stepHeading.FocusAsync();
+        }
+    }
+
+    private Task SaveDetailsAsync(bool advance) => RunAsync(async () =>
+    {
+        var id = await Mediator.Send(new SaveInitiativeDetailsCommand(Id, name, description, advance));
+
+        notice = advance ? null : DraftSavedNotice;
+
+        if (Id is null)
+        {
+            // The draft exists now; continue on the resume route (replacing /nueva so Back cannot create a second one).
+            Navigation.NavigateTo($"/iniciativas/{id}/crear", replace: true);
+            return;
+        }
+
+        MoveTo(advance ? CreationStep.Depth : CreationStep.Details, focus: advance);
+    });
+
+    private Task SaveDepthAsync(bool advance) => RunAsync(async () =>
+    {
+        await Mediator.Send(new SaveInitiativeDepthCommand(Id!.Value, mode, depth, advance));
+
+        notice = advance ? null : DraftSavedNotice;
+        MoveTo(advance ? CreationStep.Review : CreationStep.Depth, focus: advance);
+    });
+
+    private Task CompleteAsync() => RunAsync(async () =>
+    {
+        await Mediator.Send(new CompleteInitiativeCommand(Id!.Value));
+        Navigation.NavigateTo($"/iniciativas/{Id}");
+    });
+
+    // "Atrás" never persists anything.
+    private void GoTo(CreationStep target)
+    {
+        errors = [];
+        notice = null;
+        MoveTo(target, focus: true);
+    }
+
+    private void MoveTo(CreationStep target, bool focus)
+    {
+        step = target;
+        focusHeading = focus;
+    }
+
+    // Business failures become Spanish messages; anything else propagates to the error boundary.
+    private async Task RunAsync(Func<Task> action)
+    {
+        // A double click or a double Enter must not send the same command twice (two drafts on the first save).
+        if (busy)
+        {
+            return;
+        }
+
+        busy = true;
+        errors = [];
+        notice = null;
+
+        try
+        {
+            await action();
+        }
+        catch (Exception exception) when (UserMessages.TryGet(exception, out var messages))
+        {
+            errors = messages;
+            notFound = exception is NotFoundException;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+}

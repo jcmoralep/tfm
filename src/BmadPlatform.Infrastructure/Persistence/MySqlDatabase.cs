@@ -21,6 +21,9 @@ public static class MySqlDatabase
 
     public const string DefaultServerVersion = "8.4.0";
 
+    /// <summary>Explicit command timeout, so a stuck query fails in a known time instead of relying on the driver default.</summary>
+    public const int CommandTimeoutSeconds = 30;
+
     public static ServerVersion ParseServerVersion(string? value)
     {
         var text = string.IsNullOrWhiteSpace(value) ? DefaultServerVersion : value.Trim();
@@ -41,5 +44,9 @@ public static class MySqlDatabase
         builder.UseMySql(
             connectionString,
             serverVersion,
-            mySql => mySql.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName));
+            mySql =>
+            {
+                mySql.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
+                mySql.CommandTimeout(CommandTimeoutSeconds);
+            });
 }

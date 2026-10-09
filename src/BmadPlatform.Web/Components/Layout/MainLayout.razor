@@ -8,7 +8,8 @@
 
             <AuthorizeView>
                 <Authorized>
-                    <div class="flex items-center gap-4">
+                    <MainNav />
+                    <div class="ml-auto flex items-center gap-4">
                         <span class="hidden text-sm text-ink-muted sm:inline">@context.User.Identity?.Name</span>
                         <form action="@AuthenticationEndpoints.LogoutPath" method="post">
                             <AntiforgeryToken />

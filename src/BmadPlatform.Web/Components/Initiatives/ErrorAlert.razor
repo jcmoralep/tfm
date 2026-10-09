@@ -1,0 +1,20 @@
+@if (Messages.Count > 0)
+{
+    <div id="@Id" role="alert" class="rounded-control border border-danger-line bg-danger-surface p-3 text-sm text-danger">
+        <ul class="space-y-1">
+            @foreach (var message in Messages)
+            {
+                <li>@message</li>
+            }
+        </ul>
+    </div>
+}
+
+@code {
+    /// <summary>Element id, so a form can reference the alert with <c>aria-describedby</c>.</summary>
+    [Parameter]
+    public string? Id { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<string> Messages { get; set; } = [];
+}

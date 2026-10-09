@@ -39,6 +39,10 @@
   --color-line: #e3e7f0;
 
   /* Feedback */
+  --color-warning-soft: #fff1cc;
+  --color-warning-ink: #7a4d00;
+  --color-success-soft: #dcf5e4;
+  --color-success-ink: #14683a;
   --color-danger: #b42318;
   --color-danger-surface: #fef3f2;
   --color-danger-line: #fecdca;

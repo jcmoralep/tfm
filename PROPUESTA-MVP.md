@@ -39,7 +39,7 @@ La especificación sigue la estructura de cinco partes de BMAD: por qué, capaci
 
 ### 4.1 Iniciativas
 - Crear, listar, ver y editar.
-- Estados: *Aclarando*, *Planificando*, *Lista para construir*.
+- Estados: *Borrador*, *Aclarando*, *Planificando*, *Lista para construir*.
 - Detalle con tres secciones: Conversación, Artefactos y Contexto.
 
 ### 4.2 Asistente guiado
@@ -78,7 +78,7 @@ La especificación sigue la estructura de cinco partes de BMAD: por qué, capaci
 ## 6. Modelo de datos inicial (borrador)
 
 - **Usuario:** tablas de Identity.
-- **Iniciativa:** id, nombre, descripción, modo de profundidad (automático o manual), profundidad, estado, creada por, fechas.
+- **Iniciativa:** id, nombre, descripción, modo de profundidad (automático o manual), profundidad (Pequeña, Estándar o Grande), estado, paso de creación en curso (mientras es borrador), creada por, fechas, marca de eliminación lógica.
 - **Mensaje:** id, iniciativa, autor (usuario o asistente), contenido, fecha.
 - **Artefacto:** id, iniciativa, tipo (Brief, PRD, Arquitectura, Épicas e historias), versión, contenido en Markdown, aprobado, fechas.
 - **Adjunto:** id, iniciativa, tipo o enlace, nombre original, tipo de contenido, tamaño, clave de almacenamiento.

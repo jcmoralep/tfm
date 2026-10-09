@@ -1,0 +1,21 @@
+@using BmadPlatform.Domain.Initiatives
+
+@* Traffic-light progression: gray (not started), amber (clarifying), blue (planning), green (ready).
+   The status is always written out and marked with a dot, so color is never the only signal. *@
+<span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold @CssClass">
+    <span class="size-1.5 rounded-full bg-current" aria-hidden="true"></span>@InitiativeLabels.Status(Status)
+</span>
+
+@code {
+    [Parameter, EditorRequired]
+    public InitiativeStatus Status { get; set; }
+
+    private string CssClass => Status switch
+    {
+        InitiativeStatus.Draft => "bg-bubble text-ink-muted",
+        InitiativeStatus.Clarifying => "bg-warning-soft text-warning-ink",
+        InitiativeStatus.Planning => "bg-primary-soft text-primary-ink",
+        InitiativeStatus.ReadyToBuild => "bg-success-soft text-success-ink",
+        _ => throw new ArgumentOutOfRangeException(nameof(Status), Status, null),
+    };
+}
