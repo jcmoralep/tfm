@@ -161,10 +161,15 @@ Choosing the "No sé" quick reply MUST be accepted as a valid answer, MUST cover
 - WHEN the user chooses "No sé"
 - THEN the user message is stored with a don't-know marker, the topic counts as covered and the next topic is asked
 
-#### Scenario: Typed text is a normal answer [UNIT]
+#### Scenario: Typed don't-know phrase counts as the button [UNIT]
 - GIVEN a question topic
-- WHEN the user types "no sé" as free text
-- THEN it is stored as an ordinary answer without the don't-know marker and covers the topic
+- WHEN the whole trimmed message is "no sé", "no se", "ni idea" or "no lo sé" (case and accents ignored)
+- THEN it is stored with the don't-know marker like the "No sé" quick reply and covers the topic
+
+#### Scenario: Longer text containing the phrase is a normal answer [UNIT]
+- GIVEN a question topic
+- WHEN the user types "no sé, creo que es SAP"
+- THEN it is stored as an ordinary answer without the don't-know marker
 
 ### Requirement: Derived progress and visible coverage (RF-10, RF-50)
 
@@ -489,7 +494,7 @@ All assistant text, quick replies, labels and errors MUST be Spanish, without te
 - Progress text wording "{covered} de {total} temas cubiertos" and the extra Spanish messages (draft, ready, undo, pending, incomplete confirmation, unavailable, invalid quick reply) are proposals; design may adjust wording but not semantics.
 - Repeated undo walks back one answer per call; "single" means one answer per invocation.
 - An accepted depth answer is treated as having changed the initiative and is not undoable.
-- Only the "No sé" quick reply carries the don't-know marker.
+- The don't-know marker comes from the "No sé" quick reply or from a message that is only one of the accepted phrases.
 - Sending while a reply is in flight is queued in the chat (confirmed), not rejected; the domain still requires the last visible message to be from the assistant, so the queue lives in the UI and drains in order.
 - Confirmed with the user: typed "no sé"/"no se"/"ni idea"/"no lo sé" as the whole message counts as the "No sé" button; sizing step only in Automatic with empty depth; a rejected suggestion shows the three levels; a stale confirmation is rejected; repeated undo; trimmed free text; ReadyToBuild read-only; repeated StartPlanning does not refresh UpdatedAt; stale tab send is rejected keeping the typed text; quick replies are fixed script options, not model suggestions.
 - Read-only viewing of a ReadyToBuild conversation is optional (MAY).

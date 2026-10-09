@@ -33,7 +33,7 @@ rules:
   design:
     - Respect dependency rules Web -> Application -> Domain; Infrastructure -> Application -> Domain.
   tasks:
-    - Review budget 400 changed lines; delivery_strategy single-pr.
+    - Review budget 400 changed lines; delivery_strategy exception-ok (size:exception accepted by the user; sole committer, no other reviewers).
   apply:
     - Tests with xUnit only (no FluentAssertions, NSubstitute, bUnit). Spanish validation messages.
   verify:
