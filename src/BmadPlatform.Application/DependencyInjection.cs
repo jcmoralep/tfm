@@ -22,6 +22,8 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssembly(assembly, includeInternalTypes: true);
 
+        services.AddScoped<Features.Assistant.ConversationAdvancer>();
+
         // Handlers read the clock through TimeProvider so tests can fix it.
         services.TryAddSingleton(TimeProvider.System);
 

@@ -2,11 +2,20 @@
 
 Plataforma interna para que personas de producto lleven una iniciativa desde la idea hasta artefactos listos para desarrollo, con un asistente que aplica el método BMAD. El alcance y las reglas están en `AGENTS.md`, `REQUISITOS.md` y `PROPUESTA-MVP.md`.
 
-Estado actual: **paso 1 (Base)** de `PROPUESTA-MVP.md` §7. Incluye la solución por capas, MySQL, Serilog, el inicio de sesión y el estilo visual base.
+Estado actual: **paso 3 (Asistente guiado con IA falsa)** de `PROPUESTA-MVP.md` §7. Incluye la solución por capas, MySQL, Serilog, el inicio de sesión, el estilo visual base, las iniciativas y la conversación guiada con un asistente de demostración.
 
 ## Advertencia sobre Gemini (capa gratuita)
 
 El asistente usará la **capa gratuita de Gemini**. En esa capa, Google puede usar los datos enviados para mejorar sus productos. Mientras se use la capa gratuita, trabaje **solo con datos de ejemplo o no sensibles**. Antes de usar iniciativas reales de la empresa, es necesario migrar a un plan de pago. La clave de API se configurará en una variable de entorno o en user-secrets, nunca en el repositorio.
+
+## Asistente y datos de demostración
+
+La conversación con el asistente (`/iniciativas/{id}/asistente`) funciona hoy con una **implementación falsa** (`FakeAssistantService`): sigue un guion fijo de preguntas y no envía nada a Gemini ni a ningún servicio externo. Aun así, la pantalla muestra siempre un aviso de modo de demostración, porque cuando se conecte Gemini (capa gratuita) Google podrá usar lo que se escriba para mejorar sus productos.
+
+- Escriba **solo datos de ejemplo**: nada de información real de la empresa ni datos personales.
+- No use iniciativas reales hasta migrar a un plan de pago de Gemini.
+- La clave de API de Gemini irá en una variable de entorno o en user-secrets, nunca en el repositorio.
+- Los registros (`Logs/`) no guardan el texto de los mensajes de la conversación.
 
 ## Requisitos previos
 

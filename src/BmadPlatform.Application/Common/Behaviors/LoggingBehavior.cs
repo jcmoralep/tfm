@@ -38,10 +38,13 @@ public sealed class LoggingBehavior<TRequest, TResponse>(ILogger<LoggingBehavior
         }
         catch (Exception exception)
         {
-            // Validation, not-found and domain-rule failures are expected outcomes the UI shows to the user (warning);
-            // anything else is a defect (error). Only the exception type is logged here: messages may echo request data.
+            // Validation, not-found, domain-rule, conflict and assistant-unavailable failures are expected outcomes the UI
+            // shows to the user (warning); anything else is a defect (error). Only the exception type is logged here:
+            // messages may echo request data.
             logger.Log(
-                exception is ValidationException or NotFoundException or DomainException ? LogLevel.Warning : LogLevel.Error,
+                exception is ValidationException or NotFoundException or DomainException or ConflictException or AssistantUnavailableException
+                    ? LogLevel.Warning
+                    : LogLevel.Error,
                 "{RequestName} failed after {ElapsedMilliseconds:0.0} ms with {ExceptionType}",
                 requestName,
                 Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds,

@@ -22,7 +22,7 @@ public sealed class InitiativeTests
             return initiative;
         }
 
-        // Planning and ReadyToBuild transitions are out of scope, so tests reach them through reflection.
+        // ReadyToBuild has no transition yet (Planning does, but this helper keeps one path), so reflection reaches both.
         typeof(Initiative).GetProperty(nameof(Initiative.Status))!.SetValue(initiative, status);
 
         return initiative;
@@ -219,6 +219,71 @@ public sealed class InitiativeTests
 
         Assert.Throws<DomainException>(() => initiative.Complete(T1));
         Assert.Equal(InitiativeStatus.Clarifying, initiative.Status);
+    }
+
+    [Fact]
+    public void StartPlanning_moves_a_clarifying_initiative_with_depth_to_planning()
+    {
+        var initiative = InStatus(InitiativeStatus.Clarifying);
+
+        initiative.StartPlanning(T1);
+
+        Assert.Equal(InitiativeStatus.Planning, initiative.Status);
+        Assert.Equal(DepthMode.Manual, initiative.DepthMode);
+        Assert.Equal(InitiativeDepth.Standard, initiative.Depth);
+        Assert.Equal(T1, initiative.UpdatedAt);
+    }
+
+    [Fact]
+    public void StartPlanning_is_idempotent_and_does_not_refresh_updated_at()
+    {
+        var initiative = InStatus(InitiativeStatus.Clarifying);
+        initiative.StartPlanning(T1);
+
+        initiative.StartPlanning(T1.AddHours(1));
+
+        Assert.Equal(InitiativeStatus.Planning, initiative.Status);
+        Assert.Equal(T1, initiative.UpdatedAt);
+    }
+
+    [Theory]
+    [InlineData(InitiativeStatus.Draft)]
+    [InlineData(InitiativeStatus.ReadyToBuild)]
+    public void StartPlanning_outside_clarifying_is_rejected_and_leaves_the_initiative_unchanged(InitiativeStatus status)
+    {
+        var initiative = status == InitiativeStatus.Draft ? NewDraft() : InStatus(status);
+        var updatedAt = initiative.UpdatedAt;
+
+        var error = Assert.Throws<DomainException>(() => initiative.StartPlanning(T1));
+
+        Assert.Equal("La iniciativa debe estar en Aclarando para pasar a Planificando.", error.Message);
+        Assert.Equal(status, initiative.Status);
+        Assert.Equal(updatedAt, initiative.UpdatedAt);
+    }
+
+    [Fact]
+    public void StartPlanning_without_a_depth_is_rejected_and_status_stays_clarifying()
+    {
+        var initiative = NewDraft();
+        initiative.SetDepth(DepthMode.Automatic, null, T0);
+        initiative.Complete(T0);
+
+        var error = Assert.Throws<DomainException>(() => initiative.StartPlanning(T1));
+
+        Assert.Equal("Elija un nivel de profundidad antes de pasar a Planificando.", error.Message);
+        Assert.Equal(InitiativeStatus.Clarifying, initiative.Status);
+        Assert.Equal(T0, initiative.UpdatedAt);
+    }
+
+    [Fact]
+    public void StartPlanning_locks_mode_and_depth()
+    {
+        var initiative = InStatus(InitiativeStatus.Clarifying);
+        initiative.StartPlanning(T1);
+
+        Assert.Throws<DomainException>(() => initiative.SetDepth(DepthMode.Manual, InitiativeDepth.Large, T1));
+        Assert.Throws<DomainException>(() => initiative.SetDepth(DepthMode.Automatic, null, T1));
+        Assert.Equal(InitiativeDepth.Standard, initiative.Depth);
     }
 
     [Fact]

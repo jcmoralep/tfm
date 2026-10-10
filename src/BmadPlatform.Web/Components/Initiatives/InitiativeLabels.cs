@@ -30,13 +30,7 @@ public static class InitiativeLabels
         _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null),
     };
 
-    public static string Depth(InitiativeDepth depth) => depth switch
-    {
-        InitiativeDepth.Small => "Pequeña",
-        InitiativeDepth.Standard => "Estándar",
-        InitiativeDepth.Large => "Grande",
-        _ => throw new ArgumentOutOfRangeException(nameof(depth), depth, null),
-    };
+    public static string Depth(InitiativeDepth depth) => InitiativeTexts.LevelName(depth);
 
     /// <summary>
     /// What a list row or the detail shows for the depth: the level, "Pendiente de sugerencia" while the
@@ -55,21 +49,8 @@ public static class InitiativeLabels
         value.ToLocalTime().ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture);
 
     /// <summary>The documents each depth level produces, in the order they are delivered.</summary>
-    public static IReadOnlyList<string> Deliverables(InitiativeDepth depth) => depth switch
-    {
-        InitiativeDepth.Small => ["Una especificación breve"],
-        InitiativeDepth.Standard => ["Brief", "PRD"],
-        InitiativeDepth.Large => ["PRD", "Arquitectura", "Épicas e historias"],
-        _ => throw new ArgumentOutOfRangeException(nameof(depth), depth, null),
-    };
+    public static IReadOnlyList<string> Deliverables(InitiativeDepth depth) => InitiativeTexts.Deliverables(depth);
 
     /// <summary>The deliverables as one sentence fragment, for example "PRD, Arquitectura y Épicas e historias".</summary>
-    public static string DeliverablesSummary(InitiativeDepth depth)
-    {
-        var items = Deliverables(depth);
-
-        return items.Count == 1
-            ? items[0]
-            : string.Join(", ", items.Take(items.Count - 1)) + " y " + items[^1];
-    }
+    public static string DeliverablesSummary(InitiativeDepth depth) => InitiativeTexts.DeliverablesSummary(depth);
 }

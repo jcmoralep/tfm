@@ -1,0 +1,26 @@
+@using BmadPlatform.Domain.Assistant
+
+@* The prefix is read by screen readers only: the bubble side and color carry no text. *@
+<li class="flex @(IsUser ? "justify-end" : "justify-start")">
+    <div class="max-w-[85%] rounded-card px-4 py-2.5 text-sm @(IsUser ? "bg-primary text-on-primary" : "bg-bubble text-ink") @(Pending ? "opacity-70" : null)">
+        <p class="whitespace-pre-line break-words"><span class="sr-only">@AssistantLabels.RolePrefix(Role) </span>@Text</p>
+        @if (Pending)
+        {
+            <p class="mt-1 text-xs">@AssistantLabels.SendingCaption</p>
+        }
+    </div>
+</li>
+
+@code {
+    [Parameter, EditorRequired]
+    public MessageRole Role { get; set; }
+
+    [Parameter, EditorRequired]
+    public string Text { get; set; } = "";
+
+    /// <summary>The answer is queued or being sent and is not stored yet.</summary>
+    [Parameter]
+    public bool Pending { get; set; }
+
+    private bool IsUser => Role == MessageRole.User;
+}

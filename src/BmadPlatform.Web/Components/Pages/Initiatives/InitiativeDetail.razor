@@ -1,12 +1,15 @@
 @page "/iniciativas/{Id:guid}"
 @attribute [Authorize]
 @using BmadPlatform.Application.Common.Exceptions
+@using BmadPlatform.Application.Features.Assistant
+@using BmadPlatform.Application.Features.Assistant.GetConversation
 @using BmadPlatform.Application.Features.Initiatives
 @using BmadPlatform.Application.Features.Initiatives.DeleteInitiative
 @using BmadPlatform.Application.Features.Initiatives.GetInitiative
 @using BmadPlatform.Domain.Initiatives
 @inject IMediator Mediator
 @inject NavigationManager Navigation
+@inject ILogger<InitiativeDetail> Logger
 
 <PageTitle>@(details?.Name ?? "Iniciativa") · Plataforma BMAD</PageTitle>
 
@@ -112,6 +115,7 @@ else
     </section>
 
     <div class="mt-6 grid gap-4 md:grid-cols-3">
+        <ConversationCard InitiativeId="details.Id" View="conversation" />
         @foreach (var section in Placeholders)
         {
             <section aria-labelledby="section-@section.Key" class="rounded-card border border-dashed border-line bg-surface-raised p-5">
@@ -128,7 +132,6 @@ else
 
     private static readonly Placeholder[] Placeholders =
     [
-        new("conversation", "Conversación", "Aquí hablará con el asistente para aclarar la iniciativa."),
         new("artifacts", "Artefactos", "Aquí encontrará los documentos generados."),
         new("context", "Contexto", "Aquí podrá adjuntar videos, enlaces y notas."),
     ];
@@ -138,6 +141,7 @@ else
     private Guid? loadedId;
 
     private InitiativeDetails? details;
+    private ConversationView? conversation;
     private bool loading = true;
     private bool busy;
     private bool confirmingDelete;
@@ -159,7 +163,24 @@ else
         errors = [];
 
         details = await Mediator.Send(new GetInitiativeQuery(Id));
+        conversation = details is null ? null : await TryGetConversationAsync();
         loading = false;
+    }
+
+    // The card is secondary: if the conversation cannot be read, the page still works and the card has no action.
+    private async Task<ConversationView?> TryGetConversationAsync()
+    {
+        try
+        {
+            return await Mediator.Send(new GetConversationQuery(Id));
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // Type and id only: the exception message could echo conversation content.
+            Logger.LogWarning("The assistant card could not load the conversation of initiative {InitiativeId} ({ExceptionType}).", Id, exception.GetType().Name);
+
+            return null;
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

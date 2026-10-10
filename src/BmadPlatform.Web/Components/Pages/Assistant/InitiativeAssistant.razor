@@ -1,0 +1,15 @@
+@page "/iniciativas/{Id:guid}/asistente"
+@attribute [Authorize]
+
+<PageTitle>Asistente · Plataforma BMAD</PageTitle>
+
+<a href="/iniciativas/@Id" class="text-sm font-medium text-ink-muted hover:text-ink hover:underline">← Volver a la iniciativa</a>
+
+<div class="mt-4">
+    <ChatPanel InitiativeId="Id" />
+</div>
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+}

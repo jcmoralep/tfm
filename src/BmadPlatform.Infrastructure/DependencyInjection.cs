@@ -1,5 +1,7 @@
 using BmadPlatform.Application.Abstractions.Authentication;
+using BmadPlatform.Application.Features.Assistant;
 using BmadPlatform.Application.Features.Initiatives;
+using BmadPlatform.Infrastructure.Assistant;
 using BmadPlatform.Infrastructure.Identity;
 using BmadPlatform.Infrastructure.Identity.Seeding;
 using BmadPlatform.Infrastructure.Initiatives;
@@ -48,6 +50,10 @@ public static class DependencyInjection
         services.AddScoped<InitialUserSeeder>();
 
         services.AddScoped<IInitiativeRepository, InitiativeRepository>();
+        services.AddScoped<IConversationRepository, ConversationRepository>();
+
+        // Deterministic stand-in until the Gemini implementation arrives (PROPUESTA-MVP step 5).
+        services.AddSingleton<IAssistantService, FakeAssistantService>();
 
         return services;
     }

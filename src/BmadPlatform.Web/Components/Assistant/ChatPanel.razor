@@ -1,0 +1,365 @@
+@using BmadPlatform.Application.Common.Exceptions
+@using BmadPlatform.Application.Features.Assistant
+@using BmadPlatform.Application.Features.Assistant.GetConversation
+@using BmadPlatform.Application.Features.Assistant.SendMessage
+@using BmadPlatform.Application.Features.Assistant.StartConversation
+@using BmadPlatform.Application.Features.Assistant.UndoLastAnswer
+@using BmadPlatform.Domain.Assistant
+@using BmadPlatform.Domain.Initiatives
+@inject IMediator Mediator
+
+@* Container of the chat: loads the conversation, starts it on the first interactive render, and sends answers
+   through a queue (SendQueue). It holds no business rules; every decision comes from the use cases. *@
+
+@if (loading)
+{
+    <p class="text-sm text-ink-muted" role="status">Cargando…</p>
+}
+else if (view is null)
+{
+    <InitiativeNotFound />
+}
+else if (view.Status == InitiativeStatus.Draft)
+{
+    <section class="rounded-card border border-line bg-surface-raised p-6 shadow-card sm:p-8">
+        <h1 class="text-2xl font-semibold text-ink">@view.InitiativeName</h1>
+        <p class="mt-3 text-sm text-ink">@AssistantTexts.DraftNotAllowed</p>
+        <a href="/iniciativas/@view.InitiativeId/crear"
+           class="mt-4 inline-block rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover">
+            Continuar
+        </a>
+    </section>
+}
+else
+{
+    <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <section aria-labelledby="chat-title" class="min-w-0 rounded-card border border-line bg-surface-raised p-4 shadow-card sm:p-6">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="min-w-0">
+                    <h1 id="chat-title" class="break-words text-xl font-semibold text-ink">@view.InitiativeName</h1>
+                    <p class="mt-1"><StatusBadge Status="view.Status" /></p>
+                </div>
+                <p class="text-sm text-ink-muted">@AssistantLabels.OverallProgress(view.Journey)</p>
+            </div>
+
+            <div class="mt-4">
+                <DemoDataNotice Id="demo-note" />
+            </div>
+
+            <div class="mt-4">
+                <ChatMessageList Messages="view.Messages" Outstanding="queue.Outstanding" />
+            </div>
+
+            <div class="mt-3 min-h-6">
+                <p role="status" class="text-sm text-ink-muted">@(Typing ? AssistantLabels.Typing : null)</p>
+            </div>
+            <p role="status" class="sr-only">@announcement</p>
+
+            @if (errors.Count > 0)
+            {
+                <div class="mt-3">
+                    <ErrorAlert Id="chat-errors" Messages="errors" />
+                </div>
+            }
+
+            @if (CanRetry)
+            {
+                <div class="mt-3">
+                    <button type="button" @onclick="RetryAsync"
+                            class="rounded-full border border-primary bg-surface-raised px-5 py-2 text-sm font-medium text-primary-ink hover:bg-primary-soft">
+                        @AssistantLabels.RetryButton
+                    </button>
+                </div>
+            }
+
+            @if (view.ReadOnly)
+            {
+                <p class="mt-4 rounded-control bg-bubble px-3 py-2 text-sm text-ink">@AssistantTexts.ReadyToBuildReadOnly</p>
+            }
+            else
+            {
+                @if (view.QuickReplies.Count > 0)
+                {
+                    <div class="mt-4">
+                        <QuickReplies Replies="view.QuickReplies" Disabled="!QuickRepliesEnabled" OnSelected="QuickReplyAsync" />
+                    </div>
+                }
+
+                <div class="mt-4">
+                    <ChatComposer @ref="composer" Draft="draft" Disabled="!ComposerEnabled" DescribedBy="demo-note"
+                                  OnSubmit="SubmitAsync" />
+                </div>
+
+                <div class="mt-3">
+                    <button type="button" disabled="@(!UndoEnabled)" @onclick="UndoAsync"
+                            class="rounded-full border border-line bg-surface-raised px-4 py-2 text-sm font-medium text-ink hover:bg-surface disabled:cursor-not-allowed disabled:opacity-60">
+                        @AssistantLabels.UndoButton
+                    </button>
+                </div>
+            }
+        </section>
+
+        <JourneyPanel View="view" />
+    </div>
+}
+
+@code {
+    private readonly SendQueue queue = new();
+    private readonly ChatDraft draft = new();
+
+    private ChatComposer? composer;
+    private ConversationView? view;
+    private Guid? loadedId;
+    private bool loading = true;
+    private bool interactive;
+    private bool startCheckPending;
+    private bool starting;
+    private bool draining;
+    private bool undoing;
+    private bool focusComposer;
+    private string announcement = "";
+    private IReadOnlyList<string> errors = [];
+
+    [Parameter, EditorRequired]
+    public Guid InitiativeId { get; set; }
+
+    private bool IsOpen => view is { ReadOnly: false, Status: InitiativeStatus.Clarifying or InitiativeStatus.Planning };
+
+    private bool Busy => starting || draining || undoing;
+
+    private bool Typing => starting || draining;
+
+    private bool ComposerEnabled => interactive && IsOpen && !queue.IsPaused && (view!.CanSend || draining);
+
+    private bool QuickRepliesEnabled => interactive && IsOpen && view!.CanSend && !Busy && !queue.HasWork && !queue.IsPaused;
+
+    private bool UndoEnabled => interactive && IsOpen && !Busy && !queue.HasWork;
+
+    private bool CanRetry => interactive && IsOpen && view!.NeedsResume && !Busy;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (loadedId == InitiativeId)
+        {
+            return;
+        }
+
+        // Prerender runs this too. It is a read, so it is safe there; the write (start) waits for the interactive render.
+        loadedId = InitiativeId;
+        loading = true;
+        errors = [];
+        announcement = "";
+        queue.Abort();
+        draft.Replace("");
+
+        view = await Mediator.Send(new GetConversationQuery(InitiativeId));
+        loading = false;
+        startCheckPending = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // OnAfterRender never runs during prerender, so the first call here is the first interactive render.
+        if (firstRender)
+        {
+            interactive = true;
+            StateHasChanged();
+        }
+
+        if (interactive && startCheckPending && !loading)
+        {
+            startCheckPending = false;
+
+            if (IsOpen && (!view!.Started || view.NeedsResume))
+            {
+                await StartAsync();
+            }
+        }
+
+        if (focusComposer && composer is not null && ComposerEnabled)
+        {
+            focusComposer = false;
+            await composer.FocusAsync();
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (!ComposerEnabled)
+        {
+            return;
+        }
+
+        switch (draft.TrySubmit(queue))
+        {
+            case DraftSubmission.TooLong:
+                errors = [AssistantTexts.AnswerTooLong];
+                return;
+            case DraftSubmission.Empty:
+                return;
+        }
+
+        errors = [];
+        announcement = "";
+        focusComposer = true;
+        await DrainAsync();
+    }
+
+    private async Task QuickReplyAsync(QuickReply reply)
+    {
+        if (!QuickRepliesEnabled)
+        {
+            return;
+        }
+
+        errors = [];
+        announcement = "";
+        focusComposer = true;
+        queue.Enqueue(QueuedAnswer.ForQuickReply(reply.Key, reply.Label));
+        await DrainAsync();
+    }
+
+    // Sends the queued answers one at a time, each after the previous reply is stored. A second call while the
+    // loop runs only adds to the queue (the loop picks it up), so answers can never overlap.
+    private async Task DrainAsync()
+    {
+        if (draining || view is null)
+        {
+            return;
+        }
+
+        draining = true;
+
+        try
+        {
+            while (view is not null && queue.StartNext() is { } next)
+            {
+                StateHasChanged();
+                await SendOneAsync(next);
+            }
+        }
+        catch
+        {
+            queue.Abort();
+            throw;
+        }
+        finally
+        {
+            draining = false;
+            focusComposer = true;
+        }
+    }
+
+    private async Task SendOneAsync(QueuedAnswer answer)
+    {
+        try
+        {
+            view = await Mediator.Send(new SendMessageCommand(view!.InitiativeId, view.Version, answer.Text, answer.QuickReplyKey));
+            queue.Complete();
+        }
+        catch (AssistantUnavailableException exception)
+        {
+            // The answer is stored and the assistant owes a reply: keep the rest waiting until "Reintentar".
+            queue.Complete();
+            queue.Pause();
+            errors = [exception.Message];
+            await ReloadAsync();
+        }
+        catch (Exception exception) when (UserMessages.TryGet(exception, out var messages))
+        {
+            // Nothing was stored (conflict, validation, a rule): give every unsent text back to the composer.
+            var restoration = draft.Restore(queue.Abort());
+            errors = [.. messages, .. AssistantLabels.RestoreNotes(restoration)];
+            await ReloadAsync();
+        }
+    }
+
+    private async Task RetryAsync()
+    {
+        if (!CanRetry)
+        {
+            return;
+        }
+
+        errors = [];
+        announcement = "";
+        await StartAsync();
+    }
+
+    private async Task StartAsync()
+    {
+        if (starting)
+        {
+            return;
+        }
+
+        starting = true;
+
+        try
+        {
+            view = await Mediator.Send(new StartConversationCommand(InitiativeId));
+        }
+        catch (AssistantUnavailableException exception)
+        {
+            errors = [exception.Message];
+            await ReloadAsync();
+        }
+        catch (Exception exception) when (UserMessages.TryGet(exception, out var messages))
+        {
+            errors = messages;
+            await ReloadAsync();
+        }
+        finally
+        {
+            starting = false;
+            focusComposer = true;
+
+            // Started from OnAfterRenderAsync, which does not re-render by itself.
+            StateHasChanged();
+        }
+
+        if (queue.IsPaused && view is { NeedsResume: false })
+        {
+            queue.Resume();
+            await DrainAsync();
+        }
+    }
+
+    private async Task UndoAsync()
+    {
+        if (!UndoEnabled)
+        {
+            return;
+        }
+
+        undoing = true;
+        errors = [];
+        announcement = "";
+
+        try
+        {
+            view = await Mediator.Send(new UndoLastAnswerCommand(view!.InitiativeId, view.Version));
+            announcement = AssistantLabels.UndoDone;
+        }
+        catch (ConflictException exception)
+        {
+            errors = [exception.Message];
+            await ReloadAsync();
+        }
+        catch (Exception exception) when (UserMessages.TryGet(exception, out var messages))
+        {
+            // The refusals ("No hay ninguna respuesta que deshacer.") are announced, not shown as an error.
+            announcement = string.Join(" ", messages);
+        }
+        finally
+        {
+            undoing = false;
+            focusComposer = true;
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        view = await Mediator.Send(new GetConversationQuery(InitiativeId));
+    }
+}

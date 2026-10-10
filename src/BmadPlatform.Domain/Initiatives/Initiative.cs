@@ -150,6 +150,31 @@ public sealed class Initiative
         UpdatedAt = now;
     }
 
+    /// <summary>
+    /// Clarifying becomes Planning, which locks mode and depth. Repeating it on a Planning initiative
+    /// succeeds without changing anything (not even <see cref="UpdatedAt"/>) so a retry is safe.
+    /// </summary>
+    public void StartPlanning(DateTimeOffset now)
+    {
+        if (Status == InitiativeStatus.Planning)
+        {
+            return;
+        }
+
+        if (Status != InitiativeStatus.Clarifying)
+        {
+            throw new DomainException("La iniciativa debe estar en Aclarando para pasar a Planificando.");
+        }
+
+        if (Depth is null)
+        {
+            throw new DomainException("Elija un nivel de profundidad antes de pasar a Planificando.");
+        }
+
+        Status = InitiativeStatus.Planning;
+        UpdatedAt = now;
+    }
+
     /// <summary>Soft delete. Deleting an already deleted initiative changes nothing.</summary>
     public void Delete(DateTimeOffset now)
     {

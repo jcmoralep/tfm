@@ -5,6 +5,8 @@ using BmadPlatform.Application.Features.Initiatives.GetInitiative;
 using BmadPlatform.Application.Features.Initiatives.ListInitiatives;
 using BmadPlatform.Application.Features.Initiatives.SaveInitiativeDepth;
 using BmadPlatform.Application.Features.Initiatives.SaveInitiativeDetails;
+using BmadPlatform.Application.Features.Initiatives.SetInitiativeDepth;
+using BmadPlatform.Application.Features.Initiatives.StartPlanning;
 using BmadPlatform.Application.Features.Initiatives.UpdateInitiative;
 using BmadPlatform.Application.Tests.TestDoubles;
 using BmadPlatform.Domain.Initiatives;
@@ -33,6 +35,13 @@ public sealed class InitiativeTestContext
 
     public Task Complete(Guid id) =>
         new CompleteInitiativeCommandHandler(Repository, User, Clock).Handle(new CompleteInitiativeCommand(id), default);
+
+    public Task StartPlanning(Guid id) =>
+        new StartPlanningCommandHandler(Repository, User, Clock).Handle(new StartPlanningCommand(id), default);
+
+    public Task SetInitiativeDepth(Guid id, InitiativeDepth depth) =>
+        new SetInitiativeDepthCommandHandler(Repository, User, Clock)
+            .Handle(new SetInitiativeDepthCommand(id, depth), default);
 
     public Task Update(Guid id, string name, string? description, DepthMode? mode, InitiativeDepth? depth) =>
         new UpdateInitiativeCommandHandler(Repository, User, Clock)

@@ -1,0 +1,74 @@
+@using BmadPlatform.Application.Features.Assistant
+@using BmadPlatform.Domain.Initiatives
+
+<aside aria-labelledby="journey-title" class="rounded-card border border-line bg-surface-raised p-5 shadow-card">
+    <h2 id="journey-title" class="text-base font-semibold text-ink">Su recorrido</h2>
+
+    <p class="mt-3 text-sm font-medium text-ink">@AssistantLabels.OverallProgress(View.Journey)</p>
+    <div class="mt-2 h-2 overflow-hidden rounded-full bg-primary-soft" aria-hidden="true">
+        <div class="h-full rounded-full bg-primary" style="width: @AssistantLabels.OverallPercent(View.Journey)%"></div>
+    </div>
+
+    <ol class="mt-5 space-y-4">
+        @foreach (var (step, position) in AssistantLabels.Steps(View.Journey).Select((step, index) => (step, index + 1)))
+        {
+            <li aria-current="@(step.State == StepState.Current ? "step" : null)" class="flex gap-3">
+                <span aria-hidden="true"
+                      class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold @MarkerClass(step.State)">
+                    @(step.State == StepState.Done ? "✓" : position.ToString())
+                </span>
+                <div class="min-w-0">
+                    <p class="text-sm @(step.State == StepState.Current ? "font-semibold text-ink" : "font-medium text-ink-muted")">
+                        @step.Name
+                        @if (step.State == StepState.Done)
+                        {
+                            <span class="sr-only"> (terminada)</span>
+                        }
+                        else if (step.State == StepState.Current)
+                        {
+                            <span class="sr-only"> (etapa actual)</span>
+                        }
+                    </p>
+                    @if (step.Detail is not null)
+                    {
+                        <p class="text-xs text-ink-muted">@step.Detail</p>
+                    }
+                </div>
+            </li>
+        }
+    </ol>
+
+    <dl class="mt-5 space-y-3 border-t border-line pt-4 text-sm">
+        <div>
+            <dt class="text-xs font-medium uppercase tracking-wide text-ink-muted">Nivel</dt>
+            <dd class="mt-0.5 text-ink">@InitiativeLabels.DepthSummary(View.DepthMode, View.Depth)</dd>
+        </div>
+        @if (View.Depth is { } depth)
+        {
+            <div>
+                <dt class="text-xs font-medium uppercase tracking-wide text-ink-muted">Entregables</dt>
+                <dd class="mt-0.5 text-ink">@InitiativeLabels.DeliverablesSummary(depth)</dd>
+            </div>
+        }
+    </dl>
+
+    @if (View.Status == InitiativeStatus.Clarifying)
+    {
+        <p class="mt-4 text-xs text-ink-muted">
+            Puede cambiar el nivel desde <a href="/iniciativas/@View.InitiativeId/editar" class="font-medium text-primary-ink underline">Editar</a>
+            sin perder lo respondido.
+        </p>
+    }
+</aside>
+
+@code {
+    [Parameter, EditorRequired]
+    public ConversationView View { get; set; } = default!;
+
+    private static string MarkerClass(StepState state) => state switch
+    {
+        StepState.Done => "bg-success-soft text-success-ink",
+        StepState.Current => "bg-primary text-on-primary",
+        _ => "bg-bubble text-ink-muted",
+    };
+}
