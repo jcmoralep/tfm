@@ -22,6 +22,23 @@
 
 /* Rendered Markdown of the documents (read view). Scoped class instead of the typography plugin. */
 @layer components {
+  /* Native <progress> styled with the theme tokens: the value is an attribute, so no inline style is needed. */
+  .progress-bar {
+    @apply block h-2 w-full appearance-none overflow-hidden rounded-full border-0 bg-primary-soft;
+  }
+
+  .progress-bar::-webkit-progress-bar {
+    @apply bg-primary-soft;
+  }
+
+  .progress-bar::-webkit-progress-value {
+    @apply rounded-full bg-primary;
+  }
+
+  .progress-bar::-moz-progress-bar {
+    @apply rounded-full bg-primary;
+  }
+
   .doc-prose {
     @apply break-words text-base leading-7 text-ink;
   }
