@@ -1,0 +1,247 @@
+using System.Text;
+using System.Text.RegularExpressions;
+using BmadPlatform.Application.Features.Artifacts;
+using BmadPlatform.Application.Features.Artifacts.Markdown;
+using BmadPlatform.Application.Features.Assistant;
+using BmadPlatform.Application.Features.Assistant.Script;
+
+namespace BmadPlatform.Infrastructure.Artifacts;
+
+/// <summary>
+/// The pieces every document layout shares: the text being written, the identifier numbering, the registers of
+/// assumptions and open questions, and the rules for quoting the user's answers. One composer builds one document,
+/// so every draft numbers from 1.
+/// </summary>
+internal sealed partial class DraftComposer
+{
+    private static readonly Dictionary<string, string> TopicNames = new(StringComparer.Ordinal)
+    {
+        [AssistantScript.Keys.Idea] = "la idea de la iniciativa",
+        [AssistantScript.Keys.Users] = "quién usará la solución",
+        [AssistantScript.Keys.Problem] = "el problema que resuelve",
+        [AssistantScript.Keys.Success] = "cómo se medirá el éxito",
+        [AssistantScript.Keys.OutOfScope] = "qué queda fuera del alcance",
+        [AssistantScript.Keys.Capabilities] = "lo que se debe poder hacer",
+        [AssistantScript.Keys.Constraints] = "los límites o reglas que se deben respetar",
+        [AssistantScript.Keys.Priorities] = "las prioridades",
+        [AssistantScript.Keys.Integrations] = "los sistemas o equipos involucrados",
+        [AssistantScript.Keys.Qualities] = "las condiciones de velocidad o seguridad",
+    };
+
+    private readonly StringBuilder text = new();
+    private readonly ItemNumberer numberer = new();
+    private readonly Dictionary<string, TopicAnswer> answers;
+    private readonly Dictionary<string, string> questionIds = new(StringComparer.Ordinal);
+    private readonly List<(string Id, string Text)> assumptions = [];
+    private readonly List<(string Id, string Text)> questions = [];
+    private readonly int answerBudget;
+
+    public DraftComposer(DraftRequest request, int answerBudget)
+    {
+        Request = request;
+        this.answerBudget = answerBudget;
+        answers = request.Answers.GroupBy(a => a.TopicKey).ToDictionary(g => g.Key, g => g.Last(), StringComparer.Ordinal);
+    }
+
+    public DraftRequest Request { get; }
+
+    /// <summary>The initiative name on one line.</summary>
+    public string InitiativeName => Collapse(Request.InitiativeName);
+
+    /// <summary>The description on one line, clipped like an answer; null when there is none.</summary>
+    public string? Description =>
+        string.IsNullOrWhiteSpace(Request.Description) ? null : Clip(Escape(Collapse(Request.Description)), answerBudget);
+
+    public int Count(string prefix) => numberer.Count(prefix);
+
+    public string Next(string prefix) => numberer.Next(prefix);
+
+    public TopicAnswer? Answer(string key) => answers.GetValueOrDefault(key);
+
+    public bool Has(string key) => Answer(key) is { IsUnknown: false };
+
+    public void Title(string title) => text.Append("# ").Append(title).Append('\n');
+
+    /// <summary>Writes a required heading of the document type, so the layout can never drift from the outline.</summary>
+    public void Heading(string title)
+    {
+        var section = ArtifactOutline.Sections(Request.Type).First(s => s.Title == title);
+
+        Raw(section.Heading);
+    }
+
+    /// <summary>A heading that is not in the outline (a subsection a layout adds), with the spacing of any heading.</summary>
+    public void Raw(string heading)
+    {
+        // A blank line before the heading, unless one is already there.
+        if (text.Length > 0 && !(text.Length >= 2 && text[^1] == '\n' && text[^2] == '\n'))
+        {
+            text.Append('\n');
+        }
+
+        text.Append(heading).Append("\n\n");
+    }
+
+    public void Line(string line) => text.Append(line).Append('\n');
+
+    public void Blank() => text.Append('\n');
+
+    /// <summary>Registers an assumption and returns it inline: <c>[ASSUMPTION: A-1] text</c>.</summary>
+    public string Assumption(string assumptionText)
+    {
+        var id = numberer.Next(ItemPrefix.Assumption);
+        assumptions.Add((id, assumptionText));
+
+        return $"{ArtifactOutline.AssumptionMarker(id)} {assumptionText}";
+    }
+
+    /// <summary>The open question of a topic answered "No sé": registered once, numbered in document order.</summary>
+    public string Question(string key)
+    {
+        if (questionIds.TryGetValue(key, out var existing))
+        {
+            return existing;
+        }
+
+        var id = numberer.Next(ItemPrefix.Question);
+        var name = TopicNames.GetValueOrDefault(key, key);
+        var asked = answers.GetValueOrDefault(key)?.Question;
+
+        questionIds[key] = id;
+        questions.Add((id, asked is null ? $"Falta saber {name}." : $"Falta saber {name}: «{asked}»"));
+
+        return id;
+    }
+
+    /// <summary>
+    /// Writes one list item per line of the answer. A "No sé" answer refers to its open question and invents
+    /// nothing; a topic without an answer takes an assumption. <paramref name="format"/> builds the item (a plain
+    /// bullet by default) and <paramref name="label"/> prefixes each item with a bold label.
+    /// </summary>
+    public void Items(string key, Func<string, string>? format = null, string? label = null)
+    {
+        string Wrap(string value) => label is null ? "- " + value : $"- **{label}**: {value}";
+
+        var answer = Answer(key);
+
+        if (answer is null)
+        {
+            Line(Wrap(Assumption($"No se recibió una respuesta sobre {TopicNames.GetValueOrDefault(key, key)}; se confirma con quien propone la iniciativa.")));
+        }
+        else if (answer.IsUnknown)
+        {
+            Line(Wrap($"Pendiente: ver {Question(key)}."));
+        }
+        else
+        {
+            foreach (var line in Lines(answer.Text))
+            {
+                Line(format is null ? Wrap(line) : format(line));
+            }
+        }
+    }
+
+    /// <summary>A list item with a functional requirement, a metric or another identifier of the prefix.</summary>
+    public Func<string, string> Numbered(string prefix) => line => ArtifactOutline.Item(numberer.Next(prefix), line);
+
+    public void AssumptionIndex()
+    {
+        Heading(ArtifactOutline.AssumptionIndexTitle);
+
+        if (assumptions.Count == 0)
+        {
+            Line("No hay suposiciones.");
+
+            return;
+        }
+
+        foreach (var (id, assumptionText) in assumptions)
+        {
+            Line(ArtifactOutline.Item(id, assumptionText));
+        }
+    }
+
+    public void OpenQuestions(string title, string none)
+    {
+        Heading(title);
+
+        if (questions.Count == 0)
+        {
+            Line(none);
+
+            return;
+        }
+
+        foreach (var (id, questionText) in questions)
+        {
+            Line(ArtifactOutline.Item(id, questionText));
+        }
+    }
+
+    public string Finish() => text.ToString().Trim();
+
+    /// <summary>
+    /// The answer as items: one per non-empty line, list markers removed, a line that would open a heading
+    /// escaped, and the whole answer clipped to the budget with an ellipsis.
+    /// </summary>
+    public IReadOnlyList<string> Lines(string answer)
+    {
+        var lines = answer.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n')
+            .Split('\n')
+            .Select(raw => ListMarkerRegex().Replace(raw.Trim(), string.Empty).Trim())
+            .Where(line => line.Length > 0)
+            .Select(Escape)
+            .ToList();
+
+        var kept = new List<string>();
+        var used = 0;
+
+        foreach (var line in lines)
+        {
+            if (used + line.Length <= answerBudget)
+            {
+                kept.Add(line);
+                used += line.Length;
+
+                continue;
+            }
+
+            if (answerBudget - used > 1)
+            {
+                kept.Add(Clip(line, answerBudget - used));
+            }
+
+            break;
+        }
+
+        return kept;
+    }
+
+    /// <summary>At most <paramref name="max"/> characters, the last one an ellipsis when something was cut.</summary>
+    public static string Clip(string value, int max)
+    {
+        if (value.Length <= max)
+        {
+            return value;
+        }
+
+        var end = max - 1;
+
+        if (end > 0 && char.IsHighSurrogate(value[end - 1]))
+        {
+            end--;
+        }
+
+        return value[..end].TrimEnd() + "…";
+    }
+
+    private static string Collapse(string value) => WhitespaceRegex().Replace(value, " ").Trim();
+
+    private static string Escape(string line) => line.StartsWith('#') ? "\\" + line : line;
+
+    [GeneratedRegex(@"^(?:[-*+•–]|\d+[.):])\s+")]
+    private static partial Regex ListMarkerRegex();
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex WhitespaceRegex();
+}

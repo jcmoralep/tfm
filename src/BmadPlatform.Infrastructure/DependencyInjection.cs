@@ -1,6 +1,8 @@
 using BmadPlatform.Application.Abstractions.Authentication;
+using BmadPlatform.Application.Features.Artifacts;
 using BmadPlatform.Application.Features.Assistant;
 using BmadPlatform.Application.Features.Initiatives;
+using BmadPlatform.Infrastructure.Artifacts;
 using BmadPlatform.Infrastructure.Assistant;
 using BmadPlatform.Infrastructure.Identity;
 using BmadPlatform.Infrastructure.Identity.Seeding;
@@ -55,6 +57,9 @@ public static class DependencyInjection
         // Deterministic stand-in until the Gemini implementation arrives (PROPUESTA-MVP step 5).
         // The short pause lets people see the "typing" indicator; the real model will take longer.
         services.AddSingleton<IAssistantService>(_ => new FakeAssistantService(TimeSpan.FromMilliseconds(900)));
+
+        // Same idea for the documents (PROPUESTA-MVP step 5 replaces it); the pause shows the loading state.
+        services.AddSingleton<IArtifactDrafter>(_ => new FakeArtifactDrafter(TimeSpan.FromMilliseconds(900)));
 
         return services;
     }

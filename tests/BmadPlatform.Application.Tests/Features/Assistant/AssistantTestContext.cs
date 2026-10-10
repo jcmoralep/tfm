@@ -1,5 +1,6 @@
 using BmadPlatform.Application.Features.Assistant;
 using BmadPlatform.Application.Features.Assistant.GetConversation;
+using BmadPlatform.Application.Features.Assistant.GetConversationAnswers;
 using BmadPlatform.Application.Features.Assistant.Script;
 using BmadPlatform.Application.Features.Assistant.SendMessage;
 using BmadPlatform.Application.Features.Assistant.StartConversation;
@@ -104,6 +105,46 @@ public sealed class AssistantTestContext
 
         return view;
     }
+
+    /// <summary>
+    /// Walks the script until nothing is left to ask: content topics get "respuesta {key}" unless
+    /// <paramref name="texts"/> says otherwise, topics in <paramref name="unknown"/> get the "No sé" button, a choice
+    /// takes its first button, and the confirmation is accepted unless <paramref name="confirm"/> is false.
+    /// </summary>
+    public async Task<ConversationView> AnswerAll(
+        Guid id,
+        IReadOnlyDictionary<string, string>? texts = null,
+        IReadOnlyCollection<string>? unknown = null,
+        bool confirm = true)
+    {
+        var view = await Start(id);
+
+        for (var turn = 0; turn < 40 && view.CanSend && view.Journey.NextTopic is { } topic; turn++)
+        {
+            switch (topic.Kind)
+            {
+                case TopicKind.Question when unknown?.Contains(topic.Key) == true:
+                    view = await Send(id, view.Version, quickReplyKey: AssistantScript.ReplyKeys.Unknown);
+                    break;
+                case TopicKind.Question:
+                    view = await Send(id, view.Version, texts?.GetValueOrDefault(topic.Key) ?? $"respuesta {topic.Key}");
+                    break;
+                case TopicKind.Choice:
+                    view = await Send(id, view.Version, quickReplyKey: view.QuickReplies[0].Key);
+                    break;
+                case TopicKind.Confirmation when confirm:
+                    view = await Send(id, view.Version, quickReplyKey: AssistantScript.ReplyKeys.ConfirmYes);
+                    break;
+                default:
+                    return view;
+            }
+        }
+
+        return view;
+    }
+
+    public Task<ConversationAnswers?> Answers(Guid id) =>
+        new GetConversationAnswersQueryHandler(Sender, Conversations, User).Handle(new GetConversationAnswersQuery(id), default);
 
     /// <summary>Creates an initiative that finished the wizard in Automatic mode, so it has no level yet.</summary>
     public async Task<Guid> CreateAutomatic(string name)
