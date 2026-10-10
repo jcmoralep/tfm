@@ -148,7 +148,7 @@ public static class AssistantScript
 
     /// <summary>The closing message with the deliverables of the level filled in.</summary>
     public static string ClosingPrompt(InitiativeDepth depth) =>
-        Get(Keys.Closing).Prompt.Replace(DeliverablesPlaceholder, InitiativeTexts.DeliverablesSummary(depth), StringComparison.Ordinal);
+        Get(Keys.Closing).Prompt.Replace(DeliverablesPlaceholder, InitiativeTexts.DeliverablesInSentence(depth), StringComparison.Ordinal);
 
     /// <summary>
     /// True when the whole message is "no sé", "no se", "ni idea" or "no lo sé": trimmed, ignoring case, accents,

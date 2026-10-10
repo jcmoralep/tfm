@@ -11,11 +11,20 @@ namespace BmadPlatform.Infrastructure.Assistant;
 /// and nothing leaves the process. It acknowledges the last answer, then asks the next topic with an example and
 /// the reason, and never praises (RF-35). The application decides what to ask; this class only words it.
 /// </summary>
-public sealed class FakeAssistantService : IAssistantService
+/// <param name="replyDelay">
+/// Pause before answering, so the "typing" indicator can be seen the way it will be with the real model. The
+/// application registers a short one; tests use none.
+/// </param>
+public sealed class FakeAssistantService(TimeSpan replyDelay = default) : IAssistantService
 {
-    public Task<AssistantReply> ReplyAsync(AssistantRequest request, CancellationToken cancellationToken)
+    public async Task<AssistantReply> ReplyAsync(AssistantRequest request, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+
+        if (replyDelay > TimeSpan.Zero)
+        {
+            await Task.Delay(replyDelay, cancellationToken);
+        }
 
         var topic = request.NextTopic;
         var acknowledgement = Acknowledge(request.History, topic);
@@ -31,7 +40,7 @@ public sealed class FakeAssistantService : IAssistantService
             _ => Compose(acknowledgement, topic.Prompt, topic.Example, topic.Why, null),
         };
 
-        return Task.FromResult(reply);
+        return reply;
     }
 
     private static AssistantReply ProposeDepth(AssistantRequest request, string acknowledgement)
@@ -39,7 +48,7 @@ public sealed class FakeAssistantService : IAssistantService
         var suggested = SuggestDepth(request.History);
         var prompt =
             $"Según lo que me contó, le propongo el nivel {InitiativeTexts.LevelName(suggested)}. ¿Lo usamos o prefiere elegir otro?";
-        var example = $"El nivel {InitiativeTexts.LevelName(suggested)} prepara {InitiativeTexts.DeliverablesSummary(suggested)}.";
+        var example = $"El nivel {InitiativeTexts.LevelName(suggested)} prepara {InitiativeTexts.DeliverablesInSentence(suggested)}.";
 
         return Compose(acknowledgement, prompt, example, request.NextTopic.Why, suggested);
     }
@@ -60,7 +69,7 @@ public sealed class FakeAssistantService : IAssistantService
         string.Join(
             "; ",
             Enum.GetValues<InitiativeDepth>()
-                .Select(d => $"{InitiativeTexts.LevelName(d)} prepara {InitiativeTexts.DeliverablesSummary(d)}")) + ".";
+                .Select(d => $"{InitiativeTexts.LevelName(d)} prepara {InitiativeTexts.DeliverablesInSentence(d)}")) + ".";
 
     private static string Acknowledge(IReadOnlyList<ConversationTurn> history, AssistantTopic topic)
     {

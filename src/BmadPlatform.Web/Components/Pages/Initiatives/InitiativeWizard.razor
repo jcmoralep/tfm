@@ -47,7 +47,7 @@ else
 
             @if (notice is not null)
             {
-                <p role="status" class="mt-4 rounded-control bg-primary-soft px-3 py-2 text-sm text-primary-ink">@notice</p>
+                <p role="status" class="mt-4 rounded-control bg-success-soft px-3 py-2 text-sm text-success-ink">@notice</p>
             }
 
             @if (errors.Count > 0)
@@ -61,7 +61,7 @@ else
             {
                 <form @onsubmit="() => SaveDetailsAsync(advance: true)" @onsubmit:preventDefault class="mt-6 space-y-5">
                     <div>
-                        <label for="initiative-name" class="block text-sm font-medium text-ink">Nombre</label>
+                        <label for="initiative-name" class="block text-sm font-medium text-ink">Nombre<RequiredMark /></label>
                         <input id="initiative-name" type="text" @bind="name" @bind:event="oninput" autocomplete="off"
                                aria-required="true" aria-describedby="initiative-name-hint@(errors.Count > 0 ? " wizard-errors" : null)"
                                class="mt-1.5 block w-full rounded-control border border-line bg-surface-raised px-3 py-2 text-sm text-ink" />
