@@ -1,4 +1,5 @@
 using BmadPlatform.Application.Common.Exceptions;
+using BmadPlatform.Application.Features.Artifacts;
 using BmadPlatform.Application.Features.Initiatives;
 using BmadPlatform.Domain.Common;
 using BmadPlatform.Web.Components.Initiatives;
@@ -51,6 +52,13 @@ public sealed class UserMessagesTests
     {
         Assert.True(UserMessages.TryGet(new ConflictException(), out var messages));
         Assert.Equal(["La conversación cambió en otra pestaña. Recargue la página."], messages);
+    }
+
+    [Fact]
+    public void Artifact_conflict_keeps_its_own_message()
+    {
+        Assert.True(UserMessages.TryGet(new ConflictException(ArtifactTexts.Conflict), out var messages));
+        Assert.Equal([ArtifactTexts.Conflict], messages);
     }
 
     [Fact]

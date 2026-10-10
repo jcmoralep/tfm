@@ -1,0 +1,63 @@
+using BmadPlatform.Web.Components.Artifacts;
+
+namespace BmadPlatform.Web.Tests.Artifacts;
+
+public sealed class MarkdownRendererTests
+{
+    private readonly MarkdownRenderer renderer = new();
+
+    private string Html(string markdown) => renderer.Render(markdown).Value;
+
+    [Theory]
+    [InlineData("<script>alert(1)</script>", "<script")]
+    [InlineData("<img src=x onerror=alert(1)>", "<img")]
+    [InlineData("<iframe src=\"https://example.com\"></iframe>", "<iframe")]
+    [InlineData("<a href=\"javascript:alert(1)\" onclick=\"x()\">x</a>", "<a ")]
+    public void Raw_html_is_shown_as_text_not_interpreted(string markdown, string forbiddenTag)
+    {
+        var html = Html(markdown);
+
+        Assert.DoesNotContain(forbiddenTag, html, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("&lt;", html);
+    }
+
+    [Theory]
+    [InlineData("[x](javascript:alert(1))")]
+    [InlineData("[x](JaVaScRiPt:alert(1))")]
+    [InlineData("[x](java\tscript:alert(1))")]
+    [InlineData("[x](data:text/html;base64,PHNjcmlwdD4=)")]
+    [InlineData("[x](vbscript:msgbox(1))")]
+    [InlineData("![x](javascript:alert(1))")]
+    [InlineData("[x][r]\n\n[r]: javascript:alert(1)")]
+    [InlineData("<javascript:alert(1)>")]
+    public void Dangerous_addresses_are_emptied(string markdown)
+    {
+        var html = Html(markdown);
+
+        Assert.DoesNotMatch("(?i)(href|src)=\"[^\"]*(javascript|data|vbscript)[^\"]*:", html);
+    }
+
+    [Theory]
+    [InlineData("[x](https://example.com/a?b=c:d)", "https://example.com/a?b=c:d")]
+    [InlineData("[x](http://example.com)", "http://example.com")]
+    [InlineData("[x](mailto:a@example.com)", "mailto:a@example.com")]
+    [InlineData("[x](/iniciativas/1)", "/iniciativas/1")]
+    [InlineData("[x](#seccion)", "#seccion")]
+    [InlineData("[x](docs/a:b.md)", "docs/a:b.md")]
+    public void Safe_addresses_are_kept(string markdown, string address)
+    {
+        Assert.Contains($"href=\"{address}\"", Html(markdown));
+    }
+
+    [Fact]
+    public void Markdown_is_presented_as_a_document()
+    {
+        var html = Html("# Titulo\n\n- uno\n- dos\n\n| a | b |\n|---|---|\n| 1 | 2 |\n");
+
+        Assert.Contains("<h1", html);
+        Assert.Contains("<ul>", html);
+        Assert.Contains("<li>", html);
+        Assert.Contains("<table>", html);
+        Assert.Contains("<th>", html);
+    }
+}

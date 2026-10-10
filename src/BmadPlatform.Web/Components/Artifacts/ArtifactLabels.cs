@@ -1,0 +1,137 @@
+using BmadPlatform.Application.Features.Artifacts;
+using BmadPlatform.Domain.Artifacts;
+
+namespace BmadPlatform.Web.Components.Artifacts;
+
+/// <summary>Visual weight of a state badge: amber while in progress, blue for something to do, green when done.</summary>
+public enum ArtifactTone
+{
+    Neutral,
+    Action,
+    InProgress,
+    Done,
+}
+
+/// <summary>One row of the Artefactos card. <paramref name="Action"/> is null when the row offers none.</summary>
+public sealed record ArtifactRowContent(
+    string Label,
+    string State,
+    ArtifactTone Tone,
+    string? Reason,
+    ArtifactAction? Action,
+    ArtifactType? Type);
+
+public enum ArtifactAction
+{
+    Generate,
+    Open,
+}
+
+/// <summary>Spanish texts, route slugs and state decisions of the document screens, pure so they can be tested.</summary>
+public static class ArtifactLabels
+{
+    public const string SpecSlug = "especificacion";
+
+    public const string BriefSlug = "brief";
+
+    public const string PrdSlug = "prd";
+
+    /// <summary>Query string flag the card adds so the document page can show the green "generated" notice.</summary>
+    public const string GeneratedFlag = "generado";
+
+    public const string NotGenerated = "Sin generar";
+
+    public const string Available = "Disponible";
+
+    public const string NotAvailable = "Aún no disponible";
+
+    public const string GenerateAction = "Generar";
+
+    public const string OpenAction = "Abrir";
+
+    public const string Generating = "Generando el documento…";
+
+    public const string CardTitle = "Artefactos";
+
+    public const string CardIntro = "Documentos que su iniciativa necesita antes de pasar a desarrollo.";
+
+    public const string NoDocumentsText = "Aún no hay documentos para este nivel.";
+
+    public const string UnavailableCardText = "No se pudieron cargar los documentos de esta iniciativa.";
+
+    public const string Generated = "Documento generado.";
+
+    public const string Approved = "Documento aprobado.";
+
+    public const string ApprovedReady = "Documento aprobado. La iniciativa está Lista para construir.";
+
+    public static string Saved(int version) => $"Cambios guardados. Versión {version}.";
+
+    public static string TypeName(ArtifactType type) => type switch
+    {
+        ArtifactType.Spec => "Especificación",
+        ArtifactType.Brief => "Brief",
+        ArtifactType.Prd => "PRD",
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
+    };
+
+    public static string StatusName(ArtifactStatus status) => status switch
+    {
+        ArtifactStatus.Draft => "Borrador",
+        ArtifactStatus.Approved => "Aprobado",
+        _ => throw new ArgumentOutOfRangeException(nameof(status), status, null),
+    };
+
+    public static string Slug(ArtifactType type) => type switch
+    {
+        ArtifactType.Spec => SpecSlug,
+        ArtifactType.Brief => BriefSlug,
+        ArtifactType.Prd => PrdSlug,
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
+    };
+
+    /// <summary>Exact, case-sensitive match: anything else is an unknown document.</summary>
+    public static bool TryParseSlug(string? slug, out ArtifactType type)
+    {
+        switch (slug)
+        {
+            case SpecSlug:
+                type = ArtifactType.Spec;
+                return true;
+            case BriefSlug:
+                type = ArtifactType.Brief;
+                return true;
+            case PrdSlug:
+                type = ArtifactType.Prd;
+                return true;
+            default:
+                type = default;
+                return false;
+        }
+    }
+
+    public static string PagePath(Guid initiativeId, ArtifactType type) =>
+        $"/iniciativas/{initiativeId}/artefactos/{Slug(type)}";
+
+    /// <summary>"Borrador v2" or "Aprobado v3".</summary>
+    public static string VersionedStatus(ArtifactStatus status, int version) => $"{StatusName(status)} v{version}";
+
+    public static ArtifactTone StatusTone(ArtifactStatus status) =>
+        status == ArtifactStatus.Approved ? ArtifactTone.Done : ArtifactTone.InProgress;
+
+    /// <summary>What a row of the Artefactos card shows and offers for one slot.</summary>
+    public static ArtifactRowContent Row(ArtifactSlotView slot)
+    {
+        if (slot.Generated && slot.Type is not null && slot.Status is { } status)
+        {
+            return new(slot.Label, VersionedStatus(status, slot.Version), StatusTone(status), null, ArtifactAction.Open, slot.Type);
+        }
+
+        if (slot.Type is not null && slot.Availability == ArtifactAvailability.Available)
+        {
+            return new(slot.Label, Available, ArtifactTone.Action, null, ArtifactAction.Generate, slot.Type);
+        }
+
+        return new(slot.Label, NotAvailable, ArtifactTone.Neutral, slot.Reason, null, slot.Type);
+    }
+}

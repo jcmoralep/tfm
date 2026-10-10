@@ -58,6 +58,10 @@ public static class AssistantLabels
 
     public const string ViewAction = "Ver conversación";
 
+    public const string DocumentsCallToAction = "Ir a los documentos";
+
+    public const string ViewDocumentsAction = "Ver documentos";
+
     /// <summary>
     /// Notes shown when unsent answers were given back to the composer: the buttons that were not sent (they
     /// cannot go into the box) and a text that grew past the limit. Empty when nothing needs saying.

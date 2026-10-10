@@ -20,6 +20,96 @@
   }
 }
 
+/* Rendered Markdown of the documents (read view). Scoped class instead of the typography plugin. */
+@layer components {
+  .doc-prose {
+    @apply break-words text-base leading-7 text-ink;
+  }
+
+  .doc-prose > :first-child {
+    @apply mt-0;
+  }
+
+  .doc-prose h1 {
+    @apply mb-4 mt-8 text-2xl font-semibold text-ink;
+  }
+
+  .doc-prose h2 {
+    @apply mb-3 mt-8 border-b border-line pb-2 text-xl font-semibold text-ink;
+  }
+
+  .doc-prose h3 {
+    @apply mb-2 mt-6 text-lg font-semibold text-ink;
+  }
+
+  .doc-prose h4,
+  .doc-prose h5,
+  .doc-prose h6 {
+    @apply mb-2 mt-4 text-base font-semibold text-ink;
+  }
+
+  .doc-prose p {
+    @apply my-3;
+  }
+
+  .doc-prose ul {
+    @apply my-3 list-disc pl-6;
+  }
+
+  .doc-prose ol {
+    @apply my-3 list-decimal pl-6;
+  }
+
+  .doc-prose li {
+    @apply my-1;
+  }
+
+  .doc-prose li > ul,
+  .doc-prose li > ol {
+    @apply my-1;
+  }
+
+  .doc-prose a {
+    @apply font-medium text-primary underline hover:text-primary-hover;
+  }
+
+  .doc-prose strong {
+    @apply font-semibold;
+  }
+
+  .doc-prose blockquote {
+    @apply my-4 rounded-r-control border-l-4 border-line bg-bubble px-4 py-2 text-ink-muted;
+  }
+
+  .doc-prose code {
+    @apply rounded bg-bubble px-1.5 py-0.5 font-mono text-sm;
+  }
+
+  .doc-prose pre {
+    @apply my-4 overflow-x-auto rounded-control bg-bubble p-4 text-sm;
+  }
+
+  .doc-prose pre code {
+    @apply bg-transparent p-0;
+  }
+
+  .doc-prose hr {
+    @apply my-6 border-line;
+  }
+
+  .doc-prose table {
+    @apply my-4 block w-full overflow-x-auto border-collapse text-left text-sm;
+  }
+
+  .doc-prose th {
+    @apply border border-line bg-bubble px-3 py-2 font-semibold;
+  }
+
+  .doc-prose td {
+    @apply border border-line px-3 py-2;
+  }
+}
+
 /* Shown by Blazor (inline display: block) when an unhandled error occurs in the circuit. */
 #blazor-error-ui {
   display: none;

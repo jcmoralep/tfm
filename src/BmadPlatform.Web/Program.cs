@@ -4,6 +4,7 @@ using BmadPlatform.Infrastructure;
 using BmadPlatform.Infrastructure.Identity.Seeding;
 using BmadPlatform.Web.Authentication;
 using BmadPlatform.Web.Components;
+using BmadPlatform.Web.Components.Artifacts;
 using BmadPlatform.Web.Logging;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.Identity;
@@ -59,6 +60,8 @@ try
     builder.Services.AddAuthorization();
     builder.Services.AddScoped<ICurrentUser, CurrentUser>();
     builder.Services.AddScoped<CircuitHandler, CorrelationIdCircuitHandler>();
+
+    builder.Services.AddSingleton<MarkdownRenderer>();
 
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
