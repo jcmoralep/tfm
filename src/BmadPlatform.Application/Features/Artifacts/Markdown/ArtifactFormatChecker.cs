@@ -1,0 +1,238 @@
+using System.Text.RegularExpressions;
+using BmadPlatform.Domain.Artifacts;
+
+namespace BmadPlatform.Application.Features.Artifacts.Markdown;
+
+/// <summary>
+/// Reads a document and reports format warnings in Spanish: a missing required heading, a malformed or duplicated
+/// identifier, a broken assumption marker or a marker and index that do not match. It is a pure function of the
+/// text, never alters it and never blocks anything. Gaps and retired numbers are not warnings because that needs
+/// history. Identifiers are read where a definition is expected (the start of a line, optionally as a list item
+/// or in bold), so mentions inside a sentence are ignored. Fenced code is skipped.
+/// </summary>
+public static partial class ArtifactFormatChecker
+{
+    public static IReadOnlyList<FormatWarning> Check(ArtifactType type, string markdown)
+    {
+        var lines = (markdown ?? string.Empty).Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n').Split('\n');
+        var headings = ReadHeadings(lines);
+        var warnings = new List<FormatWarning>();
+
+        foreach (var section in ArtifactOutline.Sections(type))
+        {
+            if (!headings.Any(h => string.Equals(h.Title, section.Title, StringComparison.OrdinalIgnoreCase)))
+            {
+                warnings.Add(new FormatWarning(null, $"Falta la sección «{section.Title}»."));
+            }
+        }
+
+        var index = FindIndexRange(headings, lines.Length);
+        var fenced = FencedLines(lines);
+        var definitions = new Dictionary<string, int>(StringComparer.Ordinal);
+        var markers = new Dictionary<string, int>(StringComparer.Ordinal);
+        var entries = new Dictionary<string, int>(StringComparer.Ordinal);
+
+        for (var i = 0; i < lines.Length; i++)
+        {
+            var number = i + 1;
+
+            if (fenced[i] || HeadingRegex().IsMatch(lines[i]))
+            {
+                continue;
+            }
+
+            var inIndex = index is { } range && number > range.First && number <= range.Last;
+
+            if (!inIndex)
+            {
+                CheckMarkers(lines[i], number, markers, warnings);
+            }
+
+            CheckDefinition(lines[i], number, inIndex, definitions, entries, warnings);
+        }
+
+        if (index is not null)
+        {
+            warnings.AddRange(markers.Where(m => !entries.ContainsKey(m.Key))
+                .Select(m => new FormatWarning(m.Value, $"Línea {m.Value}: el supuesto {m.Key} no aparece en el Índice de suposiciones.")));
+            warnings.AddRange(entries.Where(e => !markers.ContainsKey(e.Key))
+                .Select(e => new FormatWarning(e.Value, $"Línea {e.Value}: {e.Key} está en el Índice de suposiciones pero no tiene marcador {ArtifactOutline.AssumptionMarker(e.Key)} en el texto.")));
+        }
+
+        // Document order: whole-document findings first, then by line (the sort is stable).
+        return [.. warnings.OrderBy(w => w.Line ?? 0)];
+    }
+
+    private static void CheckMarkers(string line, int number, Dictionary<string, int> markers, List<FormatWarning> warnings)
+    {
+        foreach (Match match in MarkerRegex().Matches(line))
+        {
+            var valid = ValidMarkerRegex().Match(match.Value);
+
+            if (!valid.Success)
+            {
+                warnings.Add(new FormatWarning(number, $"Línea {number}: el marcador [ASSUMPTION] no indica un identificador A-n válido."));
+                continue;
+            }
+
+            var id = "A-" + valid.Groups["n"].Value;
+
+            if (valid.Groups["n"].Value == "0")
+            {
+                warnings.Add(new FormatWarning(number, $"Línea {number}: «{id}» no es válido: la numeración empieza en 1."));
+            }
+            else if (markers.TryGetValue(id, out var first))
+            {
+                warnings.Add(new FormatWarning(number, $"Línea {number}: {id} ya está definido en la línea {first}."));
+            }
+            else
+            {
+                markers[id] = number;
+            }
+        }
+    }
+
+    private static void CheckDefinition(
+        string line,
+        int number,
+        bool inIndex,
+        Dictionary<string, int> definitions,
+        Dictionary<string, int> entries,
+        List<FormatWarning> warnings)
+    {
+        var match = DefinitionRegex().Match(line);
+
+        if (!match.Success)
+        {
+            return;
+        }
+
+        var token = match.Groups["tok"].Value;
+        var prefix = match.Groups["p"].Value.ToUpperInvariant();
+        var rest = match.Groups["rest"].Value;
+
+        if (!ItemPrefix.All.Contains(prefix, StringComparer.Ordinal))
+        {
+            return;
+        }
+
+        var exact = match.Groups["p"].Value == prefix;
+        var hasDigit = rest.Any(char.IsDigit);
+
+        // Lowercase prefixes only count when a number follows, so ordinary words are never flagged. A single-letter
+        // prefix followed by a longer word ("A-priori") is prose, not an identifier.
+        if ((!exact && !hasDigit) || (prefix.Length == 1 && !hasDigit && rest.Count(char.IsLetter) > 1))
+        {
+            return;
+        }
+
+        var valid = ValidIdRegex().Match(token);
+
+        if (!valid.Success)
+        {
+            warnings.Add(new FormatWarning(number, $"Línea {number}: «{token}» no sigue el formato {prefix}-n."));
+
+            return;
+        }
+
+        if (valid.Groups["n"].Value == "0")
+        {
+            warnings.Add(new FormatWarning(number, $"Línea {number}: «{token}» no es válido: la numeración empieza en 1."));
+
+            return;
+        }
+
+        // Assumptions are defined by their inline marker; the index lines are references kept apart.
+        if (prefix == ItemPrefix.Assumption && !inIndex)
+        {
+            return;
+        }
+
+        var target = prefix == ItemPrefix.Assumption ? entries : definitions;
+
+        if (target.TryGetValue(token, out var first))
+        {
+            warnings.Add(new FormatWarning(number, $"Línea {number}: {token} ya está definido en la línea {first}."));
+        }
+        else
+        {
+            target[token] = number;
+        }
+    }
+
+    private static List<(int Line, int Level, string Title)> ReadHeadings(string[] lines)
+    {
+        var fenced = FencedLines(lines);
+        var headings = new List<(int, int, string)>();
+
+        for (var i = 0; i < lines.Length; i++)
+        {
+            var match = HeadingRegex().Match(lines[i]);
+
+            if (fenced[i] || !match.Success)
+            {
+                continue;
+            }
+
+            var title = NumberPrefixRegex().Replace(match.Groups["title"].Value.Trim().TrimEnd('#').Trim(), string.Empty);
+            headings.Add((i + 1, match.Groups["hashes"].Length, title));
+        }
+
+        return headings;
+    }
+
+    // The assumption index runs from its heading to the next heading of the same or a higher level.
+    private static (int First, int Last)? FindIndexRange(List<(int Line, int Level, string Title)> headings, int lineCount)
+    {
+        var position = headings.FindIndex(h => string.Equals(h.Title, ArtifactOutline.AssumptionIndexTitle, StringComparison.OrdinalIgnoreCase));
+
+        if (position < 0)
+        {
+            return null;
+        }
+
+        var start = headings[position];
+        var next = headings.Skip(position + 1).FirstOrDefault(h => h.Level <= start.Level);
+
+        return (start.Line, next == default ? lineCount : next.Line - 1);
+    }
+
+    private static bool[] FencedLines(string[] lines)
+    {
+        var fenced = new bool[lines.Length];
+        var open = false;
+
+        for (var i = 0; i < lines.Length; i++)
+        {
+            if (lines[i].TrimStart().StartsWith("```", StringComparison.Ordinal))
+            {
+                fenced[i] = true;
+                open = !open;
+            }
+            else
+            {
+                fenced[i] = open;
+            }
+        }
+
+        return fenced;
+    }
+
+    [GeneratedRegex(@"^\s{0,3}(?<hashes>#{1,6})\s+(?<title>.*)$")]
+    private static partial Regex HeadingRegex();
+
+    [GeneratedRegex(@"^\d+(\.\d+)*\.?\s+")]
+    private static partial Regex NumberPrefixRegex();
+
+    [GeneratedRegex(@"^\s*(?:[-*+]\s+)?(?:\*\*)?(?<tok>(?<p>[A-Za-z]{1,3})(?<rest>\s?-\s?[A-Za-z0-9]*|[0-9]+))(?=\*\*|\s|:|\.|\)|$)")]
+    private static partial Regex DefinitionRegex();
+
+    [GeneratedRegex(@"^(?<p>NFR|FR|UJ|SM|A|Q)-(?<n>0|[1-9][0-9]*)$")]
+    private static partial Regex ValidIdRegex();
+
+    [GeneratedRegex(@"\[ASSUMPTION[^\]]*\]?")]
+    private static partial Regex MarkerRegex();
+
+    [GeneratedRegex(@"^\[ASSUMPTION: A-(?<n>0|[1-9][0-9]*)\]$")]
+    private static partial Regex ValidMarkerRegex();
+}
