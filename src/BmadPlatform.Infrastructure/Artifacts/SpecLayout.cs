@@ -12,7 +12,7 @@ internal static class SpecLayout
 
         c.Heading("Por qué");
         c.Items(AssistantScript.Keys.Idea, label: "La idea");
-        c.Items(AssistantScript.Keys.Users, label: "Quién lo usará");
+        c.JoinedItem(AssistantScript.Keys.Users, "Quién lo usará");
         c.Items(AssistantScript.Keys.Problem, label: "El problema");
 
         c.Heading("Capacidades");

@@ -124,8 +124,8 @@ Numbering MUST follow RF-44 with a hyphen and a number for every element, number
 
 Mapping of answers to sections (the sections not listed take an assumption):
 - Brief: idea feeds Resumen ejecutivo and La solución; problem feeds El problema; users feeds A quién sirve; success feeds Criterios de éxito (`SM-n`); out of scope feeds Alcance (outside); Qué lo hace distinto, Visión and the inside of Alcance carry `[ASSUMPTION: A-n]`.
-- PRD: idea and initiative name feed Propósito and Visión; users and problem feed Trabajos por hacer; the users answer also yields one journey `UJ-n` per person or group named, always tagged `[ASSUMPTION: A-n]` ("recorrido por confirmar") because the script does not ask for a real journey (decision D1; a journey question is for step 5); capabilities feed Funcionalidades (`FR-n`) and Alcance dentro (annotated with the priorities answer when present); constraints and qualities feed `NFR-n` items under a "Requisitos no funcionales" feature of Funcionalidades; integrations and teams (Large) feed `FR-n` items under an "Integraciones" feature; out of scope feeds No objetivos and Alcance fuera; success feeds Métricas (`SM-n`). Glosario and No usuarios carry `[ASSUMPTION: A-n]` when nothing feeds them.
-- Spec: idea, users and problem feed Por qué; capabilities feed Capacidades (`FR-n`); out of scope feeds No objetivos (at least one item); success feeds Señal de éxito (`SM-n`); Restricciones carries `[ASSUMPTION: A-n]` because Small asks no constraints topic.
+- PRD: idea and initiative name feed Propósito and Visión; users and problem feed Trabajos por hacer; the users answer also yields one journey `UJ-n` per person or group named, the whole Recorridos clave section carries one shared `[ASSUMPTION: A-n]` (journeys to confirm) because the script does not ask for a real journey (decision D1; a journey question is for step 5); capabilities feed Funcionalidades (`FR-n`) and Alcance dentro (the line "Todas las funcionalidades de la sección 4.", annotated with the priorities answer when present); constraints and qualities feed `NFR-n` items under a "Requisitos no funcionales" feature of Funcionalidades; integrations and teams (Large) feed `FR-n` items under an "Integraciones" feature, each phrased as a requirement ("Debe integrarse con <sistema o equipo>"); out of scope feeds No objetivos and Alcance fuera; success feeds Métricas (`SM-n`). Glosario and No usuarios carry `[ASSUMPTION: A-n]` when nothing feeds them.
+- Spec: idea, users and problem feed Por qué (the users go in one bullet, "Quién lo usará", joined by semicolons); capabilities feed Capacidades (`FR-n`); out of scope feeds No objetivos (at least one item); success feeds Señal de éxito (`SM-n`); Restricciones carries `[ASSUMPTION: A-n]` because Small asks no constraints topic.
 
 Every section with no feeding answer MUST carry at least one `[ASSUMPTION: A-n]` marker instead of being left empty. The Índice de suposiciones MUST list every `A-n` of the document with its text, and Preguntas pendientes / Preguntas abiertas MUST list every `Q-n`.
 
@@ -487,17 +487,17 @@ The system MUST derive format warnings by reading the Markdown on every read and
 
 ### Requirement: Rendered view and edit mode (RF-55)
 
-The document page MUST show a read view in which the Markdown is presented as a document, and an edit mode with a text area holding the Markdown. The Markdown to HTML conversion MUST use a Markdown library with raw HTML disabled so that embedded HTML tags (script, iframe, on-event attributes, raw tags) are not interpreted; dangerous link schemes (such as `javascript:`) MUST NOT become active links. Switching between view and edit MUST NOT lose unsaved text on a failed save. Both modes MUST show type, version, status and approval state.
+The document page MUST show a read view in which the Markdown is presented as a document, and an edit mode with a text area holding the Markdown. The Markdown to HTML conversion MUST use a Markdown library with raw HTML disabled so that embedded HTML tags (script, iframe, on-event attributes, raw tags) are not interpreted; dangerous link schemes (such as `javascript:`) MUST NOT become active links: a link or image with a disallowed address MUST render as plain text (the link text or the image alt), never as an anchor. Headings in the document MUST be demoted one level (`#` renders as h2, capped at h6) because the page already has an h1. Switching between view and edit MUST NOT lose unsaved text on a failed save. Both modes MUST show type, version, status and approval state.
 
 #### Scenario: HTML is not interpreted [UNIT]
 - GIVEN Markdown containing `<script>alert(1)</script>`, `<img src=x onerror=alert(1)>` and `[x](javascript:alert(1))`
 - WHEN it is rendered
-- THEN the output contains no script element, no img element with an event attribute and no javascript link
+- THEN the output contains no script element, no img element with an event attribute, no anchor and no javascript link (the link text stays as plain text)
 
 #### Scenario: Markdown is presented [UNIT]
 - GIVEN Markdown with headings, lists and a table
 - WHEN it is rendered
-- THEN the output contains the corresponding heading, list and table elements
+- THEN the output contains the corresponding heading (one level lower, so no h1), list and table elements
 
 #### Scenario: Read view and edit mode [UI]
 - GIVEN a document
@@ -638,7 +638,8 @@ All text MUST be Spanish and plain. Success notices (generated, saved, approved,
 - The content cap (20000 characters) is measured after trimming and line-ending normalization; generated content is shortened (answers quoted with an ellipsis) when needed to stay under it.
 - Answers are split into one item per non-empty line; list markers are removed; items keep the user's words.
 - The Spec uses `FR-n` for Capacidades (platform scheme RF-44) instead of BMAD's `CAP-n`. BMAD's PRD defines no identifier for non-functional requirements and its epics step reads `FR1:` and `NFR1:` without a hyphen; the platform keeps the hyphenated RF-44 scheme for all of them, and the step 8 exporter (or the step 6 epics generator) maps `FR-n`, `NFR-n` and `CAP-n` to what BMAD expects.
-- Integrations and teams (Large) become `FR-n` items under an "Integraciones" feature in the PRD.
+- Integrations and teams (Large) become `FR-n` items under an "Integraciones" feature in the PRD, each phrased as "Debe integrarse con ..." so BMAD's epics step reads a requirement and not a bare system name.
+- Decision D1 refinement: the Recorridos clave section carries one shared assumption for all its `UJ-n` journeys (they are placeholders to confirm), so the assumption index is not inflated with one entry per journey.
 - A document edited in Clarifying or Planning that is made stale by later conversation answers is not regenerated automatically; the user may regenerate.
 - Format-warning wording, detection list and the Spanish rejection messages are proposals; design may adjust wording but not semantics.
 - The `tipo` route segment slugs are a design choice.

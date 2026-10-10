@@ -22,21 +22,29 @@ public sealed class MarkdownRenderer
     {
         var document = Markdown.Parse(markdown ?? string.Empty, pipeline);
 
-        foreach (var link in document.Descendants<LinkInline>())
+        // The page already has an h1, so the document headings start at h2.
+        foreach (var heading in document.Descendants<HeadingBlock>())
         {
-            if (!IsAllowed(link.Url))
+            heading.Level = Math.Min(heading.Level + 1, 6);
+        }
+
+        // A link or image with a blocked address becomes plain text (the link text or the image alt), because an
+        // anchor with an empty href would navigate to the current page.
+        foreach (var link in document.Descendants<LinkInline>().Where(l => !IsAllowed(l.Url)).ToList())
+        {
+            foreach (var child in link.ToList())
             {
-                link.Url = string.Empty;
+                child.Remove();
+                link.InsertBefore(child);
             }
+
+            link.Remove();
         }
 
         // <scheme:address> autolinks are a separate node type and are not limited to http by the parser.
-        foreach (var autolink in document.Descendants<AutolinkInline>())
+        foreach (var autolink in document.Descendants<AutolinkInline>().Where(a => !IsAllowed(a.Url)).ToList())
         {
-            if (!IsAllowed(autolink.Url))
-            {
-                autolink.Url = string.Empty;
-            }
+            autolink.ReplaceBy(new LiteralInline(autolink.Url));
         }
 
         return new MarkupString(document.ToHtml(pipeline));

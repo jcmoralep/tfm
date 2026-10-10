@@ -59,7 +59,8 @@ internal static class PrdLayout
             c.Raw("### Integraciones");
             c.Line("Sistemas y equipos con los que debe coordinarse la solución.");
             c.Blank();
-            c.Items(AssistantScript.Keys.Integrations, c.Numbered(ItemPrefix.FunctionalRequirement));
+            // A bare system name would read as a requirement title in BMAD's epics step, so each item is a sentence.
+            c.Items(AssistantScript.Keys.Integrations, line => ArtifactOutline.Item(c.Next(ItemPrefix.FunctionalRequirement), "Debe integrarse con " + line));
         }
 
         c.Heading("No objetivos");
@@ -84,8 +85,8 @@ internal static class PrdLayout
         c.AssumptionIndex();
     }
 
-    // One journey per line of the users answer. The script never asks for a real journey, so each one stays an
-    // assumption to confirm (decision D1).
+    // One journey per line of the users answer. The script never asks for a real journey, so the whole section carries
+    // one shared assumption to confirm (decision D1), not one per journey.
     private static void WriteJourneys(DraftComposer c)
     {
         var users = c.Answer(AssistantScript.Keys.Users);
@@ -98,10 +99,11 @@ internal static class PrdLayout
             for (var position = 1; position <= count; position++)
             {
                 var id = c.Next(ItemPrefix.UserJourney);
-                var assumption = c.Assumption($"El recorrido {id} está por confirmar con las personas usuarias.");
 
-                c.Line(ArtifactOutline.Item(id, $"Recorrido de la persona o grupo n.º {position} del usuario objetivo (sección 2) para cumplir los trabajos por hacer. {assumption}"));
+                c.Line(ArtifactOutline.Item(id, $"Recorrido de la persona o grupo n.º {position} del usuario objetivo (sección 2) para cumplir los trabajos por hacer."));
             }
+
+            c.Line("- " + c.Assumption("Los recorridos de esta sección son un punto de partida; se confirman con las personas usuarias."));
 
             return;
         }
@@ -140,9 +142,7 @@ internal static class PrdLayout
 
         if (requirements > 0)
         {
-            c.Line(requirements == 1
-                ? "- Funcionalidad FR-1 (sección 4)."
-                : $"- Funcionalidades FR-1 a FR-{requirements} (sección 4).");
+            c.Line("- Todas las funcionalidades de la sección 4.");
         }
         else if (capabilities is { IsUnknown: true })
         {

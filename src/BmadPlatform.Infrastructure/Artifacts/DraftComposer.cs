@@ -141,6 +141,22 @@ internal sealed partial class DraftComposer
         }
     }
 
+    /// <summary>
+    /// One list item with every line of the answer joined by semicolons under a single bold label. Unknown and
+    /// missing answers behave as in <see cref="Items"/>.
+    /// </summary>
+    public void JoinedItem(string key, string label)
+    {
+        if (Answer(key) is { IsUnknown: false } answer)
+        {
+            Line($"- **{label}**: {string.Join("; ", Lines(answer.Text))}");
+
+            return;
+        }
+
+        Items(key, label: label);
+    }
+
     /// <summary>A list item with a functional requirement, a metric or another identifier of the prefix.</summary>
     public Func<string, string> Numbered(string prefix) => line => ArtifactOutline.Item(numberer.Next(prefix), line);
 

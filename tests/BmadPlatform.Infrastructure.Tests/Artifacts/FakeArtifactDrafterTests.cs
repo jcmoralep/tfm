@@ -198,9 +198,9 @@ public sealed partial class FakeArtifactDrafterTests
 
         var prd = await Draft(Request(ArtifactType.Prd, InitiativeDepth.Large, Answers(InitiativeDepth.Large, texts)));
 
-        Assert.Equal(["- **FR-1**: Buscar un pedido", "- **FR-2**: Sistema de inventario", "- **FR-3**: Equipo de logística"], Definitions(prd, "FR"));
+        Assert.Equal(["- **FR-1**: Buscar un pedido", "- **FR-2**: Debe integrarse con Sistema de inventario", "- **FR-3**: Debe integrarse con Equipo de logística"], Definitions(prd, "FR"));
         Assert.Contains("### Integraciones", prd, StringComparison.Ordinal);
-        Assert.Contains("FR-1 a FR-3 (sección 4)", Section(prd, "6.1 Dentro"), StringComparison.Ordinal);
+        Assert.Contains("Todas las funcionalidades de la sección 4.", Section(prd, "6.1 Dentro"), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -233,10 +233,24 @@ public sealed partial class FakeArtifactDrafterTests
 
         var journeys = Definitions(prd, "UJ").ToList();
         Assert.Equal(2, journeys.Count);
-        Assert.All(journeys, j => Assert.Matches(MarkerRegex(), j));
+        Assert.All(journeys, j => Assert.DoesNotMatch(MarkerRegex(), j));
+        var shared = Assert.Single(MarkerRegex().Matches(Section(prd, "2.3 Recorridos clave")));
+        Assert.Single(Definitions(prd, "A"), a => a.Contains("Los recorridos de esta sección", StringComparison.Ordinal));
+        Assert.NotNull(shared);
         Assert.Contains("n.º 2", journeys[1], StringComparison.Ordinal);
         Assert.Equal(1, Regex.Count(prd, "Personal de bodega"));
-        Assert.Contains("está por confirmar", Section(prd, "Índice de suposiciones"), StringComparison.Ordinal);
+        Assert.Contains("Los recorridos de esta sección", Section(prd, "Índice de suposiciones"), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task The_spec_lists_the_users_in_one_labelled_bullet()
+    {
+        var texts = new Dictionary<string, string> { [AssistantScript.Keys.Users] = "Vendedoras\nPersonal de bodega" };
+
+        var spec = await Draft(Request(ArtifactType.Spec, InitiativeDepth.Small, Answers(InitiativeDepth.Small, texts)));
+
+        Assert.Contains("- **Quién lo usará**: Vendedoras; Personal de bodega", spec, StringComparison.Ordinal);
+        Assert.Equal(1, Regex.Count(spec, "Quién lo usará"));
     }
 
     [Fact]

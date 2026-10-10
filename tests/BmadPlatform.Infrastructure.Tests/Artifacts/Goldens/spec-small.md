@@ -3,8 +3,7 @@
 ## Por qué
 
 - **La idea**: Que el equipo de ventas consulte el estado de un pedido sin llamar a bodega.
-- **Quién lo usará**: Las vendedoras de las tiendas
-- **Quién lo usará**: El personal de bodega
+- **Quién lo usará**: Las vendedoras de las tiendas; El personal de bodega
 - **El problema**: Hoy cada consulta toma diez minutos por teléfono y los clientes se quejan de la demora.
 
 ## Capacidades

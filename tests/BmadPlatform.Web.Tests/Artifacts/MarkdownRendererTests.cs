@@ -30,11 +30,14 @@ public sealed class MarkdownRendererTests
     [InlineData("![x](javascript:alert(1))")]
     [InlineData("[x][r]\n\n[r]: javascript:alert(1)")]
     [InlineData("<javascript:alert(1)>")]
-    public void Dangerous_addresses_are_emptied(string markdown)
+    public void Dangerous_addresses_become_plain_text(string markdown)
     {
         var html = Html(markdown);
 
-        Assert.DoesNotMatch("(?i)(href|src)=\"[^\"]*(javascript|data|vbscript)[^\"]*:", html);
+        Assert.DoesNotContain("<a", html);
+        Assert.DoesNotContain("<img", html);
+        Assert.DoesNotContain("href=", html);
+        Assert.DoesNotContain("src=", html);
     }
 
     [Theory]
@@ -50,11 +53,32 @@ public sealed class MarkdownRendererTests
     }
 
     [Fact]
+    public void Blocked_link_keeps_its_text_and_blocked_image_keeps_its_alt()
+    {
+        var html = Html("[ver aqui](javascript:alert(1)) y ![logo](javascript:alert(1))");
+
+        Assert.Contains("ver aqui", html);
+        Assert.Contains("logo", html);
+    }
+
+    [Theory]
+    [InlineData("# T", "<h2")]
+    [InlineData("## T", "<h3")]
+    [InlineData("###### T", "<h6")]
+    public void Headings_are_demoted_one_level_and_capped_at_h6(string markdown, string expected)
+    {
+        var html = Html(markdown);
+
+        Assert.Contains(expected, html);
+        Assert.DoesNotContain("<h1", html);
+    }
+
+    [Fact]
     public void Markdown_is_presented_as_a_document()
     {
         var html = Html("# Titulo\n\n- uno\n- dos\n\n| a | b |\n|---|---|\n| 1 | 2 |\n");
 
-        Assert.Contains("<h1", html);
+        Assert.Contains("<h2", html);
         Assert.Contains("<ul>", html);
         Assert.Contains("<li>", html);
         Assert.Contains("<table>", html);

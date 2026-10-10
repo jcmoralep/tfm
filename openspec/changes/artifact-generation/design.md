@@ -18,7 +18,7 @@ The guiding invariant is RN-06: **an initiative is Ready to build only while eve
 | 6 | Format index (RF-43, RF-56) | Persist an items table now / derive warnings on read | **Derived on read, nothing stored.** `ArtifactFormatChecker` is a pure function of the Markdown; the items table, owners and statuses are a later change |
 | 7 | Generated length | Truncate the finished document / bound each inserted answer | **The drafter contract requires output of at most `Artifact.ContentMaxLength` (20,000).** The fake clips each inserted answer to 1,500 characters with "…"; a test with every answer at 2,000 characters proves the bound. The domain rejects anything longer anyway |
 | 8 | Identical save | Bump the version anyway / no-op | **No-op**: content equal after line-ending normalization changes nothing (no version, no reopen) |
-| 9 | Rendering | Markdig in Application / in Web | **Web only** (`MarkdownRenderer`), raw HTML disabled, link and image URLs restricted to `http`, `https`, `mailto` and relative; others are emptied |
+| 9 | Rendering | Markdig in Application / in Web | **Web only** (`MarkdownRenderer`), raw HTML disabled, link and image URLs restricted to `http`, `https`, `mailto` and relative; others render as plain text (link text or image alt); headings are demoted one level (the page owns the h1) |
 | 10 | Document styles | Tailwind typography plugin: availability in the standalone CLI not verified / scoped CSS | **`.doc-prose` rules in the Tailwind input CSS** with `@apply` and the theme tokens |
 | 11 | Spec item ids | BMAD `CAP-n` / RF-44 `FR-n` | **`FR-n`**: RF-44 has no `CAP` prefix and one checker serves every type |
 | 12 | Generic text helpers | Artifacts reads `AssistantScript` topics / the answers DTO carries what is needed | **The DTO carries `TopicKey`, `Question` and `Text`.** Artifacts references only the public `AssistantScript.Keys` constants |
@@ -78,13 +78,13 @@ No ids, owner or e-mail. `FakeArtifactDrafter` (`Infrastructure/Artifacts`) is p
 |---|---|---|---|
 | idea (+ description) | Resumen ejecutivo, La solución | 0 Propósito, 1 Visión | Por qué |
 | problem | El problema | 0 Propósito, 2.1 Trabajos por hacer | Por qué |
-| users | A quién sirve | 2 Usuario objetivo, `UJ-n` (always tagged `[ASSUMPTION: A-n]` "recorrido por confirmar"; a real journey question is for step 5) | Por qué |
+| users | A quién sirve | 2 Usuario objetivo, `UJ-n` (one shared `[ASSUMPTION: A-n]` for the whole 2.3 section; a real journey question is for step 5); 6.1 says "Todas las funcionalidades de la sección 4." | Por qué |
 | capabilities | — | 4 `FR-n`, 6.1 Dentro | Capacidades `FR-n` |
 | constraints, qualities | — | 4 `NFR-n` (feature "Requisitos no funcionales") | — (Restricciones takes an assumption) |
 | success | Criterios de éxito `SM-n` | 7 `SM-n` | Señal de éxito `SM-n` |
 | out-of-scope | Alcance (fuera) | 5 No objetivos, 6.2 Fuera | No objetivos |
 | priorities | — | 6.1 Dentro (annotates the capabilities) | — |
-| integrations, teams (Large) | — | 4 `FR-n` (feature "Integraciones") | — |
+| integrations, teams (Large) | — | 4 `FR-n` (feature "Integraciones", each "Debe integrarse con ...") | — |
 | "No sé" (any topic) | Preguntas pendientes `Q-n` with the question | 8 Preguntas abiertas `Q-n` | Preguntas abiertas `Q-n` |
 | empty section | `[ASSUMPTION: A-n]` plus the Índice de suposiciones | same | same |
 
@@ -166,7 +166,7 @@ Generate: GetConversationAnswersQuery -> Catalog.Availability -> IArtifactDrafte
 | Application | Catalog per level, availability matrix; the numberer; checker cases (each warning, a clean document gives none, text never changes); answers query (flags per level, undone answers ignored, "No sé" flagged); handlers (owner isolation, stale version gives a conflict, Generate twice, set completion for Small and Standard, never for Large, reopen-first order, failure injection gives `CompletionPending` and retry, regenerate renumbers) | Hand-written doubles with detached copies |
 | Infrastructure | Fake drafter: goldens for Spec, Brief, PRD Standard and PRD Large (byte-exact, `\n`; `UPDATE_GOLDENS=1` rewrites them), zero checker warnings on every output, at most 20,000 with maximum answers, determinism, `#` escaping; model tests | Goldens in the test project |
 | Architecture | Three-module boundary, including the token sample tests for `Artifact` | Source scan |
-| Web | `ArtifactLabels`; `MarkdownRenderer` (`<script>` and `<img onerror>` stay text, `javascript:` links emptied, headings and lists render) | Pure C#; Chrome walkthrough per AGENTS 5.4 |
+| Web | `ArtifactLabels`; `MarkdownRenderer` (`<script>` and `<img onerror>` stay text, `javascript:` links become plain text, headings demoted one level, lists render) | Pure C#; Chrome walkthrough per AGENTS 5.4 |
 
 ## Threat Matrix
 

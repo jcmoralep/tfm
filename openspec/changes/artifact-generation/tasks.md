@@ -103,8 +103,8 @@ Estimated lines per group:
 - [x] 6.8 Document page flows: Generar with the typing-dot indicator "Generando el documento…", Regenerar panel ("Se reemplazará todo el contenido, incluidos sus cambios manuales.") sending `Confirmed`, Aprobar panel listing warnings and stating when approval makes the initiative Ready to build, green success notices, `busy` flag disabling controls, `catch … when (UserMessages.TryGet)` with a conflict reload, "Reintentar" when `CompletionPending`. Test: ART "Generar then open", "Approval confirmation lists warnings", "Success is green", "Loading and double submit" via Chrome [UI].
 - [x] 6.9 `ChatPanel.razor` and `AssistantLabels`: call to action "Ir a los documentos" (link to `/iniciativas/{id}#section-artifacts`) when `Journey.NextTopic` is Closing, a Brief link as soon as the Aclarar flag is true on Standard, and "Ver documentos" when read-only; it generates nothing and does not change the quick replies. Test: ASI "Link after Aclarar on Standard", "Link at the closing", "No link before the documents are available", "Read-only conversation links to the documents" via Chrome [UI].
 - [x] 6.10 `README.md`: add the Artefactos section (what is generated per level, Draft/Approved, edit and regenerate rules, Large cannot finish until step 6, Markdown only, no export yet) and keep the demo-data notice (AGENTS 4.8) next to it, noting that the output is a deterministic fake until Gemini in step 5.
-- [ ] 6.11 BMAD conformance check (standing user rule): compare the goldens and a live generated Spec, Brief and PRD against `docs/bmad-referencia.md` and `docs/hallazgos-simulaciones-bmad.md` (headings, order, identifier scheme, assumption index). Record deviations in the README or the follow-ups below; the known ones are `FR-n` instead of `CAP-n` and hyphenated `NFR-n` (ART Assumptions). Fix golden and drafter if a real gap appears.
-- [ ] 6.12 Final gate: `dotnet build` with zero warnings, `dotnet test` (all projects), then the Chrome checklist.
+- [x] 6.11 BMAD conformance check (standing user rule): compare the goldens and a live generated Spec, Brief and PRD against `docs/bmad-referencia.md` and `docs/hallazgos-simulaciones-bmad.md` (headings, order, identifier scheme, assumption index). Record deviations in the README or the follow-ups below; the known ones are `FR-n` instead of `CAP-n` and hyphenated `NFR-n` (ART Assumptions). Fix golden and drafter if a real gap appears. Done: conformance PASS with notes; batch C6c fixed the real gaps (integrations as requirement sentences, one shared journeys assumption, 6.1 without a computed FR range, one users bullet in the Spec, headings demoted, blocked links as plain text).
+- [x] 6.12 Final gate: `dotnet build` with zero warnings, `dotnet test` (all projects), then the Chrome checklist. Done: Chrome walkthrough for Small, Standard and Large; generate, edit, regenerate, approve and reopen all worked, HTML escaped and `javascript:` links neutralised, Escape closes the panel and returns focus, green notices, loading dots, unauthenticated redirect, unknown slug not found, no errors in `Logs/`. NOT observed: the Reintentar path (CompletionPending), two-tab conflicts in the browser, the `#section-artifacts` anchor scroll, a foreign user in the browser (unit-tested).
 
 ## Manual Chrome checklist (artifact flow)
 
@@ -135,7 +135,11 @@ Setup: `docker compose` MySQL 8.4 with temporary credentials, apply migrations, 
 - Design file names use `Command.cs`/`Handler.cs`; implementation follows the existing `XCommand.cs` convention.
 - When archiving, apply the "Non-requirement sections to update when archiving" lists of the `initiatives` and `assistant-conversation` deltas.
 - Step 5 replaces the fake drafter: goldens will change, and a real journey question can replace the tagged `UJ-n` assumptions (D1).
-- `NFR-n`/`FR-n`/`CAP-n` mapping to BMAD belongs to the step 6 epics generator or the step 8 exporter.
+- `NFR-n`/`FR-n`/`CAP-n` mapping to BMAD belongs to the step 6 epics generator or the step 8 exporter. Implement it in one place, with a test, mapping to BMAD's `FR1:`/`NFR1:`.
+- Owner, blocking phase and state for each `Q-n` (the RF-43 items table) are not generated yet.
+- Decide the Brief vs PRD overlap (both repeat the idea, users and problem).
+- Frontmatter and the usage note belong to the step 8 export.
+- A real journey question for step 5 can replace the shared journeys assumption (D1).
 
 ## Key Learnings
 
