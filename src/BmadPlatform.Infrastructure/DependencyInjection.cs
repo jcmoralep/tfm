@@ -53,6 +53,7 @@ public static class DependencyInjection
 
         services.AddScoped<IInitiativeRepository, InitiativeRepository>();
         services.AddScoped<IConversationRepository, ConversationRepository>();
+        services.AddScoped<IArtifactRepository, ArtifactRepository>();
 
         // Deterministic stand-in until the Gemini implementation arrives (PROPUESTA-MVP step 5).
         // The short pause lets people see the "typing" indicator; the real model will take longer.
