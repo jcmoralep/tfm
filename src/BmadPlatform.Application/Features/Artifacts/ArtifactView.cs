@@ -1,0 +1,41 @@
+using BmadPlatform.Application.Features.Artifacts.Markdown;
+using BmadPlatform.Domain.Artifacts;
+using BmadPlatform.Domain.Initiatives;
+
+namespace BmadPlatform.Application.Features.Artifacts;
+
+/// <summary>
+/// One document as the page needs it. A document that was not generated is a normal result: <see cref="Generated"/>
+/// is false, there is no content and the flags say whether it can be generated. <see cref="Version"/> is zero then.
+/// The <c>Can*</c> flags are the single source of what the owner may do; the handlers enforce the same rules.
+/// </summary>
+/// <param name="ApprovalCompletesSet">Approving this draft would make the initiative Ready to build.</param>
+/// <param name="CompletionPending">
+/// The required set is approved but the initiative is still Planning (a failed transition); resending the approval
+/// completes it.
+/// </param>
+public sealed record ArtifactView(
+    Guid InitiativeId,
+    string InitiativeName,
+    InitiativeStatus InitiativeStatus,
+    InitiativeDepth? Depth,
+    ArtifactType Type,
+    bool Generated,
+    ArtifactAvailability Availability,
+    int Version,
+    ArtifactStatus? Status,
+    string Content,
+    DateTimeOffset? UpdatedAt,
+    DateTimeOffset? ApprovedAt,
+    IReadOnlyList<FormatWarning> Warnings,
+    bool CanGenerate,
+    bool CanEdit,
+    bool CanRegenerate,
+    bool CanApprove,
+    bool ApprovalCompletesSet,
+    bool CompletionPending)
+{
+    // The synthesized ToString would print the document, which can contain initiative information.
+    public override string ToString() =>
+        $"{nameof(ArtifactView)} {{ InitiativeId = {InitiativeId}, Type = {Type}, Version = {Version}, Status = {Status}, Content = [redacted] }}";
+}

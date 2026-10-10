@@ -19,4 +19,16 @@ public static class ArtifactTexts
     public const string DraftInitiative = "Termine de crear la iniciativa para generar documentos.";
 
     public const string TopicsUncovered = "Aún no se puede generar este documento: termine primero las preguntas del asistente.";
+
+    public const string ComingLater = "Disponible en un paso posterior.";
+
+    /// <summary>The plain reason a document cannot be generated now; null when it can.</summary>
+    public static string? ReasonFor(ArtifactAvailability availability) => availability switch
+    {
+        ArtifactAvailability.Available => null,
+        ArtifactAvailability.InitiativeDraft => DraftInitiative,
+        ArtifactAvailability.LevelNotSet or ArtifactAvailability.NotRequired => NotForLevel,
+        ArtifactAvailability.NotYetSupported => ComingLater,
+        _ => TopicsUncovered,
+    };
 }

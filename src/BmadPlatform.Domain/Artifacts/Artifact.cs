@@ -11,6 +11,10 @@ public sealed class Artifact
 {
     public const int ContentMaxLength = 20_000;
 
+    public const string EmptyContentMessage = "El documento no puede estar vacío.";
+
+    public const string TooLongMessage = "El documento no puede superar los 20000 caracteres.";
+
     // Required by EF Core to materialize the entity.
     private Artifact()
     {
@@ -96,22 +100,26 @@ public sealed class Artifact
         UpdatedAt = now;
     }
 
-    /// <summary>Unifies line endings and trims surrounding whitespace, then enforces the content rules.</summary>
-    public static string NormalizeContent(string? content)
-    {
-        var normalized = (content ?? string.Empty)
+    /// <summary>Unifies line endings and trims surrounding whitespace. The content rules are not applied.</summary>
+    public static string Normalize(string? content) =>
+        (content ?? string.Empty)
             .Replace("\r\n", "\n", StringComparison.Ordinal)
             .Replace('\r', '\n')
             .Trim();
 
+    /// <summary>Normalizes, then enforces the content rules.</summary>
+    public static string NormalizeContent(string? content)
+    {
+        var normalized = Normalize(content);
+
         if (normalized.Length == 0)
         {
-            throw new DomainException("El documento no puede estar vacío.");
+            throw new DomainException(EmptyContentMessage);
         }
 
         if (normalized.Length > ContentMaxLength)
         {
-            throw new DomainException($"El documento no puede superar los {ContentMaxLength} caracteres.");
+            throw new DomainException(TooLongMessage);
         }
 
         return normalized;
