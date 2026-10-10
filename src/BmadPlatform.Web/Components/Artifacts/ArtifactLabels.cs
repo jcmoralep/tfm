@@ -1,5 +1,6 @@
 using BmadPlatform.Application.Features.Artifacts;
 using BmadPlatform.Domain.Artifacts;
+using BmadPlatform.Domain.Initiatives;
 
 namespace BmadPlatform.Web.Components.Artifacts;
 
@@ -65,7 +66,31 @@ public static class ArtifactLabels
 
     public const string ApprovedReady = "Documento aprobado. La iniciativa está Lista para construir.";
 
+    public const string Regenerating = "Regenerando el documento…";
+
+    public const string Saving = "Guardando los cambios…";
+
+    public const string Approving = "Aprobando el documento…";
+
+    public const string Regenerated = "Documento regenerado.";
+
+    public const string EditorLabel = "Contenido en Markdown";
+
+    /// <summary>The limit as shown in the counter; the thousands separator is written literally to stay culture independent.</summary>
+    public const string ContentLimitText = "20.000";
+
     public static string Saved(int version) => $"Cambios guardados. Versión {version}.";
+
+    public static string EditCounter(int length) => $"{length} / {ContentLimitText}";
+
+    /// <summary>What saving an edit of an approved document will undo; null for a draft, where nothing changes state.</summary>
+    public static string? EditHint(ArtifactStatus? status, InitiativeStatus initiativeStatus) => status switch
+    {
+        ArtifactStatus.Approved when initiativeStatus == InitiativeStatus.ReadyToBuild =>
+            "Al guardar, el documento vuelve a Borrador y la iniciativa vuelve a Planificando.",
+        ArtifactStatus.Approved => "Al guardar, el documento vuelve a Borrador.",
+        _ => null,
+    };
 
     public static string TypeName(ArtifactType type) => type switch
     {

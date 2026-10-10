@@ -17,6 +17,21 @@ La conversación con el asistente (`/iniciativas/{id}/asistente`) funciona hoy c
 - La clave de API de Gemini irá en una variable de entorno o en user-secrets, nunca en el repositorio.
 - Los registros (`Logs/`) no guardan el texto de los mensajes de la conversación.
 
+## Artefactos (documentos de la iniciativa)
+
+Desde el detalle de la iniciativa, la tarjeta **Artefactos** lista los documentos que su nivel necesita y los abre en `/iniciativas/{id}/artefactos/{tipo}`. Nada se genera solo: cada documento se crea con el botón **Generar**, a partir de las respuestas de la conversación.
+
+- **Pequeña:** Especificación. **Estándar:** Brief y PRD. **Grande:** PRD; Arquitectura y Épicas e historias aparecen como "disponible en un paso posterior".
+- Cada documento se guarda como **Markdown** con un número de versión y tiene un estado: **Borrador** o **Aprobado**. Solo se puede aprobar un borrador, y solo la persona dueña de la iniciativa.
+- **Editar** abre el Markdown en un editor (máximo 20.000 caracteres). Cada cambio guardado sube la versión y devuelve el documento a Borrador; si la iniciativa estaba Lista para construir, vuelve a Planificando. Guardar el mismo texto no cambia nada.
+- **Regenerar** reemplaza todo el contenido, incluidos los cambios manuales, y pide confirmación antes de hacerlo.
+- Si el Markdown pierde una sección o un identificador (`FR-1`, `NFR-1`, `A-1`…), la página muestra avisos de formato. Los avisos nunca impiden guardar ni aprobar.
+- La iniciativa pasa a **Lista para construir** cuando todos los documentos de su nivel están aprobados. **Una iniciativa Grande todavía no puede terminar**: faltan Arquitectura y Épicas e historias, que llegan en un paso posterior.
+- Por ahora solo hay Markdown en pantalla: **no hay exportación** (PDF, copia o descarga) todavía.
+- El texto lo redacta un **generador falso y determinista** (`FakeArtifactDrafter`): produce siempre el mismo borrador con las mismas respuestas y no envía nada a Gemini. Gemini llegará en el paso 5.
+- Igual que en el asistente, la página muestra el aviso de modo de demostración: escriba **solo datos de ejemplo**, nunca información real de la empresa ni datos personales, y no use iniciativas reales hasta migrar a un plan de pago de Gemini.
+- Los registros no guardan el contenido de los documentos.
+
 ## Requisitos previos
 
 - SDK de .NET 10 (versión fijada en `global.json`).

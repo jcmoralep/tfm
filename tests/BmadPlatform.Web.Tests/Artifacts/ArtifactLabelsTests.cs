@@ -1,5 +1,6 @@
 using BmadPlatform.Application.Features.Artifacts;
 using BmadPlatform.Domain.Artifacts;
+using BmadPlatform.Domain.Initiatives;
 using BmadPlatform.Web.Components.Artifacts;
 
 namespace BmadPlatform.Web.Tests.Artifacts;
@@ -77,5 +78,14 @@ public sealed class ArtifactLabelsTests
 
         Assert.Equal(("Aún no disponible", ArtifactTexts.ComingLater), (row.State, row.Reason));
         Assert.Null(row.Action);
+    }
+
+    [Theory]
+    [InlineData(ArtifactStatus.Draft, InitiativeStatus.Planning, null)]
+    [InlineData(ArtifactStatus.Approved, InitiativeStatus.Planning, "Al guardar, el documento vuelve a Borrador.")]
+    [InlineData(ArtifactStatus.Approved, InitiativeStatus.ReadyToBuild, "Al guardar, el documento vuelve a Borrador y la iniciativa vuelve a Planificando.")]
+    public void Edit_hint_warns_only_when_saving_undoes_an_approval(ArtifactStatus status, InitiativeStatus initiative, string? expected)
+    {
+        Assert.Equal(expected, ArtifactLabels.EditHint(status, initiative));
     }
 }

@@ -65,6 +65,16 @@ else
             </div>
             <p role="status" class="sr-only">@announcement</p>
 
+            @if (AssistantLabels.DocumentsLinkFor(view) is { } documents)
+            {
+                <p class="mt-3">
+                    <a href="@documents.Href"
+                       class="inline-block rounded-full border border-primary bg-surface-raised px-5 py-2 text-sm font-medium text-primary-ink hover:bg-primary-soft">
+                        @documents.Label
+                    </a>
+                </p>
+            }
+
             @if (errors.Count > 0)
             {
                 <div class="mt-3">

@@ -173,6 +173,33 @@ public sealed class AssistantLabelsTests
         Assert.Null(card.ActionLabel);
     }
 
+    [Theory]
+    [InlineData(InitiativeStatus.Draft, InitiativeDepth.Standard, 5, 5, TopicKind.Question, false, null)]
+    [InlineData(InitiativeStatus.Clarifying, InitiativeDepth.Standard, 4, 5, TopicKind.Question, false, null)]
+    [InlineData(InitiativeStatus.Clarifying, InitiativeDepth.Standard, 5, 5, TopicKind.Confirmation, false, "Ir al Brief")]
+    [InlineData(InitiativeStatus.Clarifying, InitiativeDepth.Small, 5, 5, TopicKind.Confirmation, false, null)]
+    [InlineData(InitiativeStatus.Planning, InitiativeDepth.Standard, 5, 5, TopicKind.Question, false, "Ir al Brief")]
+    [InlineData(InitiativeStatus.Planning, InitiativeDepth.Standard, 5, 5, TopicKind.Closing, false, "Ir a los documentos")]
+    [InlineData(InitiativeStatus.Planning, InitiativeDepth.Small, 6, 6, TopicKind.Closing, false, "Ir a los documentos")]
+    [InlineData(InitiativeStatus.ReadyToBuild, InitiativeDepth.Standard, 5, 5, TopicKind.Closing, true, "Ver documentos")]
+    public void Documents_link_follows_the_journey(
+        InitiativeStatus status,
+        InitiativeDepth depth,
+        int covered,
+        int total,
+        TopicKind next,
+        bool readOnly,
+        string? expectedLabel)
+    {
+        var topic = new AssistantTopic("t", next, "", "", "", []);
+        var journey = new JourneySnapshot(JourneyStep.Clarify, topic, new PhaseProgress(covered, total), null, false, null, false);
+        var view = View(status, started: true, journey) with { Depth = depth, ReadOnly = readOnly };
+
+        var link = AssistantLabels.DocumentsLinkFor(view);
+
+        Assert.Equal(expectedLabel, link?.Label);
+    }
+
     [Fact]
     public void The_privacy_note_is_the_full_sentence_of_the_spec()
     {
