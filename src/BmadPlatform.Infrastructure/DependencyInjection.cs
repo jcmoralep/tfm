@@ -53,7 +53,8 @@ public static class DependencyInjection
         services.AddScoped<IConversationRepository, ConversationRepository>();
 
         // Deterministic stand-in until the Gemini implementation arrives (PROPUESTA-MVP step 5).
-        services.AddSingleton<IAssistantService, FakeAssistantService>();
+        // The short pause lets people see the "typing" indicator; the real model will take longer.
+        services.AddSingleton<IAssistantService>(_ => new FakeAssistantService(TimeSpan.FromMilliseconds(900)));
 
         return services;
     }

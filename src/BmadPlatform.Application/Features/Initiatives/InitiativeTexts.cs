@@ -41,4 +41,15 @@ public static class InitiativeTexts
             ? items[0]
             : string.Join(", ", items.Take(items.Count - 1)) + " y " + items[^1];
     }
+
+    /// <summary>
+    /// The summary for the middle of a sentence: a single item that starts with an article ("Una especificación
+    /// breve") loses its capital, while document names such as "Brief" or "PRD" keep theirs.
+    /// </summary>
+    public static string DeliverablesInSentence(InitiativeDepth depth)
+    {
+        var summary = DeliverablesSummary(depth);
+
+        return summary.StartsWith("Una ", StringComparison.Ordinal) ? "u" + summary[1..] : summary;
+    }
 }

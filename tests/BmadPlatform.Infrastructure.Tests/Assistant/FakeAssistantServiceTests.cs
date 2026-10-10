@@ -108,7 +108,7 @@ public sealed class FakeAssistantServiceTests
     }
 
     [Theory]
-    [InlineData(AssistantScript.ReplyKeys.SizeSmall, InitiativeDepth.Small, "Pequeña", "Una especificación breve")]
+    [InlineData(AssistantScript.ReplyKeys.SizeSmall, InitiativeDepth.Small, "Pequeña", "una especificación breve")]
     [InlineData(AssistantScript.ReplyKeys.SizeFeature, InitiativeDepth.Standard, "Estándar", "Brief y PRD")]
     [InlineData(AssistantScript.ReplyKeys.SizeProduct, InitiativeDepth.Large, "Grande", "PRD, Arquitectura y Épicas e historias")]
     [InlineData(AssistantScript.ReplyKeys.Unknown, InitiativeDepth.Standard, "Estándar", "Brief y PRD")]
@@ -145,7 +145,7 @@ public sealed class FakeAssistantServiceTests
         var reply = await service.ReplyAsync(Request(AssistantScript.Keys.Closing, depth: InitiativeDepth.Small), default);
 
         Assert.Contains("lista para redactar", reply.Text, StringComparison.Ordinal);
-        Assert.Contains("Una especificación breve", reply.Text, StringComparison.Ordinal);
+        Assert.Contains("redactar una especificación breve", reply.Text, StringComparison.Ordinal);
         Assert.Contains("siguiente paso es generar los documentos", reply.Text, StringComparison.Ordinal);
     }
 

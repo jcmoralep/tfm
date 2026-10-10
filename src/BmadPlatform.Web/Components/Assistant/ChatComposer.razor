@@ -1,6 +1,6 @@
 @* Free-text answer box. The parent owns the draft and the send queue; this box only edits Draft.Text. *@
 <form @onsubmit="SubmitAsync" @onsubmit:preventDefault class="space-y-2">
-    <label for="@TextAreaId" class="block text-sm font-medium text-ink">@AssistantLabels.ComposerLabel</label>
+    <label for="@TextAreaId" class="block text-sm font-medium text-ink">@AssistantLabels.ComposerLabel<RequiredMark /></label>
     @* The value is set only when the box is built (see Draft.Revision): re-sending it on every keystroke would
        overwrite what the person typed while the previous keystroke was still travelling to the server. *@
     <textarea @key="seenRevision" id="@TextAreaId" @ref="textArea" rows="3" maxlength="@ChatDraft.MaxLength" disabled="@Disabled"

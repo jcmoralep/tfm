@@ -194,7 +194,7 @@ public sealed class AssistantScriptTests
     }
 
     [Theory]
-    [InlineData(InitiativeDepth.Small, "lista para redactar Una especificación breve")]
+    [InlineData(InitiativeDepth.Small, "lista para redactar una especificación breve")]
     [InlineData(InitiativeDepth.Standard, "lista para redactar Brief y PRD")]
     [InlineData(InitiativeDepth.Large, "lista para redactar PRD, Arquitectura y Épicas e historias")]
     public void Closing_names_the_deliverables_of_the_level(InitiativeDepth depth, string expected)
