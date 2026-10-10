@@ -104,7 +104,7 @@ Multi-line answers split into one item per non-empty line, with leading bullets 
 | `GetArtifactQuery(InitiativeId, Type)` | `ArtifactView?` | Content, warnings, availability, and the `Can*` flags, `ApprovalCompletesSet`, `CompletionPending` |
 | `GenerateArtifactCommand(InitiativeId, Type)` | `ArtifactView` | Requires `Available` and no row ("El documento ya existe. Use Regenerar para reemplazarlo."). Drafter, `Create`, `AddAsync`; a unique violation becomes `ConflictException` |
 | `SaveArtifactContentCommand(InitiativeId, Type, ExpectedVersion, Content)` | `ArtifactView` | Version check; if unchanged, no-op; if Approved and the initiative is ReadyToBuild, `ReopenPlanningCommand` first; then `Edit` and `SaveAsync`. `ToString` redacts `Content` |
-| `RegenerateArtifactCommand(InitiativeId, Type, ExpectedVersion)` | `ArtifactView` | Requires `Available`; version check; drafter; reopen first as above; `Replace`, `SaveAsync` |
+| `RegenerateArtifactCommand(InitiativeId, Type, ExpectedVersion, Confirmed)` | `ArtifactView` | Requires `Confirmed` (RF-57, the confirmation panel sets it) and `Available`; version check; drafter; reopen first as above; `Replace`, `SaveAsync` |
 | `ApproveArtifactCommand(InitiativeId, Type, ExpectedVersion)` | `ArtifactView` | Version check; `Approve` (no save when already approved); if the status is Planning and `IsSetComplete`, `MarkReadyToBuildCommand` |
 
 - Validators: `InitiativeId` not empty, `Type` `IsInEnum`, `ExpectedVersion > 0`, content not empty and at most 20,000, with the Spanish messages above.
