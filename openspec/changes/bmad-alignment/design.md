@@ -36,7 +36,7 @@ public static partial class OpenQuestions
 public sealed record QuestionAssignment(string Id, string? Owner, string? Revisit);
 public static partial class QuestionOwners
 {
-    public const int OwnerMaxLength = 60, RevisitMaxLength = 120;
+    public const int OwnerMaxLength = 60, RevisitMaxLength = 80;
     public static bool IsAllowed(string? value);
     // Rewrites only head + text + canonical suffix of the targeted lines; every other byte is unchanged.
     // Unknown id -> DomainException(ArtifactTexts.QuestionNotFound(id)).
@@ -141,3 +141,4 @@ The total is about 1,180 authored lines, more than the proposal's ~700 estimate,
 - A3: Duplicate ids are assigned together.
 - A4: Partial saves are allowed; the asterisk means "needed to approve".
 - A5: The panel is also shown for Approved documents, and saving it returns them to Draft.
+- Assumptions confirmed by the user (2026-10-11): A1-A5 are accepted as written, and the panel is KEPT in this change.

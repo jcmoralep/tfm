@@ -1,0 +1,139 @@
+# Tasks: BMAD alignment after step 4
+
+Conventions: file naming follows the existing modules (`XCommand.cs`, `XCommandHandler.cs`, `XCommandValidator.cs`, not the design's `Command.cs`). Tests are xUnit only, no bUnit, `strict_tdd` false (a test is written with or just before its code). Verbatim Spanish messages come from the SPEC (the contract); the design may adjust wording but not semantics. Tags: **[UNIT]** xUnit, **[UI]** manual in Chrome, **[DOC]** checked by reading the file. Threat matrix: N/A (design). Branch `feat/bmad-alignment`; git state is not touched by these tasks except the commits listed per group. Stacks on the unarchived `artifact-generation` change: its spec is the baseline, so this delta carries full MODIFIED requirements.
+
+Spec abbreviations: SPEC = `specs/artifacts/spec.md` of this change. Scenario names are quoted from it. Design decision numbers are `D1..D10` of `design.md`; assumptions `A1..A5`.
+
+Standing user rules baked into every task:
+
+- **Lean tests.** Group same-rule cases in `[Theory]` with `InlineData`; no reflection shape tests; no label-by-label tests (one theory over the few new label texts at most); keep the rule, round-trip and gate tests.
+- **BMAD first.** Validate against `docs/bmad-referencia.md` and the BMAD source copy (`...\scratchpad\bmad-src\package\src\bmm-skills\`). Anything beyond BMAD goes to `docs/mejoras-posteriores.md`, not into code.
+- **Views.** CSS classes only: no `style=`, no script. Success is green, required is a red asterisk (`RequiredMark`), a loading indicator shows while busy, colors match meaning (amber for the blocked hint, red for errors).
+- **Evidence.** Screenshots of the Chrome flows saved in `docs/evidencias/bmad-alignment/` with an index `README.md`.
+- **After apply.** A manual 3-lens code review and an independent verify (not part of these tasks' commits).
+
+Spec decisions that override the design where they differ (the spec is the contract):
+
+- Revisit text limit is 80 characters (SPEC, A2). The design interface block shows `RevisitMaxLength = 120`; use 80.
+- Rejection wording of the assign command is taken verbatim from the SPEC ("La pregunta Q-9 no existe en este documento.", "No hay preguntas para guardar.", the four length/character messages). The design's per-row id prefix ("Q-2: ...") may be added to the validator messages without changing the sentence. Update the design wording when archiving.
+
+## Review Workload Forecast
+
+| Field | Value |
+|-------|-------|
+| Estimated changed lines | ~1,180 hand-written (design commit slices; tests included); the four regenerated goldens are not counted |
+| 400-line budget risk | High |
+| Chained PRs recommended | No |
+| Delivery strategy | exception-ok (`size:exception` accepted by the user; sole committer, no other reviewers) |
+| Review budget | 400 lines, exceeded knowingly; one PR |
+
+Decision needed before apply: No
+Chained PRs recommended: No
+400-line budget risk: High
+
+Estimated lines per group:
+
+| Group | Scope | Est. lines |
+|-------|-------|-----------|
+| C1 | Journeys PRD change, drafter tests, goldens, spec text, verification checklist | ~120 |
+| C2 | `MarkdownLines`, `OpenQuestions` parser, composer suffix, goldens, view fields, approve gate, adjusted approve tests | ~380 |
+| C3 | `QuestionOwners.Apply`, assign command, handler, validator, `SaveEditAsync`, regenerate confirm text | ~420 |
+| C4 | `OpenQuestionsPanel`, page integration, labels, README and docs, Chrome walk-through | ~260 |
+
+### Suggested Work Units
+
+| Unit | Goal | Focused test command | Runtime harness | Rollback boundary |
+|------|------|----------------------|-----------------|-------------------|
+| C1 | PRD 2.3 single assumption, no `UJ-n`; §7 checklist | `dotnet test tests/BmadPlatform.Infrastructure.Tests --filter "FullyQualifiedName~FakeArtifactDrafter"` | N/A, pure | revert; goldens revert with it |
+| C2 | Parser, suffix, gate | `dotnet test tests/BmadPlatform.Application.Tests --filter "FullyQualifiedName~Artifact"` plus Infrastructure `~FakeArtifactDrafter` | N/A, pure and doubles | revert; no migration, no UI change |
+| C3 | Rewriter, assign command, shared edit helper | Application.Tests `~AssignQuestionOwners\|~SaveArtifactContent\|~Regenerate` | N/A, doubles | revert; the command is unused until C4 |
+| C4 | Panel, page, labels, evidence | `dotnet test tests/BmadPlatform.Web.Tests` | Chrome checklist below | revert; the page returns to the raw editor |
+
+## Commit 1: Journeys, spec text and verification checklist (~120)
+
+- [ ] 1.1 `Infrastructure/Artifacts/PrdLayout.cs` (and `DraftComposer.cs` if the journeys live there): section 2.3 "Recorridos clave" keeps its heading and writes exactly one list line, `- [ASSUMPTION: A-n] Aún no se describió un recorrido concreto de uso; se completa con un caso real (una persona con nombre) al revisar el documento.`, numbered in document order, with one matching index entry; no `UJ-n` line whatever the users answer says; "No sé" users still yield their Q-n in Usuario objetivo and add nothing to 2.3. Per D10, append ` Ver Q-n.` only if that adds no second marker (the Q-n already exists from section 2). Test: `FakeArtifactDrafterTests.cs`, replace the old journeys test with one theory over (users named, "No sé", users missing): SPEC "No journeys generated", "One assumption in the section", "Unknown users" [UNIT].
+- [ ] 1.2 Test: `FakeArtifactDrafterTests.cs` one theory (or two cases) for the checker side: SPEC "Hand-written journey is valid" (`UJ-1` valid, `UJ1 Ana` warns, deleted heading warns); keep the existing "drafted PRD has zero warnings" assertion for Standard and Large [UNIT].
+- [ ] 1.3 Regenerate `prd-standard.md` and `prd-large.md` goldens only (`UPDATE_GOLDENS=1`): no `UJ-` remains, one A-n line in 2.3. (The four goldens are regenerated again in C2 for the suffix; run the golden test unregenerated first to confirm the diff is only 2.3.) SPEC "Goldens updated" [UNIT].
+- [ ] 1.4 Test: one scan theory over the four drafted documents for FR, NFR, UJ or SM followed directly by digits, SPEC "Only hyphenated identifiers are generated". Test: SPEC "No mapper exists" as a single source scan of the Artifacts module for a converter (only if a similar scan helper already exists in the architecture tests; otherwise cover by review and mark [DOC]) [UNIT].
+- [ ] 1.5 `docs/bmad-referencia.md`: add §7 "Verificación pendiente en una instalación real (antes del paso 6)" with the three checks: (1) `bmad-build` with `spec-small.md` as `SPEC.md`; (2) `bmad-create-epics-and-stories` step 1 on `prd-large.md` giving `FR1:`/`NFR1:` with the same numbers; (3) Spanish headings and a `Q-n` line with its `(Responsable: …; Revisar: …)` suffix read without loss. Each has how to run it (disposable BMAD 6.12.1 install outside the repo, golden copied in), the expected result, and a results table (Comprobación, Fecha, Versión, Resultado, Evidencia) with "no ejecutado" stated; a contradiction updates §4 and `AGENTS.md` §6.3. BMAD is not run. SPEC "Checklist present and complete" [DOC].
+- [ ] 1.6 Check that the identifier wording agrees in `REQUISITOS.md` (RF-36, RF-44), `AGENTS.md` §6.3 and `docs/bmad-referencia.md` §4 (hyphen decision, epics-only unhyphenated inventory with the same number, `NFR-n` as platform extension); fix only wording drift. SPEC "Documents agree" [DOC].
+- [ ] 1.7 Check that RF-65 and RF-66 appear in `REQUISITOS.md` with BMAD sources and that no code or test refers to them. SPEC "Nothing to verify now" [DOC].
+- [ ] 1.8 Gate for the group: `dotnet build` zero code warnings, Infrastructure.Tests green. Commit: `feat(artifacts): replace generated journeys with one assumption and add the BMAD verification checklist`.
+
+## Commit 2: Parser, default suffix, view fields and approve gate (~380)
+
+- [ ] 2.1 Extract `Application/Features/Artifacts/Markdown/MarkdownLines.cs` (internal; the `FencedLines`/split logic moves out of `ArtifactFormatChecker`) and make the checker use it. Behaviour unchanged: the existing checker tests are the proof, no new test [UNIT].
+- [ ] 2.2 Create `Markdown/{OpenQuestion,OpenQuestions}.cs` per the design interface: `Parse` (recognition as the checker, D1; malformed ids ignored, D2; suffix anchored at the end, D3), `Unassigned` (distinct ids, document order), `IsAssigned` (A1/D4), `OwnerPlaceholder`, `RevisitPlaceholder`, `DefaultSuffix`, `Suffix(owner, revisit)`. Test: `Markdown/OpenQuestionsTests.cs`, theories only: (a) assigned/unassigned matrix as one theory (no suffix, empty owner, `Por Asignar`, empty revisit, `por definir`, missing `Revisar`, trailing spaces, assigned) covering SPEC "Assigned question is read" and "What counts as unassigned"; (b) line shapes theory (canonical, bold-colon, plain `Q-2.`) with inner parentheses and trailing `(ver anexo)` covering "Parentheses in the question text"; (c) ignore theory (fenced block, assumption index, heading, `Pendiente: ver Q-1.`, `Q1`, `q-1`, `Q-01`, `Q-0`) covering "Fences and assumption index are ignored"; (d) one fact for document order, duplicates kept, and the no-questions text covering "Document order and no questions" [UNIT].
+- [ ] 2.3 `Infrastructure/Artifacts/DraftComposer.cs`: the open-questions item writes `Item(id, text + OpenQuestions.DefaultSuffix)` for Brief, PRD and Spec. Reuse the Application constant (Infrastructure → Application is allowed). Test: `FakeArtifactDrafterTests.cs`, SPEC "Generated question carries the default suffix", "Question lines carry the suffix", "Several unknowns are numbered in order" (one theory over the three types) [UNIT].
+- [ ] 2.4 Regenerate the four goldens (`UPDATE_GOLDENS=1`): every Q-n line gains the default suffix. Test: golden test unchanged. SPEC "Goldens updated" [UNIT].
+- [ ] 2.5 Test (round trip with the checker, D-testing row 2): over every golden and every drafted type/level, `ArtifactFormatChecker.Check` gives zero warnings and `OpenQuestions.Unassigned` lists every generated `Q-n`. SPEC "Generated documents have no warnings", "Triage state is not a warning" (the second as one case: a line with no suffix and one with a broken suffix produce no warning) [UNIT].
+- [ ] 2.6 `ArtifactTexts.cs`: add `UnassignedQuestions(ids)` = "Asigne un responsable y una condición de revisión a las preguntas pendientes antes de aprobar: Q-1, Q-3." (verbatim from SPEC). `ArtifactView`/`ArtifactViewBuilder`: append `Questions` and `UnassignedQuestions`; `CanApprove &= UnassignedQuestions.Count == 0`; `ApprovalCompletesSet` follows; `CompletionPending` untouched; `ToString` stays redacted. Test: `ArtifactViewBuilderTests.cs` one fact for SPEC "View flags" (Q-1 unassigned then assigned) [UNIT].
+- [ ] 2.7 `ApproveArtifactCommandHandler.cs`: inside `if (artifact.Status != Approved)` only (D7), after ownership, set, generated, version and availability checks, throw `DomainException(ArtifactTexts.UnassignedQuestions(Unassigned(content)))` when the list is not empty; nothing saved. Test: `ApproveArtifactTests.cs`: new cases (use a theory for the blocked/allowed matrix): SPEC "Unassigned question blocks approval", "All assigned approves", "Document without questions approves as before", "Half-assigned question blocks", "Warnings do not trigger the gate", "Gate message is not a warning and does not mask conflicts" [UNIT].
+- [ ] 2.8 Test: `ApproveArtifactTests.cs` grandfathering and retries: SPEC "Idempotent re-approve skips the gate", "CompletionPending retry still works", "Edit after approval brings the gate back" (the last through `SaveArtifactContent` then approve). Also the "Unassigned question rejects the approval" initiative-unchanged check [UNIT].
+- [ ] 2.9 Adjust the existing approve tests (and any save/regenerate/overview test that approves a draft with questions): where the draft contains "No sé" questions, assign owners first (a small test helper writes a full suffix on every `Q-n` line) or use answers with no unknowns. Do not add new coverage here; prefer a single shared helper in `TestDoubles` over per-test edits [UNIT].
+- [ ] 2.10 BMAD conformance (standing rule), part 1: read the generated question lines against BMAD's triage rule in `bmad-prd` Finalize 4 ("non-blockers deferred with owner + revisit condition") and its order before `status: final`; confirm the suffix `(Responsable: …; Revisar: …)` carries both pieces and the gate precedes approval. Record "PASS with notes" or deviations in the README follow-ups; anything beyond BMAD goes to `docs/mejoras-posteriores.md` [DOC].
+- [ ] 2.11 Gate for the group: `dotnet build` zero code warnings, Application.Tests and Infrastructure.Tests green. Commit: `feat(artifacts): add the owner and revisit suffix to open questions and block approval until assigned`.
+
+## Commit 3: Rewriter, assign command and shared edit path (~420)
+
+- [ ] 3.1 Create `Markdown/{QuestionAssignment,QuestionOwners}.cs`: `OwnerMaxLength = 60`, `RevisitMaxLength = 80`, `IsAllowed` (forbidden `( ) ; [ ] * | \` and line breaks, D6), `Apply` rewriting only `head + " " + text + canonical suffix` of the targeted lines (key by id, every duplicate, D5); a trailing `(ver anexo)` stays and a full suffix is appended; empty value writes the placeholder; unknown id throws `DomainException(ArtifactTexts.QuestionNotFound(id))`; other bytes, line endings and fences untouched. Add `QuestionNotFound` text: "La pregunta Q-9 no existe en este documento." (SPEC verbatim). Test: `Markdown/QuestionOwnersTests.cs`: (a) one theory for what changes (single, several, duplicates, blank field gives default, inner-parenthesis text, `(ver anexo)` tail, CRLF) asserting only targeted lines differ and other bytes identical; (b) one theory for idempotence and "current values return the input unchanged"; (c) round trip `Parse(Apply(m, a))` returns the assigned values; (d) unknown id throws; (e) `IsAllowed` theory over the forbidden set and the 60/80 limits at their boundaries. SPEC "Assign rewrites only the listed lines" (rewriter half), "Blank field writes the default" (half), "No change is a no-op" (rewriter half) [UNIT].
+- [ ] 3.2 Extract `ArtifactGuards.SaveEditAsync` (D9): unchanged normalized content does nothing; otherwise reopen first if the initiative is ReadyToBuild, then `Edit`, then `SaveAsync(expectedVersion)`. Make `SaveArtifactContentCommandHandler` use it. Behaviour unchanged: existing `SaveArtifactContentTests` are the proof; no new test for the extraction itself [UNIT].
+- [ ] 3.3 Create `Features/Artifacts/AssignQuestionOwners/{AssignQuestionOwnersCommand,AssignQuestionOwnersCommandHandler,AssignQuestionOwnersCommandValidator}.cs`: command `(InitiativeId, Type, ExpectedVersion, Assignments)`, `ToString` with ids and count only; validator: assignments not empty ("No hay preguntas para guardar."), at most 200, ids match `^Q-[1-9][0-9]{0,3}$` and distinct, owner/revisit via `QuestionOwners.IsAllowed` and the limits with the SPEC messages (optional `Q-n:` prefix per row); handler: owner/initiative/RequireManageable/RequireGenerated/RequireVersion, then `Apply`, `NormalizeContent` (20,000 cap, baseline message), then `SaveEditAsync`, then reload the view. Every rejecting rule runs before `ReopenPlanningCommand`. Register in `Application/DependencyInjection.cs`. Test: `AssignQuestionOwnersTests.cs`: SPEC "Assign rewrites only the listed lines", "Batch of several questions in one save", "No change is a no-op" (status, version, update time), "Assigning on an Approved document returns it to Draft", "Stale version conflicts" (initiative also unchanged), "Ready initiative is reopened", "Foreign, deleted or not generated" (theory over the three) [UNIT].
+- [ ] 3.4 Test: `AssignQuestionOwnersValidatorTests.cs` (or in the same file) as theories: "Unknown or duplicate id" (unknown id rejected with no reopen and nothing stored), "Invalid text" (61-char owner, `Legal (TI)`, `a;b`, `a|b`, `*x*`, `a\nb`, 81-char revisit, revisit with parentheses; exactly 60 and 80 accepted), over-cap result rejected with no reopen, empty and over-200 lists [UNIT].
+- [ ] 3.5 Test: SPEC "No content in logs" with the capturing logger double: handler success and failure, `ToString` on the command; distinctive owner and revisit text appears nowhere [UNIT].
+- [ ] 3.6 Failure injection: a `SaveAsync` failure after the reopen leaves Planning with the documents as they were (the CompletionPending state, RN-06); one case in `AssignQuestionOwnersTests.cs` mirroring the existing save test [UNIT].
+- [ ] 3.7 Test: SPEC "Stale approve, regenerate and assign are rejected" (extend the existing stale test with the assign command, one theory over the three commands) and "Concurrent writers" is unchanged [UNIT].
+- [ ] 3.8 Regenerate: `RegenerateArtifactTests.cs` add SPEC "Regeneration resets the owners" (assigned Q-1 comes back with the default suffix and the gate rejects approval again). The Regenerar panel text change belongs to C4 (4.4) [UNIT].
+- [ ] 3.9 BMAD conformance, part 2: confirm that `Apply` output lines still parse as BMAD-readable Markdown list items (bold id, colon, text, suffix) and that nothing outside the suffix changes the document structure BMAD reads (headings, `FR-n`, `[ASSUMPTION: A-n]`). Record the result with 2.10 [DOC].
+- [ ] 3.10 Gate for the group: `dotnet build` zero code warnings, Application.Tests green. Commit: `feat(artifacts): add the assign question owners command and the shared edit path`.
+
+## Commit 4: Panel, page integration, labels and evidence (~260)
+
+- [ ] 4.1 Create `Web/Components/Artifacts/OpenQuestionsPanel.razor` (presentational): parameters `Questions`, `Version`, `Busy`, `Enabled`, `Hint`, `OnSave(QuestionOwnersSubmission(BaseVersion, Assignments))`, `OnCancel`; copies `Questions` and `Version` once in `OnInitialized` (the editBaseVersion lesson). Markup per design: `<section aria-labelledby>` with h2 "Preguntas pendientes" and an intro that saving counts as an edit (`ArtifactLabels.EditHint` when Approved or ReadyToBuild); one `<fieldset>` per distinct id whose legend holds id and text plus the text badge "Sin asignar"; inputs "Responsable de Q-n" (`list` → `<datalist>` Legal, TI, Finanzas, Quien propone la iniciativa; `maxlength` 60) and "Revisar cuando de Q-n" (`maxlength` 80, placeholder "antes de la arquitectura"), each label with a red `RequiredMark` and the legend "* necesario para aprobar"; defaults shown as empty fields; inputs `readonly` while busy; one primary **Guardar** and a secondary **Cancelar**, disabled until interactive and while busy; `aria-describedby` to the hint and `doc-errors`. CSS classes only, no `style=`, no script. Test: none (UI), covered by the Chrome checklist [UI].
+- [ ] 4.2 `ArtifactLabels.cs`: add only the new texts (panel title, intro, saved notice "Preguntas guardadas. Versión N.", unchanged notice "No había cambios que guardar.", saving text "Guardando las preguntas pendientes…", the amber approve-blocked hint reusing `ArtifactTexts.UnassignedQuestions`, the Regenerar sentence "Los responsables de las preguntas vuelven a «por asignar»."). Test: `ArtifactLabelsTests.cs` one theory over these few new texts that depend on a parameter (version number in the saved notice), no label-by-label assertions [UNIT].
+- [ ] 4.3 `Pages/Artifacts/ArtifactDocument.razor` (container): show the panel in the read view when `Questions.Count > 0` and the editor is closed, above the warnings, rendered with `@key="questionsRevision"` that increments only after a successful write or Cancelar; add `SaveOwnersAsync` through `RunAsync` sending `AssignQuestionOwnersCommand` with the panel's base version; typing-dot "Guardando las preguntas pendientes…"; green notice on success (or the "No había cambios" notice when the version did not move); validation errors red without a reload; conflict or domain error reloads while the typed values and the stale base version stay (retry conflicts again until Cancelar). Test: Chrome [UI].
+- [ ] 4.4 Page: when `UnassignedQuestions` is not empty, show the amber hint with id `approve-blocked` (same `UnassignedQuestions` text, pointing to the panel) and give the Aprobar button `aria-describedby="approve-blocked"`; add the sentence about owners to the Regenerar confirmation panel (SPEC "Confirmation panel"). Test: Chrome [UI].
+- [ ] 4.5 Docs: `README.md` Artefactos section gains the open-question triage (suffix format, the approval gate, the panel, regeneration resets owners, grandfathered Approved documents, journeys are one assumption, identifier decision pointer). `docs/mejoras-posteriores.md`: confirm the deferred items of the proposal's Out of Scope are listed (independent validation, mixed-stakes rule, remaining filler questions, coaching, export naming/frontmatter/usage note, blocking-phase flag, RF-43 items table, owner directory) and add any found during C2/C3 conformance. `AGENTS.md`/`REQUISITOS.md` only if a wording drift was found in 1.6 [DOC].
+- [ ] 4.6 BMAD conformance, final: with the live generated Spec, Brief and PRD (Small, Standard, Large) compare headings, order, identifier scheme, assumption index and the question line format against `docs/bmad-referencia.md` and BMAD's triage rule (`bmad-prd` Finalize 4). Known deviations stay as recorded (`FR-n` instead of `CAP-n`, platform `NFR-n`, Spanish headings, suffix as the owner+revisit carrier). Fix golden/drafter if a real gap appears; record the outcome here and in the README [DOC].
+- [ ] 4.7 Final gate: `dotnet build` with zero code warnings (the NU1507 NuGet source warnings come from the developer machine's private feed and are not code warnings), `dotnet test` (all projects), then the Chrome checklist below with screenshots. Commit: `feat(artifacts): add the pending questions panel and the approval hint` and a separate `docs(bmad-alignment): add the Chrome evidence and the README index` for the screenshots.
+- [ ] 4.8 After apply (outside these commits, run by the orchestrator): manual 3-lens code review of the final diff and an independent `sdd-verify`; verify checks every SPEC scenario tagged [UNIT] against a test and every [UI]/[DOC] against the evidence or the file.
+
+## Manual Chrome checklist (bmad-alignment flow)
+
+Setup: `docker compose` MySQL 8.4 with temporary credentials, apply migrations (none are new), run the app with the seed user. Never touch containers named `hcm_*`. Keep the project MySQL running at the end (user decision). Save a screenshot of each numbered step to `docs/evidencias/bmad-alignment/` (`NN-description.png`) and write `docs/evidencias/bmad-alignment/README.md` as the index: one line per image with the step, the date, what it proves and the SPEC scenario it covers.
+
+- [ ] 1 Small with "No sé" answers: generate the Spec; the panel "Preguntas pendientes" shows one row per Q-n with the "Sin asignar" badge, red asterisks, the legend and the datalist suggestions; the amber approve-blocked hint lists the ids and Aprobar is disabled. SPEC "Panel only with questions", "Two inputs, suggestions and single button", "Required marker and labels", "Aprobar explains why it is disabled".
+- [ ] 2 Small: a document with no open question shows no panel and approves as before. SPEC "Document without questions approves as before".
+- [ ] 3 Small: save a partial row (one field typed); the loading dots show, the green notice appears, Aprobar stays blocked and the hint still lists the id. SPEC "Save assigns and reports", "Blank field writes the default".
+- [ ] 4 Small: fill every row, Guardar once; green notice "Preguntas guardadas. Versión N.", version +1, Borrador, hint gone, Aprobar enabled; pressing Guardar again quickly stores one change. SPEC "Save assigns and reports", "Double click stores one change".
+- [ ] 5 Small: Aprobar blocked first (with unassigned), then allowed; initiative reads "Lista para construir". SPEC "All assigned approves".
+- [ ] 6 Small (Ready to build): the panel warns that saving returns the document to Borrador and the initiative to Planificando; saving does exactly that. SPEC "Warning about the effect".
+- [ ] 7 Standard with open questions: Brief and PRD each assigned and approved; initiative Ready to build only after the second; PRD 2.3 shows the single assumption and no `UJ-n`; the questions line reads `(Responsable: …; Revisar: …)` in the read view. SPEC "One assumption in the section".
+- [ ] 8 Large with open questions: PRD panel works the same; the initiative stays "Planificando" after approval. SPEC "Large never completes in this change".
+- [ ] 9 Regenerate: the panel says the owners come back to "por asignar"; confirming resets them, the hint returns and Aprobar is blocked. SPEC "Confirmation panel", "Regeneration resets the owners".
+- [ ] 10 Edit after approval: edit an Approved document with the raw editor; it returns to Borrador and an unassigned question blocks approval again. SPEC "Edit after approval brings the gate back".
+- [ ] 11 Two tabs: assign in tab A, then Guardar in stale tab B; red conflict message, typed values kept, saving again conflicts again until Cancelar. SPEC "Conflict keeps typed values".
+- [ ] 12 Reintentar path: if reachable in a dev run (force the ready transition to fail once), the page shows the approved document with "Reintentar" even with an unassigned question; if not reachable, state "not observed, unit-tested" in the evidence README. SPEC "CompletionPending retry still works".
+- [ ] 13 Another user: open a foreign `/iniciativas/{id}/artefactos/prd`; the same not-found message, no panel. SPEC "Foreign, deleted or not generated".
+- [ ] 14 Validation: type `Legal (TI)` and a 61-character owner; red message without a reload and the typed values kept.
+- [ ] 15 View hygiene: confirm there is no inline `style=` and no script on the document page (page source or a `Grep` on the new files), colors match meaning (green success, red errors and asterisks, amber blocked hint).
+- [ ] 16 `Logs/` contains no owner text, revisit text or document content, and no errors from the flow.
+- [ ] 17 Teardown: stop the app, remove temporary credentials and scratch data; leave the project MySQL container running; do not touch any `hcm_*` container.
+
+## Follow-ups (not edited here)
+
+- Archive `artifact-generation` (or confirm full MODIFIED text is enough) before archiving this change; there is no main `openspec/specs/artifacts/spec.md`.
+- Update the design wording (revisit limit 80, spec rejection messages) when archiving.
+- `Q1:` without hyphen bypasses the gate; note it for the step 5 validation (design Risks).
+- `(Revisar: X)` written alone is not recognised; the next save appends a full suffix after it.
+- Real BMAD checks (checklist §7) run before step 6; record results in the table.
+- Step 5 specification takes RF-65 and RF-66.
+- Everything beyond BMAD found during conformance goes to `docs/mejoras-posteriores.md`.
+
+## Key Learnings
+
+1. Guarding only the Draft-to-Approved branch keeps idempotent re-approval and the CompletionPending retry working for documents approved earlier.
+2. Running every rejecting rule before the reopen call prevents a failed assign from leaving the initiative in Planning for no reason.
+3. A single shared edit helper keeps save and assign identical in version, status and reopen behavior without duplicated handler code.
+4. The spec wins over the design where limits and messages differ, so the revisit limit is 80 characters, not 120.
+5. Grouping same-rule cases in theories keeps about 1,180 lines reviewable while still covering the gate, rewriter and round-trip rules.

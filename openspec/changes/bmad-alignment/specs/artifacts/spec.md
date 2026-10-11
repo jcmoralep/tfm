@@ -558,6 +558,7 @@ Approving MUST be a manual action of the owner on a Draft document with the expe
 - Gate check order in approve: not found, type in set, generated, version (conflict), availability, then the gate.
 - Message wording of the assign command and the panel text ("Guardar", "Preguntas pendientes") are proposals; semantics are fixed.
 - Brief and Spec are unchanged except for the triage suffix on their Q-n lines; their gate and panel work the same.
+- Assumptions confirmed by the user (2026-10-11): all assumptions above are accepted as written, and the panel is KEPT in this change.
 
 ## Out of Scope (amends the baseline)
 
