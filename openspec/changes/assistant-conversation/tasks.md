@@ -58,7 +58,7 @@ Decisions embedded:
 
 - [x] 1.1 `Domain/Initiatives/Initiative.cs`: add `StartPlanning(now)`; no-op if Planning (UpdatedAt untouched); Domain errors "La iniciativa debe estar en Aclarando para pasar a Planificando." and "Elija un nivel de profundidad antes de pasar a Planificando." Test: `Domain/InitiativeTests.cs` (Clarifying+depth, idempotent, Draft/ReadyToBuild, empty depth, locks mode/depth).
 - [x] 1.2 Create `Features/Initiatives/StartPlanning/StartPlanningCommand.cs` and `StartPlanningCommandHandler.cs` (id only, owner-resolved, not found for foreign/deleted). Test: `Features/Initiatives/InitiativeTransitionTests.cs` (owner only, deleted, no status member via reflection).
-- [x] 1.3 Create `Features/Initiatives/SetInitiativeDepth/{SetInitiativeDepthCommand,CommandHandler,CommandValidator}.cs` (`SetDepth(Manual, depth)`, Draft/Clarifying only, `IsInEnum`). Test: `InitiativeTransitionTests.cs` (Automatic empty to Manual, replace, Planning/ReadyToBuild rejected, undefined level, other user).
+- [x] 1.3 Create `Features/Initiatives/SetInitiativeDepth/{SetInitiativeDepthCommand,CommandHandler,CommandValidator}.cs` (`SetDepth(currentMode, depth)`, Draft/Clarifying only, `IsInEnum`). Test: `InitiativeTransitionTests.cs` (Automatic empty keeps Automatic with the level, replace, Planning/ReadyToBuild rejected, undefined level, other user).
 - [x] 1.4 `InitiativeTexts.cs`: add level names and deliverables moved from `Web/Components/Initiatives/InitiativeLabels.cs`, which delegates. Test: existing `Web.Tests/Initiatives/InitiativeLabelsTests.cs` stays green.
 - [x] 1.5 Test: edit depth Standard to Large in Clarifying touches no conversation data; "only two status transitions" in `InitiativeTransitionTests.cs`.
 
@@ -115,7 +115,7 @@ Decisions embedded:
 - [x] 7 Double click Enviar: one answer. (NOT OBSERVED: the second half, two sends while it is typing; the fake replies instantly, so the queue is covered only by SendQueue unit tests.) Send twice while "El asistente está escribiendo…": second is queued and sent in order; Undo disabled during the queue.
 - [x] 8 Undo repeatedly until "No hay ninguna respuesta que deshacer."; announced in the status region.
 - [x] 9 Leave midway and return: history, panel and last question intact, no duplicate opening question.
-- [x] 10 Automatic with no level: size question, suggestion, "Elegir otro nivel" shows three levels, choice gives Manual + level (detail shows Manual); accepted level not undoable.
+- [x] 10 Automatic with no level: size question, suggestion, "Elegir otro nivel" shows three levels, choice gives that level and keeps Automatic (detail shows Automático); accepted level not undoable.
 - [x] 11 Edit level in Clarifying, return: history kept, progress and next question reflect the new level.
 - [x] 12 Confirmation: "Quiero añadir algo" keeps Clarifying and re-offers; "Sí, pasar a Planificar" moves to Planning, level locked, not undoable; Small shows "lista para redactar".
 - [x] 13 Two tabs: answer in tab A, then in stale tab B: conflict message, typed text kept.

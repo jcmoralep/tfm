@@ -346,7 +346,7 @@ public sealed class SendMessageTests
     // ---- Depth proposal (Automatic mode) ----
 
     [Fact]
-    public async Task Accepting_the_suggested_depth_switches_to_manual_and_cannot_be_undone()
+    public async Task Accepting_the_suggested_depth_keeps_automatic_and_cannot_be_undone()
     {
         var id = await context.CreateAutomatic("App");
         context.Assistant.SuggestedDepth = InitiativeDepth.Standard;
@@ -360,7 +360,7 @@ public sealed class SendMessageTests
         var view = await context.Send(id, proposal.Version, quickReplyKey: "depth:standard");
 
         var details = await context.Details(id);
-        Assert.Equal(DepthMode.Manual, details.DepthMode);
+        Assert.Equal(DepthMode.Automatic, details.DepthMode);
         Assert.Equal(InitiativeDepth.Standard, details.Depth);
         var answer = context.StoredMessages(id).Last(m => m.Role == MessageRole.User);
         Assert.True(answer.AppliedToInitiative);
@@ -385,7 +385,7 @@ public sealed class SendMessageTests
     }
 
     [Fact]
-    public async Task Rejecting_the_suggestion_keeps_automatic_and_offers_the_three_levels_then_a_choice_sets_manual()
+    public async Task Rejecting_the_suggestion_keeps_automatic_and_offers_the_three_levels_then_a_choice_sets_the_level_and_keeps_automatic()
     {
         var id = await context.CreateAutomatic("App");
         var proposal = await context.AnswerUntilDecision(id);
@@ -405,7 +405,7 @@ public sealed class SendMessageTests
         view = await context.Send(id, view.Version, quickReplyKey: "depth:large");
 
         details = await context.Details(id);
-        Assert.Equal(DepthMode.Manual, details.DepthMode);
+        Assert.Equal(DepthMode.Automatic, details.DepthMode);
         Assert.Equal(InitiativeDepth.Large, details.Depth);
         Assert.False(view.CanUndo);
     }

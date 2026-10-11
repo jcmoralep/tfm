@@ -51,8 +51,15 @@
     else if (Mode == DepthMode.Automatic)
     {
         <p class="rounded-control bg-bubble px-4 py-3 text-sm text-ink">
-            El asistente sugerirá el nivel más adelante. Por ahora quedará como
-            <span class="font-semibold">@InitiativeTexts.DepthPending</span>.
+            @if (Depth is { } agreed)
+            {
+                <text>El nivel acordado con el asistente es <span class="font-semibold">@InitiativeLabels.Depth(agreed)</span>.</text>
+            }
+            else
+            {
+                <text>El asistente sugerirá el nivel más adelante. Por ahora quedará como
+                <span class="font-semibold">@InitiativeTexts.DepthPending</span>.</text>
+            }
         </p>
     }
 </div>
@@ -79,7 +86,7 @@
         Mode = value;
         await ModeChanged.InvokeAsync(value);
 
-        // Automatic never keeps a level, so the selection is cleared right away.
+        // Switching to Automatic starts without a level: the assistant will suggest it.
         if (value == DepthMode.Automatic && Depth is not null)
         {
             Depth = null;

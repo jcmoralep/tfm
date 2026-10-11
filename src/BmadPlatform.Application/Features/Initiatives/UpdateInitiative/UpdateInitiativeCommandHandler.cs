@@ -21,8 +21,6 @@ public sealed class UpdateInitiativeCommandHandler(
         initiative.Rename(request.Name, request.Description, now);
 
         // Mode and depth are locked outside Draft and Clarifying, so only touch them when the user changed them.
-        // The validator already rejects Automatic with a level, and the domain (SetDepth) stays the authority on
-        // what is stored, so the handler does not normalize the request itself.
         if (initiative.DepthMode != request.DepthMode || initiative.Depth != request.Depth)
         {
             initiative.SetDepth(request.DepthMode, request.Depth, now);

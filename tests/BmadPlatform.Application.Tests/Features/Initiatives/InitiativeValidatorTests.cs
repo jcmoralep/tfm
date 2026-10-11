@@ -67,14 +67,11 @@ public sealed class InitiativeValidatorTests
     }
 
     [Fact]
-    public void Automatic_mode_with_a_level_is_rejected()
+    public void Automatic_mode_with_a_level_is_valid()
     {
         var validator = new SaveInitiativeDepthCommandValidator();
 
-        var failure = Assert.Single(
-            validator.Validate(new SaveInitiativeDepthCommand(Guid.NewGuid(), DepthMode.Automatic, InitiativeDepth.Large, false)).Errors);
-
-        Assert.Equal("En modo automático no se puede elegir un nivel de profundidad.", failure.ErrorMessage);
+        Assert.True(validator.Validate(new SaveInitiativeDepthCommand(Guid.NewGuid(), DepthMode.Automatic, InitiativeDepth.Large, false)).IsValid);
     }
 
     [Fact]

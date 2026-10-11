@@ -82,8 +82,9 @@ public sealed class Initiative
     }
 
     /// <summary>
-    /// Sets the depth mode and level. Only possible in Draft or Clarifying. Automatic mode always clears the level.
-    /// A draft may keep an unfinished choice; once it is Clarifying, Manual needs a level.
+    /// Sets the depth mode and level. Only possible in Draft or Clarifying. Automatic mode may carry a level: the
+    /// one the person accepted from the assistant. A draft may keep an unfinished choice; once it is Clarifying,
+    /// Manual needs a level.
     /// </summary>
     public void SetDepth(DepthMode? mode, InitiativeDepth? depth, DateTimeOffset now)
     {
@@ -111,7 +112,7 @@ public sealed class Initiative
         }
 
         DepthMode = mode;
-        Depth = mode == Initiatives.DepthMode.Automatic ? null : depth;
+        Depth = depth;
         UpdatedAt = now;
     }
 

@@ -256,7 +256,7 @@ public sealed class InitiativeTransitionTests
     }
 
     [Fact]
-    public async Task SetInitiativeDepth_turns_automatic_with_an_empty_depth_into_manual_with_the_level()
+    public async Task SetInitiativeDepth_keeps_automatic_and_sets_the_level()
     {
         var id = await context.CreateDraft("App");
         await context.SaveDepth(id, DepthMode.Automatic, null, advance: true);
@@ -266,7 +266,7 @@ public sealed class InitiativeTransitionTests
 
         var details = await context.Get(id);
         Assert.NotNull(details);
-        Assert.Equal(DepthMode.Manual, details.DepthMode);
+        Assert.Equal(DepthMode.Automatic, details.DepthMode);
         Assert.Equal(InitiativeDepth.Standard, details.Depth);
         Assert.Equal(InitiativeStatus.Clarifying, details.Status);
     }
