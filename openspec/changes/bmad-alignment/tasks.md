@@ -102,23 +102,23 @@ Estimated lines per group:
 
 Setup: `docker compose` MySQL 8.4 with temporary credentials, apply migrations (none are new), run the app with the seed user. Never touch containers named `hcm_*`. Keep the project MySQL running at the end (user decision). Save a screenshot of each numbered step to `docs/evidencias/bmad-alignment/` (`NN-description.png`) and write `docs/evidencias/bmad-alignment/README.md` as the index: one line per image with the step, the date, what it proves and the SPEC scenario it covers.
 
-- [ ] 1 Small with "No sé" answers: generate the Spec; the panel "Preguntas pendientes" shows one row per Q-n with the "Sin asignar" badge, red asterisks, the legend and the datalist suggestions; the amber approve-blocked hint lists the ids and Aprobar is disabled. SPEC "Panel only with questions", "Two inputs, suggestions and single button", "Required marker and labels", "Aprobar explains why it is disabled".
+- [x] 1 Small with "No sé" answers: generate the Spec; the panel "Preguntas pendientes" shows one row per Q-n with the "Sin asignar" badge, red asterisks, the legend and the datalist suggestions; the amber approve-blocked hint lists the ids and Aprobar is disabled. SPEC "Panel only with questions", "Two inputs, suggestions and single button", "Required marker and labels", "Aprobar explains why it is disabled".
 - [ ] 2 Small: a document with no open question shows no panel and approves as before. SPEC "Document without questions approves as before".
-- [ ] 3 Small: save a partial row (one field typed); the loading dots show, the green notice appears, Aprobar stays blocked and the hint still lists the id. SPEC "Save assigns and reports", "Blank field writes the default".
-- [ ] 4 Small: fill every row, Guardar once; green notice "Preguntas guardadas. Versión N.", version +1, Borrador, hint gone, Aprobar enabled; pressing Guardar again quickly stores one change. SPEC "Save assigns and reports", "Double click stores one change".
-- [ ] 5 Small: Aprobar blocked first (with unassigned), then allowed; initiative reads "Lista para construir". SPEC "All assigned approves".
+- [x] 3 Small: save a partial row (one field typed); the loading dots show, the green notice appears, Aprobar stays blocked and the hint still lists the id. SPEC "Save assigns and reports", "Blank field writes the default".
+- [x] 4 Small: fill every row, Guardar once; green notice "Preguntas guardadas. Versión N.", version +1, Borrador, hint gone, Aprobar enabled; pressing Guardar again quickly stores one change. SPEC "Save assigns and reports", "Double click stores one change".
+- [x] 5 Small: Aprobar blocked first (with unassigned), then allowed; initiative reads "Lista para construir". SPEC "All assigned approves".
 - [ ] 6 Small (Ready to build): the panel warns that saving returns the document to Borrador and the initiative to Planificando; saving does exactly that. SPEC "Warning about the effect".
 - [ ] 7 Standard with open questions: Brief and PRD each assigned and approved; initiative Ready to build only after the second; PRD 2.3 shows the single assumption and no `UJ-n`; the questions line reads `(Responsable: …; Revisar: …)` in the read view. SPEC "One assumption in the section".
 - [ ] 8 Large with open questions: PRD panel works the same; the initiative stays "Planificando" after approval. SPEC "Large never completes in this change".
-- [ ] 9 Regenerate: the panel says the owners come back to "por asignar"; confirming resets them, the hint returns and Aprobar is blocked. SPEC "Confirmation panel", "Regeneration resets the owners".
+- [x] 9 Regenerate: the panel says the owners come back to "por asignar"; confirming resets them, the hint returns and Aprobar is blocked. SPEC "Confirmation panel", "Regeneration resets the owners".
 - [ ] 10 Edit after approval: edit an Approved document with the raw editor; it returns to Borrador and an unassigned question blocks approval again. SPEC "Edit after approval brings the gate back".
-- [ ] 11 Two tabs: assign in tab A, then Guardar in stale tab B; red conflict message, typed values kept, saving again conflicts again until Cancelar. SPEC "Conflict keeps typed values".
+- [x] 11 Two tabs: assign in tab A, then Guardar in stale tab B; red conflict message, typed values kept, saving again conflicts again until Cancelar. SPEC "Conflict keeps typed values".
 - [ ] 12 Reintentar path: if reachable in a dev run (force the ready transition to fail once), the page shows the approved document with "Reintentar" even with an unassigned question; if not reachable, state "not observed, unit-tested" in the evidence README. SPEC "CompletionPending retry still works".
 - [ ] 13 Another user: open a foreign `/iniciativas/{id}/artefactos/prd`; the same not-found message, no panel. SPEC "Foreign, deleted or not generated".
-- [ ] 14 Validation: type `Legal (TI)` and a 61-character owner; red message without a reload and the typed values kept.
-- [ ] 15 View hygiene: confirm there is no inline `style=` and no script on the document page (page source or a `Grep` on the new files), colors match meaning (green success, red errors and asterisks, amber blocked hint).
-- [ ] 16 `Logs/` contains no owner text, revisit text or document content, and no errors from the flow.
-- [ ] 17 Teardown: stop the app, remove temporary credentials and scratch data; leave the project MySQL container running; do not touch any `hcm_*` container.
+- [x] 14 Validation: type `Legal (TI)` and a 61-character owner; red message without a reload and the typed values kept.
+- [x] 15 View hygiene: confirm there is no inline `style=` and no script on the document page (page source or a `Grep` on the new files), colors match meaning (green success, red errors and asterisks, amber blocked hint).
+- [x] 16 `Logs/` contains no owner text, revisit text or document content, and no errors from the flow.
+- [x] 17 Teardown: stop the app, remove temporary credentials and scratch data; leave the project MySQL container running; do not touch any `hcm_*` container.
 
 ## Follow-ups (not edited here)
 
@@ -137,3 +137,5 @@ Setup: `docker compose` MySQL 8.4 with temporary credentials, apply migrations (
 3. A single shared edit helper keeps save and assign identical in version, status and reopen behavior without duplicated handler code.
 4. The spec wins over the design where limits and messages differ, so the revisit limit is 80 characters, not 120.
 5. Grouping same-rule cases in theories keeps about 1,180 lines reviewable while still covering the gate, rewriter and round-trip rules.
+
+Chrome re-check notes (2026-10-11): items 1, 3, 4, 5, 9, 11, 14, 15, 16 and 17 observed with a Standard Brief (evidence in docs/evidencias/bmad-alignment/). A binding bug found there was fixed (the panel hint printed the literal expression because the parameter lacked an @). Not observed in the browser, covered by unit tests: 2, 6, 7 (PRD), 8, 10, 12, 13, and the 61-character owner.

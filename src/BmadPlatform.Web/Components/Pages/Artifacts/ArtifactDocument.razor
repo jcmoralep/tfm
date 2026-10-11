@@ -214,7 +214,7 @@ else
             {
                 <OpenQuestionsPanel @key="questionsRevision" Questions="view.Questions" Version="view.Version"
                                     Busy="busy" Enabled="view.CanEdit" HasErrors="errors.Count > 0"
-                                    Hint="ArtifactLabels.EditHint(view.Status, view.InitiativeStatus)"
+                                    Hint="@ArtifactLabels.EditHint(view.Status, view.InitiativeStatus)"
                                     OnSave="SaveOwnersAsync" OnCancel="CancelOwners" />
             }
 
