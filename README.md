@@ -2,7 +2,7 @@
 
 Plataforma interna para que personas de producto lleven una iniciativa desde la idea hasta artefactos listos para desarrollo, con un asistente que aplica el método BMAD. El alcance y las reglas están en `AGENTS.md`, `REQUISITOS.md` y `PROPUESTA-MVP.md`.
 
-Estado actual: **paso 3 (Asistente guiado con IA falsa)** de `PROPUESTA-MVP.md` §7. Incluye la solución por capas, MySQL, Serilog, el inicio de sesión, el estilo visual base, las iniciativas y la conversación guiada con un asistente de demostración.
+Estado actual: **paso 4 (Artefactos con generador falso)** de `PROPUESTA-MVP.md` §7. Incluye la solución por capas, MySQL, Serilog, el inicio de sesión, el estilo visual base, las iniciativas, la conversación guiada con un asistente de demostración y la generación, edición y aprobación del Brief, el PRD y la especificación. Siguen pendientes Gemini real (paso 5), Arquitectura y Épicas (paso 6), contexto adjunto (paso 7) y exportación (paso 8).
 
 ## Advertencia sobre Gemini (capa gratuita)
 
