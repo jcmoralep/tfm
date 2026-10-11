@@ -82,7 +82,32 @@ public static class ArtifactLabels
     /// <summary>The limit as shown in the counter; the thousands separator is written literally to stay culture independent.</summary>
     public const string ContentLimitText = "20.000";
 
+    public const string QuestionsTitle = "Preguntas pendientes";
+
+    public const string QuestionsIntro = "Guardar cuenta como una edición del documento: se crea una versión nueva y queda en Borrador.";
+
+    public const string QuestionsRequiredLegend = "necesario para aprobar";
+
+    public const string QuestionsUnassigned = "Sin asignar";
+
+    public const string SavingQuestions = "Guardando las preguntas pendientes…";
+
+    public const string QuestionsUnchanged = "No había cambios que guardar.";
+
+    public const string RegenerateOwnersLost = "Los responsables de las preguntas vuelven a «por asignar».";
+
+    public const string OwnerPlaceholderHint = "antes de la arquitectura";
+
+    /// <summary>Suggested areas for the owner input; any text is still allowed.</summary>
+    public static readonly IReadOnlyList<string> OwnerSuggestions = ["Legal", "TI", "Finanzas", "Quien propone la iniciativa"];
+
     public static string Saved(int version) => $"Cambios guardados. Versión {version}.";
+
+    public static string QuestionsSaved(int version) => $"Preguntas guardadas. Versión {version}.";
+
+    /// <summary>The amber note under the header that says why Aprobar is disabled.</summary>
+    public static string ApproveBlocked(IEnumerable<string> unassignedIds) =>
+        $"{ArtifactTexts.UnassignedQuestions(unassignedIds)} Use el panel «{QuestionsTitle}».";
 
     public static string EditCounter(int length) => $"{length} / {ContentLimitText}";
 

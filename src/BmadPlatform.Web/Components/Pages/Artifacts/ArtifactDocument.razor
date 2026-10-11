@@ -3,6 +3,7 @@
 @using BmadPlatform.Application.Common.Exceptions
 @using BmadPlatform.Application.Features.Artifacts
 @using BmadPlatform.Application.Features.Artifacts.ApproveArtifact
+@using BmadPlatform.Application.Features.Artifacts.AssignQuestionOwners
 @using BmadPlatform.Application.Features.Artifacts.GenerateArtifact
 @using BmadPlatform.Application.Features.Artifacts.GetArtifact
 @using BmadPlatform.Application.Features.Artifacts.RegenerateArtifact
@@ -78,6 +79,7 @@ else
                         </button>
                         <button type="button" @ref="approveButton" disabled="@(busy || !view.CanApprove)"
                                 aria-expanded="@(confirm == PanelKind.Approve ? "true" : "false")" aria-controls="approve-panel"
+                                aria-describedby="@(ApproveBlocked ? "approve-blocked" : null)"
                                 @onclick="AskApprove"
                                 class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-60">
                             Aprobar
@@ -117,11 +119,20 @@ else
             </div>
         }
 
+        @if (!editing && ApproveBlocked)
+        {
+            <p id="approve-blocked" class="mt-4 rounded-control bg-warning-soft px-3 py-2 text-sm text-warning-ink">@ArtifactLabels.ApproveBlocked(view.UnassignedQuestions)</p>
+        }
+
         @if (!editing && confirm == PanelKind.Regenerate)
         {
             <ConfirmPanel Id="regenerate-panel" Title="¿Regenerar este documento?" ConfirmLabel="Sí, regenerar" Destructive="true"
                           Busy="busy" OnConfirm="RegenerateAsync" OnCancel="CancelPanel">
                 <p>Se reemplazará todo el contenido, incluidos sus cambios manuales.</p>
+                @if (view.Questions.Count > 0)
+                {
+                    <p class="mt-1">@ArtifactLabels.RegenerateOwnersLost</p>
+                }
                 @if (view.InitiativeStatus == InitiativeStatus.ReadyToBuild)
                 {
                     <p class="mt-1">La iniciativa volverá a Planificando.</p>
@@ -199,6 +210,14 @@ else
                 </div>
             }
 
+            @if (view.Questions.Count > 0)
+            {
+                <OpenQuestionsPanel @key="questionsRevision" Questions="view.Questions" Version="view.Version"
+                                    Busy="busy" Enabled="view.CanEdit" HasErrors="errors.Count > 0"
+                                    Hint="ArtifactLabels.EditHint(view.Status, view.InitiativeStatus)"
+                                    OnSave="SaveOwnersAsync" OnCancel="CancelOwners" />
+            }
+
             @if (view.Warnings.Count > 0)
             {
                 <div role="status" class="mt-6 rounded-control border border-line bg-warning-soft p-3 text-sm text-warning-ink">
@@ -242,6 +261,7 @@ else
     private string editInitial = "";
     private int editRevision;
     private int editBaseVersion;
+    private int questionsRevision;
     private bool focusEditor;
     private PanelKind confirm;
     private PanelKind restoreFocusTo;
@@ -258,6 +278,9 @@ else
     public string? GeneratedFlag { get; set; }
 
     private bool CounterTooLong => editText.Trim().Length > ContentMaxLength;
+
+    // Aprobar is disabled only because of unassigned questions on a draft; the note says which ones.
+    private bool ApproveBlocked => view is { Generated: true, Status: ArtifactStatus.Draft, UnassignedQuestions.Count: > 0 };
 
     private MarkupString Rendered
     {
@@ -282,6 +305,7 @@ else
         }
 
         loadedKey = key;
+        questionsRevision++;
         loading = true;
         view = null;
         editing = false;
@@ -430,6 +454,35 @@ else
         }
     }
 
+    private async Task SaveOwnersAsync(QuestionOwnersSubmission submission)
+    {
+        if (view is not { CanEdit: true } current)
+        {
+            return;
+        }
+
+        // The panel sends the version its rows came from; after a conflict a retry conflicts again until Cancelar.
+        await RunAsync(
+            ArtifactLabels.SavingQuestions,
+            () => Mediator.Send(new AssignQuestionOwnersCommand(Id, current.Type, submission.BaseVersion, submission.Assignments)),
+            result => result.Version == submission.BaseVersion
+                ? ArtifactLabels.QuestionsUnchanged
+                : ArtifactLabels.QuestionsSaved(result.Version));
+    }
+
+    // A fresh panel copies the current document again; the typed values are dropped on purpose.
+    private void CancelOwners()
+    {
+        if (busy)
+        {
+            return;
+        }
+
+        errors = [];
+        notice = null;
+        questionsRevision++;
+    }
+
     private async Task RegenerateAsync()
     {
         if (view is not { CanRegenerate: true } current)
@@ -491,6 +544,7 @@ else
         {
             view = await work();
             notice = successNotice(view);
+            questionsRevision++;
 
             return true;
         }

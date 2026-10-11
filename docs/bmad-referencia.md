@@ -76,3 +76,17 @@ Estas tres comprobaciones necesitan ejecutar BMAD de verdad. **No se han ejecuta
 | 1. `bmad-build` con `SPEC.md` | — | 6.12.1 | no ejecutado | — |
 | 2. Épicas: `FR-n` a `FR1:` con el mismo número | — | 6.12.1 | no ejecutado | — |
 | 3. Encabezados en español y sufijo `Q-n` | — | 6.12.1 | no ejecutado | — |
+
+## 8. Cierre de conformidad del cambio `bmad-alignment`
+
+Resultado: **cumple con notas** (comparación por lectura de los cuatro documentos de ejemplo `Goldens/` contra las secciones 2 y 4 de este documento y contra la regla de cierre de `bmad-prd`, paso Finalize 4: lo que no bloquea se difiere con responsable y condición de revisión). No se ejecutó BMAD.
+
+| Aspecto | Resultado |
+|---|---|
+| Encabezados y orden (Brief, PRD, Especificación) | Coinciden con la sección 2; los títulos van en español. |
+| Esquema de identificadores | Con guion (`FR-n`, `NFR-n`, `UJ-n`, `A-n`, `Q-n`); decisión y excepción del paso de épicas en la sección 4. |
+| Recorridos clave (PRD 2.3) | Una sola suposición `[ASSUMPTION: A-n]` con su entrada en el índice; no se inventan `UJ-n`. |
+| Línea de pregunta abierta | `- **Q-n**: texto (Responsable: …; Revisar: …)`: lleva las dos piezas que pide Finalize 4. La aprobación se bloquea mientras falte alguna. |
+| Índice de suposiciones | Cada `A-n` del documento aparece una vez en el índice. |
+
+Desviaciones conocidas y aceptadas: `FR-n` en lugar de `CAP-n` en la Especificación, `NFR-n` como extensión de la plataforma, encabezados en español y el sufijo como portador de responsable y revisión. No se encontró ninguna brecha real, así que ni los documentos de ejemplo ni el generador cambiaron. Lo que va más allá de BMAD (marca de fase bloqueante, tabla de elementos, validación independiente) está en `docs/mejoras-posteriores.md`. Las tres comprobaciones con una instalación real siguen pendientes en la sección 7.

@@ -88,4 +88,21 @@ public sealed class ArtifactLabelsTests
     {
         Assert.Equal(expected, ArtifactLabels.EditHint(status, initiative));
     }
+
+    [Theory]
+    [InlineData(3, "Preguntas guardadas. Versión 3.")]
+    [InlineData(12, "Preguntas guardadas. Versión 12.")]
+    public void Saved_questions_notice_carries_the_version(int version, string expected)
+    {
+        Assert.Equal(expected, ArtifactLabels.QuestionsSaved(version));
+    }
+
+    [Fact]
+    public void Approve_blocked_note_lists_the_ids_and_points_to_the_panel()
+    {
+        var text = ArtifactLabels.ApproveBlocked(["Q-1", "Q-3"]);
+
+        Assert.StartsWith(ArtifactTexts.UnassignedQuestions(["Q-1", "Q-3"]), text);
+        Assert.Contains("Preguntas pendientes", text);
+    }
 }
