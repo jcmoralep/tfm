@@ -7,7 +7,8 @@ namespace BmadPlatform.Web.Components.Artifacts;
 
 /// <summary>
 /// Turns the stored Markdown into HTML for the read view. Raw HTML is disabled, so tags typed in a document stay
-/// visible text, and link and image addresses are limited to http, https, mailto and relative ones.
+/// visible text, and link addresses are limited to http, https, mailto and relative ones. Images are never loaded:
+/// they show their alt text, so a viewer's browser cannot be made to fetch an external address.
 /// </summary>
 public sealed class MarkdownRenderer
 {
@@ -28,9 +29,9 @@ public sealed class MarkdownRenderer
             heading.Level = Math.Min(heading.Level + 1, 6);
         }
 
-        // A link or image with a blocked address becomes plain text (the link text or the image alt), because an
-        // anchor with an empty href would navigate to the current page.
-        foreach (var link in document.Descendants<LinkInline>().Where(l => !IsAllowed(l.Url)).ToList())
+        // An image, or a link with a blocked address, becomes plain text (the alt or the link text). A blocked anchor
+        // would otherwise navigate to the current page, and an image would make the viewer's browser fetch its address.
+        foreach (var link in document.Descendants<LinkInline>().Where(l => l.IsImage || !IsAllowed(l.Url)).ToList())
         {
             foreach (var child in link.ToList())
             {

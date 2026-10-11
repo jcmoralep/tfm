@@ -114,6 +114,31 @@ public sealed class ArtifactFormatCheckerTests
         Assert.Empty(CheckSpec(markdown));
     }
 
+    [Theory]
+    [InlineData("- Q4 cerró con buenas ventas")]
+    [InlineData("- A4 es el tamaño del papel")]
+    [InlineData("- SM2 es el modelo del equipo")]
+    [InlineData("Q3: revisar las cifras")]
+    public void Plain_bullets_that_start_with_a_short_token_are_not_identifiers(string line)
+    {
+        var markdown = CleanSpec(m => m.Replace("Texto.", line, StringComparison.Ordinal));
+
+        Assert.Empty(CheckSpec(markdown));
+    }
+
+    [Fact]
+    public void A_badly_broken_document_returns_fifty_warnings_and_the_count_of_the_rest()
+    {
+        var broken = string.Join('\n',Enumerable.Range(1, 80).Select(n => $"- **FR-0{n}**: mal"));
+        var markdown = CleanSpec(m => m.Replace("- **FR-2**: Ver su estado", broken, StringComparison.Ordinal));
+
+        var warnings = CheckSpec(markdown);
+
+        Assert.Equal(ArtifactFormatChecker.MaxWarnings + 1, warnings.Count);
+        Assert.Equal("y 30 avisos más.", warnings[^1].Message);
+        Assert.Null(warnings[^1].Line);
+    }
+
     [Fact]
     public void Duplicate_identifier_is_reported_once_with_both_lines()
     {

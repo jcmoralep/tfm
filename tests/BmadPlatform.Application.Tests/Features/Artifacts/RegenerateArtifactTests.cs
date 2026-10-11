@@ -73,7 +73,8 @@ public sealed class RegenerateArtifactTests
     {
         var id = await ReadySpec();
         context.Drafter.FailuresRemaining = 1;
-        await Assert.ThrowsAsync<InvalidOperationException>(() => context.Regenerate(id, ArtifactType.Spec, 1));
+        context.Drafter.Failure = new AssistantUnavailableException();
+        await Assert.ThrowsAsync<AssistantUnavailableException>(() => context.Regenerate(id, ArtifactType.Spec, 1));
         context.Drafter.Output = "   ";
         await Assert.ThrowsAsync<DomainException>(() => context.Regenerate(id, ArtifactType.Spec, 1));
 

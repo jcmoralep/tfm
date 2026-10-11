@@ -520,4 +520,55 @@ public sealed partial class FakeArtifactDrafterTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => new FakeArtifactDrafter().DraftAsync(Request(ArtifactType.Brief, InitiativeDepth.Standard), cancelled.Token));
     }
+
+    [Theory]
+    [InlineData(ArtifactType.Prd, InitiativeDepth.Large, AssistantScript.Keys.Integrations, "Ninguno", "No se indicaron integraciones.")]
+    [InlineData(ArtifactType.Prd, InitiativeDepth.Standard, AssistantScript.Keys.Constraints, "Ninguno que yo sepa", "No se indicaron restricciones.")]
+    [InlineData(ArtifactType.Prd, InitiativeDepth.Large, AssistantScript.Keys.Qualities, "Nada especial", "No se indicaron condiciones especiales de velocidad o seguridad.")]
+    [InlineData(ArtifactType.Spec, InitiativeDepth.Small, AssistantScript.Keys.OutOfScope, "Nada por ahora", "No se indicó nada fuera del alcance por ahora.")]
+    [InlineData(ArtifactType.Brief, InitiativeDepth.Standard, AssistantScript.Keys.OutOfScope, "Nada por ahora", "No se indicó nada fuera del alcance por ahora.")]
+    public async Task A_nothing_quick_reply_becomes_a_sentence_and_never_a_requirement(
+        ArtifactType type,
+        InitiativeDepth depth,
+        string key,
+        string label,
+        string sentence)
+    {
+        var answers = Answers(depth).Select(a => a.TopicKey == key ? None(key, label) : a).ToList();
+        var withText = await Draft(Request(type, depth, Answers(depth, new Dictionary<string, string> { [key] = label })));
+
+        var document = await Draft(Request(type, depth, answers));
+
+        Assert.Contains("- " + sentence, document, StringComparison.Ordinal);
+        Assert.DoesNotContain(label, document, StringComparison.Ordinal);
+        Assert.Contains(label, withText, StringComparison.Ordinal);
+        Assert.Empty(ArtifactFormatChecker.Check(type, document));
+    }
+
+    [Fact]
+    public async Task Other_quick_replies_keep_their_label_as_text()
+    {
+        var answers = Answers(InitiativeDepth.Standard, new Dictionary<string, string> { [AssistantScript.Keys.Users] = "Ambos" });
+
+        var prd = await Draft(Request(ArtifactType.Prd, InitiativeDepth.Standard, answers));
+
+        Assert.Contains("- Ambos", prd, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(ArtifactType.Prd, InitiativeDepth.Large)]
+    [InlineData(ArtifactType.Brief, InitiativeDepth.Standard)]
+    [InlineData(ArtifactType.Spec, InitiativeDepth.Small)]
+    public async Task Many_tiny_lines_are_capped_per_answer_and_stay_under_the_content_cap(ArtifactType type, InitiativeDepth depth)
+    {
+        var thousand = string.Join('\n', Enumerable.Repeat("a", 1000));
+        var texts = Topics(depth).ToDictionary(key => key, _ => thousand);
+
+        var document = await Draft(Request(type, depth, Answers(depth, texts)));
+
+        Assert.True(document.Length <= Artifact.ContentMaxLength, $"Length {document.Length}");
+        Assert.Contains("- y 980 más.", document, StringComparison.Ordinal);
+        Assert.All(new[] { "FR", "UJ", "SM" }, prefix => Assert.True(Definitions(document, prefix).Count() <= 40));
+        Assert.Empty(ArtifactFormatChecker.Check(type, document));
+    }
 }

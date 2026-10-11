@@ -35,7 +35,9 @@ try
 
     builder.Services
         .AddRazorComponents()
-        .AddInteractiveServerComponents();
+        .AddInteractiveServerComponents()
+        // The editor sends up to 20,000 characters (multibyte ones included) in one message, above the 32 KB default.
+        .AddHubOptions(options => options.MaximumReceiveMessageSize = 128 * 1024);
 
     builder.Services.AddCascadingAuthenticationState();
     builder.Services

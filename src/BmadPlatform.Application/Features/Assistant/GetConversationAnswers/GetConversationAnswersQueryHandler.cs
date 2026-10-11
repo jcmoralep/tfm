@@ -61,7 +61,10 @@ public sealed class GetConversationAnswersQueryHandler(
 
             if (latest is not null)
             {
-                answers.Add(new TopicAnswer(key, topic.Prompt, latest.Content, latest.AnswerKind == AnswerKind.Unknown));
+                var none = latest.AnswerKind == AnswerKind.QuickReply
+                    && latest.QuickReplyKey is AssistantScript.ReplyKeys.None or AssistantScript.ReplyKeys.Nothing;
+
+                answers.Add(new TopicAnswer(key, topic.Prompt, latest.Content, latest.AnswerKind == AnswerKind.Unknown, none));
             }
         }
 

@@ -94,13 +94,18 @@ internal static class PrdLayout
         if (users is { IsUnknown: false })
         {
             // The answer itself is quoted once, in section 2; each journey points to its line by position.
-            var count = c.Lines(users.Text).Count;
+            var count = c.Lines(users.Text, out var omitted).Count;
 
             for (var position = 1; position <= count; position++)
             {
                 var id = c.Next(ItemPrefix.UserJourney);
 
                 c.Line(ArtifactOutline.Item(id, $"Recorrido de la persona o grupo n.º {position} del usuario objetivo (sección 2) para cumplir los trabajos por hacer."));
+            }
+
+            if (omitted > 0)
+            {
+                c.Line("- " + DraftComposer.MoreText(omitted));
             }
 
             c.Line("- " + c.Assumption("Los recorridos de esta sección son un punto de partida; se confirman con las personas usuarias."));

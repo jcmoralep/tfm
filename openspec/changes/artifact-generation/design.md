@@ -18,7 +18,7 @@ The guiding invariant is RN-06: **an initiative is Ready to build only while eve
 | 6 | Format index (RF-43, RF-56) | Persist an items table now / derive warnings on read | **Derived on read, nothing stored.** `ArtifactFormatChecker` is a pure function of the Markdown; the items table, owners and statuses are a later change |
 | 7 | Generated length | Truncate the finished document / bound each inserted answer | **The drafter contract requires output of at most `Artifact.ContentMaxLength` (20,000).** The fake clips each inserted answer to 1,500 characters with "…"; a test with every answer at 2,000 characters proves the bound. The domain rejects anything longer anyway |
 | 8 | Identical save | Bump the version anyway / no-op | **No-op**: content equal after line-ending normalization changes nothing (no version, no reopen) |
-| 9 | Rendering | Markdig in Application / in Web | **Web only** (`MarkdownRenderer`), raw HTML disabled, link and image URLs restricted to `http`, `https`, `mailto` and relative; others render as plain text (link text or image alt); headings are demoted one level (the page owns the h1) |
+| 9 | Rendering | Markdig in Application / in Web | **Web only** (`MarkdownRenderer`), raw HTML disabled, link URLs restricted to `http`, `https`, `mailto` and relative, others render as plain text (the link text); images are never rendered and show their alt text; headings are demoted one level (the page owns the h1) |
 | 10 | Document styles | Tailwind typography plugin: availability in the standalone CLI not verified / scoped CSS | **`.doc-prose` rules in the Tailwind input CSS** with `@apply` and the theme tokens |
 | 11 | Spec item ids | BMAD `CAP-n` / RF-44 `FR-n` | **`FR-n`**: RF-44 has no `CAP` prefix and one checker serves every type |
 | 12 | Generic text helpers | Artifacts reads `AssistantScript` topics / the answers DTO carries what is needed | **The DTO carries `TopicKey`, `Question` and `Text`.** Artifacts references only the public `AssistantScript.Keys` constants |
@@ -62,6 +62,7 @@ Generation needs `Available`. Edit, regenerate and approve need an existing row 
   - a malformed id (`FR1`, `FR -1`, `fr-1`, `FR-`, `FR-01`): "Línea 12: «FR1» no sigue el formato FR-n."
   - the same id defined twice: "Línea 30: FR-2 ya está definido en la línea 14."
   - an `[ASSUMPTION` marker without a valid `A-n`.
+  - at most 50 warnings, then a final "y N avisos más."; a hyphenless token such as `Q4`, `A4` or `SM2` is prose, only `FR1`, `NFR1` and `UJ1` count as malformed without a hyphen.
   - It never changes the text.
 
 ### Drafter
@@ -92,7 +93,7 @@ Multi-line answers split into one item per non-empty line, with leading bullets 
 
 ### Cross-module contracts
 
-- Assistant: `GetConversationAnswersQuery(InitiativeId)` returns `ConversationAnswers?` (null when the initiative is not found): `ClarifyComplete`, `PlanComplete`, `Answers: IReadOnlyList<TopicAnswer(TopicKey, Question, Text, IsUnknown)>`. Visible user answers in order, content topics only (no size, depth-proposal or confirm-planning). Computed with `ConversationJourney`: `ClarifyComplete = Clarify.IsComplete && Depth is not null`; `PlanComplete = Status is Planning or ReadyToBuild && (Plan is null || Plan.IsComplete)`. A missing conversation gives empty answers and both flags false.
+- Assistant: `GetConversationAnswersQuery(InitiativeId)` returns `ConversationAnswers?` (null when the initiative is not found): `ClarifyComplete`, `PlanComplete`, `Answers: IReadOnlyList<TopicAnswer(TopicKey, Question, Text, IsUnknown, IsNone)>`. `IsNone` marks the "nothing" quick replies (`none`, `nothing`), which the layouts write as one sentence without an identifier. Visible user answers in order, content topics only (no size, depth-proposal or confirm-planning). Computed with `ConversationJourney`: `ClarifyComplete = Clarify.IsComplete && Depth is not null`; `PlanComplete = Status is Planning or ReadyToBuild && (Plan is null || Plan.IsComplete)`. A missing conversation gives empty answers and both flags false.
 - Initiatives: `MarkReadyToBuildCommand(Id)` and `ReopenPlanningCommand(Id)`, idempotent, owner-scoped, sent only by Artifacts (RF-34).
 - Boundary tokens: Artifacts adds `(?<!\.)\bArtifact\b(?!\s*[,;)])`, `\bIArtifactRepository\b`, `Infrastructure\.Artifacts`, `\bart_`. The names `GetConversationAnswersQuery`, `ConversationAnswers` and `InitiativeDetails` contain no bare `Conversation` or `Initiative` token, so they are allowed. Initiatives code must not mention `Artifact` outside `//` comments.
 
@@ -105,11 +106,11 @@ Multi-line answers split into one item per non-empty line, with leading bullets 
 | `GenerateArtifactCommand(InitiativeId, Type)` | `ArtifactView` | Requires `Available` and no row ("El documento ya existe. Use Regenerar para reemplazarlo."). Drafter, `Create`, `AddAsync`; a unique violation becomes `ConflictException` |
 | `SaveArtifactContentCommand(InitiativeId, Type, ExpectedVersion, Content)` | `ArtifactView` | Version check; if unchanged, no-op; if Approved and the initiative is ReadyToBuild, `ReopenPlanningCommand` first; then `Edit` and `SaveAsync`. `ToString` redacts `Content` |
 | `RegenerateArtifactCommand(InitiativeId, Type, ExpectedVersion, Confirmed)` | `ArtifactView` | Requires `Confirmed` (RF-57, the confirmation panel sets it) and `Available`; version check; drafter; reopen first as above; `Replace`, `SaveAsync` |
-| `ApproveArtifactCommand(InitiativeId, Type, ExpectedVersion)` | `ArtifactView` | Version check; `Approve` (no save when already approved); if the status is Planning and `IsSetComplete`, `MarkReadyToBuildCommand` |
+| `ApproveArtifactCommand(InitiativeId, Type, ExpectedVersion)` | `ArtifactView` | Version check; requires the document type to be `Available` (an undone answer takes the approval away); `Approve` (no save when already approved); if the status is Planning, every document of the level is available and `IsSetComplete`, `MarkReadyToBuildCommand` |
 
 - Validators: `InitiativeId` not empty, `Type` `IsInEnum`, `ExpectedVersion > 0`, content not empty and at most 20,000, with the Spanish messages above.
 - Port: `IArtifactRepository { GetAsync(initiativeId, type, ownerId); ListAsync(initiativeId, ownerId) -> ArtifactSummary(Type, Status, Version); AddAsync; SaveAsync(artifact, expectedVersion) }`. Every read takes the owner; summaries never load content.
-- Errors: `ConflictException(ArtifactTexts.Conflict)`: "El documento cambió en otra pestaña. Recargue la página." Other texts go in `ArtifactTexts`. `UserMessages` already maps `ConflictException` and `DomainException`; no new exception type is needed.
+- Errors: `ConflictException(ArtifactTexts.Conflict)`: "El documento cambió en otra pestaña. Si estaba editando, su texto sigue en el cuadro: cópielo, cancele y edite de nuevo la versión actual." Other texts go in `ArtifactTexts`. `UserMessages` already maps `ConflictException` and `DomainException`; no new exception type is needed.
 
 ## Data Flow
 
@@ -139,7 +140,7 @@ Generate: GetConversationAnswersQuery -> Catalog.Availability -> IArtifactDrafte
     - Regenerar (RN-07): "Se reemplazará todo el contenido, incluidos sus cambios manuales."
     - Aprobar: lists the warnings (RF-59) and says when the approval will make the initiative Ready to build.
   - Feedback: green success notices ("Documento generado.", "Cambios guardados. Versión N.", "Documento aprobado. La iniciativa está Lista para construir."), the typing-dot loading indicator "Generando el documento…", a `busy` flag, controls disabled until interactive, and "Reintentar" when `CompletionPending`.
-  - Errors: `catch … when (UserMessages.TryGet)`; a conflict reloads through the query.
+  - Errors: `catch … when (UserMessages.TryGet)`; a conflict reloads through the query, and the editor keeps sending the version its text came from (`editBaseVersion`), so a retry conflicts again until the person cancels and edits again. Any other failure shows a generic message and keeps the editor; the drafter failure contract (`AssistantUnavailableException`) is documented on `IArtifactDrafter`.
 - `MarkdownRenderer` (singleton): Markdig pipeline with `DisableHtml()`, pipe tables and URL filtering, returned as a `MarkupString`.
 - `ArtifactLabels` (pure, tested): slugs, names, state texts, reasons per availability, success texts.
 - `ChatPanel`: when `Journey.NextTopic` is Closing or the view is read-only, it shows a call to action "Ir a los documentos" linking to `/iniciativas/{id}#section-artifacts` (`AssistantLabels.DocumentsCallToAction`).

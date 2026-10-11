@@ -166,4 +166,50 @@ public sealed class ApproveArtifactTests
         Assert.Equal((2, ArtifactStatus.Draft), (stored.Version, stored.Status));
         Assert.Equal(InitiativeStatus.Planning, await context.StatusOf(id));
     }
+
+    [Fact]
+    public async Task Undoing_a_plan_answer_takes_the_approval_back_until_the_topic_is_answered_again()
+    {
+        var id = await context.AtClosing(InitiativeDepth.Standard);
+        await context.Generate(id, ArtifactType.Prd);
+        var closing = await context.Assistant.Current(id);
+        await context.Assistant.Undo(id, closing.Version);
+
+        var view = await context.Get(id, ArtifactType.Prd);
+        var error = await Assert.ThrowsAsync<DomainException>(() => context.Approve(id, ArtifactType.Prd, 1));
+
+        Assert.False(view!.CanApprove);
+        Assert.Equal(ArtifactTexts.TopicsUncovered, error.Message);
+        Assert.Equal(ArtifactStatus.Draft, context.StoredArtifact(id, ArtifactType.Prd).Status);
+
+        await context.Assistant.Answer(id, "Primero consultar");
+
+        Assert.Equal(ArtifactStatus.Approved, (await context.Approve(id, ArtifactType.Prd, 1)).Status);
+    }
+
+    [Fact]
+    public async Task The_retry_after_a_failed_transition_waits_while_a_topic_is_uncovered()
+    {
+        var id = await context.AtClosing(InitiativeDepth.Standard);
+        await context.Generate(id, ArtifactType.Brief);
+        await context.Generate(id, ArtifactType.Prd);
+        await context.Approve(id, ArtifactType.Brief, 1);
+        context.Sender.BeforeHandle = request =>
+        {
+            if (request is MarkReadyToBuildCommand)
+            {
+                throw new InvalidOperationException("boom");
+            }
+        };
+        await Assert.ThrowsAsync<InvalidOperationException>(() => context.Approve(id, ArtifactType.Prd, 1));
+        context.Sender.BeforeHandle = null;
+        Assert.True((await context.Get(id, ArtifactType.Prd))!.CompletionPending);
+
+        var closing = await context.Assistant.Current(id);
+        await context.Assistant.Undo(id, closing.Version);
+
+        Assert.False((await context.Get(id, ArtifactType.Prd))!.CompletionPending);
+        await Assert.ThrowsAsync<DomainException>(() => context.Approve(id, ArtifactType.Prd, 1));
+        Assert.Equal(InitiativeStatus.Planning, await context.StatusOf(id));
+    }
 }

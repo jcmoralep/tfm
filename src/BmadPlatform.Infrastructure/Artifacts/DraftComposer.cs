@@ -28,6 +28,18 @@ internal sealed partial class DraftComposer
         [AssistantScript.Keys.Qualities] = "las condiciones de velocidad o seguridad",
     };
 
+    // One answer never yields more than this many items or journeys, so many tiny lines cannot outgrow the content cap.
+    private const int MaxItemsPerAnswer = 20;
+
+    // What a "nothing" quick reply ("Ninguno", "Nada por ahora") says as a sentence. It is not an item, so it has no identifier.
+    private static readonly Dictionary<string, string> NoneTexts = new(StringComparer.Ordinal)
+    {
+        [AssistantScript.Keys.OutOfScope] = "No se indicó nada fuera del alcance por ahora.",
+        [AssistantScript.Keys.Constraints] = "No se indicaron restricciones.",
+        [AssistantScript.Keys.Integrations] = "No se indicaron integraciones.",
+        [AssistantScript.Keys.Qualities] = "No se indicaron condiciones especiales de velocidad o seguridad.",
+    };
+
     private readonly StringBuilder text = new();
     private readonly ItemNumberer numberer = new();
     private readonly Dictionary<string, TopicAnswer> answers;
@@ -115,7 +127,9 @@ internal sealed partial class DraftComposer
 
     /// <summary>
     /// Writes one list item per line of the answer. A "No sé" answer refers to its open question and invents
-    /// nothing; a topic without an answer takes an assumption. <paramref name="format"/> builds the item (a plain
+    /// nothing; a topic without an answer takes an assumption; a "nothing" quick reply is one sentence with no
+    /// identifier, because it states that there is nothing to list. At most 20 items are written, then a closing
+    /// "y N más" line. <paramref name="format"/> builds the item (a plain
     /// bullet by default) and <paramref name="label"/> prefixes each item with a bold label.
     /// </summary>
     public void Items(string key, Func<string, string>? format = null, string? label = null)
@@ -132,14 +146,28 @@ internal sealed partial class DraftComposer
         {
             Line(Wrap($"Pendiente: ver {Question(key)}."));
         }
+        else if (answer.IsNone && NoneTexts.TryGetValue(key, out var none))
+        {
+            Line(Wrap(none));
+        }
         else
         {
-            foreach (var line in Lines(answer.Text))
+            var lines = Lines(answer.Text, out var omitted);
+
+            foreach (var line in lines)
             {
                 Line(format is null ? Wrap(line) : format(line));
             }
+
+            if (omitted > 0)
+            {
+                Line(Wrap(MoreText(omitted)));
+            }
         }
     }
+
+    /// <summary>The closing line that stands for the items of an answer that were left out.</summary>
+    public static string MoreText(int omitted) => $"y {omitted} más.";
 
     /// <summary>
     /// One list item with every line of the answer joined by semicolons under a single bold label. Unknown and
@@ -149,7 +177,9 @@ internal sealed partial class DraftComposer
     {
         if (Answer(key) is { IsUnknown: false } answer)
         {
-            Line($"- **{label}**: {string.Join("; ", Lines(answer.Text))}");
+            var lines = Lines(answer.Text, out var omitted);
+
+            Line($"- **{label}**: {string.Join("; ", omitted > 0 ? [.. lines, MoreText(omitted)] : lines)}");
 
             return;
         }
@@ -200,7 +230,13 @@ internal sealed partial class DraftComposer
     /// The answer as items: one per non-empty line, list markers removed, a line that would open a heading
     /// escaped, and the whole answer clipped to the budget with an ellipsis.
     /// </summary>
-    public IReadOnlyList<string> Lines(string answer)
+    public IReadOnlyList<string> Lines(string answer) => Lines(answer, out _);
+
+    /// <summary>
+    /// As <see cref="Lines(string)"/>, keeping at most 20 lines; <paramref name="omitted"/> is how many more lines the
+    /// answer had, so the caller can say so.
+    /// </summary>
+    public IReadOnlyList<string> Lines(string answer, out int omitted)
     {
         var lines = answer.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n')
             .Split('\n')
@@ -208,6 +244,9 @@ internal sealed partial class DraftComposer
             .Where(line => line.Length > 0)
             .Select(Escape)
             .ToList();
+
+        omitted = Math.Max(0, lines.Count - MaxItemsPerAnswer);
+        lines = lines.Take(MaxItemsPerAnswer).ToList();
 
         var kept = new List<string>();
         var used = 0;

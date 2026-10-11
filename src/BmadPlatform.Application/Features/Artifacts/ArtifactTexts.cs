@@ -6,7 +6,7 @@ namespace BmadPlatform.Application.Features.Artifacts;
 /// </summary>
 public static class ArtifactTexts
 {
-    public const string Conflict = "El documento cambió en otra pestaña. Recargue la página.";
+    public const string Conflict = "El documento cambió en otra pestaña. Si estaba editando, su texto sigue en el cuadro: cópielo, cancele y edite de nuevo la versión actual.";
 
     public const string AlreadyExists = "El documento ya existe. Use Regenerar para reemplazarlo.";
 

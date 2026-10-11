@@ -44,7 +44,7 @@ public sealed class ArtifactViewBuilderTests
     [InlineData(InitiativeStatus.Planning, InitiativeDepth.Small, ArtifactType.Spec, Doc.None, true, true, true, false, false, false)]
     [InlineData(InitiativeStatus.Planning, InitiativeDepth.Small, ArtifactType.Spec, Doc.Draft, true, true, false, true, true, true)]
     [InlineData(InitiativeStatus.Planning, InitiativeDepth.Small, ArtifactType.Spec, Doc.Approved, true, true, false, true, true, false)]
-    [InlineData(InitiativeStatus.Planning, InitiativeDepth.Small, ArtifactType.Spec, Doc.Draft, true, false, false, true, false, true)]
+    [InlineData(InitiativeStatus.Planning, InitiativeDepth.Small, ArtifactType.Spec, Doc.Draft, true, false, false, true, false, false)]
     [InlineData(InitiativeStatus.Clarifying, InitiativeDepth.Standard, ArtifactType.Brief, Doc.None, true, false, true, false, false, false)]
     [InlineData(InitiativeStatus.Clarifying, InitiativeDepth.Standard, ArtifactType.Prd, Doc.None, true, false, false, false, false, false)]
     [InlineData(InitiativeStatus.Clarifying, InitiativeDepth.Small, ArtifactType.Brief, Doc.Draft, true, true, false, false, false, false)]

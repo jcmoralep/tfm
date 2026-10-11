@@ -130,13 +130,16 @@ public sealed class GenerateArtifactTests
     }
 
     [Fact]
-    public async Task A_failing_drafter_stores_nothing()
+    public async Task An_unavailable_drafter_reaches_the_caller_unchanged_and_stores_nothing()
     {
         var id = await context.AtClosing(InitiativeDepth.Small);
         context.Drafter.FailuresRemaining = 1;
+        context.Drafter.Failure = new AssistantUnavailableException();
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => context.Generate(id, ArtifactType.Spec));
+        var error = await Assert.ThrowsAsync<AssistantUnavailableException>(() => context.Generate(id, ArtifactType.Spec));
 
+        Assert.Equal(AssistantUnavailableException.DefaultMessage, error.Message);
+        Assert.Equal(InitiativeStatus.Planning, await context.StatusOf(id));
         AssertNothingStored();
     }
 

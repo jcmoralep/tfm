@@ -7,11 +7,13 @@
 @using BmadPlatform.Application.Features.Artifacts.GetArtifact
 @using BmadPlatform.Application.Features.Artifacts.RegenerateArtifact
 @using BmadPlatform.Application.Features.Artifacts.SaveArtifactContent
+@using BmadPlatform.Application.Features.Initiatives
 @using BmadPlatform.Domain.Artifacts
 @using BmadPlatform.Domain.Common
 @using BmadPlatform.Domain.Initiatives
 @inject IMediator Mediator
 @inject MarkdownRenderer Renderer
+@inject ILogger<ArtifactDocument> Logger
 
 @* Container of the document page. It decides nothing about the rules: the Can* flags of the view say what is allowed
    and the commands enforce the same rules. Reads happen in OnParametersSetAsync (safe while prerendering); every
@@ -239,6 +241,7 @@ else
     private string editText = "";
     private string editInitial = "";
     private int editRevision;
+    private int editBaseVersion;
     private bool focusEditor;
     private PanelKind confirm;
     private PanelKind restoreFocusTo;
@@ -347,6 +350,11 @@ else
         errors = [];
         editText = view.Content;
         editInitial = editText;
+
+        // The save is sent against the version the text came from, not the latest one the page adopted. After a
+        // conflict the page shows the newer version but the typed text still belongs to the old one, so a retry
+        // conflicts again until the person cancels and edits the current version.
+        editBaseVersion = view.Version;
         editRevision++;
         focusEditor = true;
     }
@@ -410,7 +418,7 @@ else
 
         var saved = await RunAsync(
             ArtifactLabels.Saving,
-            () => Mediator.Send(new SaveArtifactContentCommand(Id, current.Type, current.Version, editText)),
+            () => Mediator.Send(new SaveArtifactContentCommand(Id, current.Type, editBaseVersion, editText)),
             result => ArtifactLabels.Saved(result.Version));
 
         // On a failure the editor stays open with the typed text.
@@ -463,7 +471,8 @@ else
     }
 
     // Runs one write at a time. Returns true when it succeeded. A business failure becomes red messages; a conflict
-    // or a rule refusal also reloads the document so the page shows the current version.
+    // or a rule refusal also reloads the document so the page shows the current version. Any other failure shows a
+    // generic message and keeps the editor and its text. A failing reload never hides the message already set.
     private async Task<bool> RunAsync(string text, Func<Task<ArtifactView>> work, Func<ArtifactView, string> successNotice)
     {
         if (busy)
@@ -476,6 +485,8 @@ else
         errors = [];
         notice = null;
 
+        var type = view!.Type;
+
         try
         {
             view = await work();
@@ -487,14 +498,24 @@ else
         {
             errors = messages;
 
-            if (exception is NotFoundException)
+            // Only the missing initiative empties the page; a missing document is an ordinary refusal.
+            if (exception is NotFoundException { Message: InitiativeTexts.NotFound })
             {
                 view = null;
             }
-            else if (exception is ConflictException or DomainException)
+            else if (exception is NotFoundException or ConflictException or DomainException)
             {
-                view = await Mediator.Send(new GetArtifactQuery(Id, view!.Type)) ?? view;
+                await TryReloadAsync(type);
             }
+
+            return false;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // Type and id only: the exception message could echo document content.
+            Logger.LogError("A document action of initiative {InitiativeId} failed ({ExceptionType}).", Id, exception.GetType().Name);
+            errors = [ArtifactLabels.ActionFailed];
+            await TryReloadAsync(type);
 
             return false;
         }
@@ -502,6 +523,18 @@ else
         {
             busy = false;
             busyText = null;
+        }
+    }
+
+    private async Task TryReloadAsync(ArtifactType type)
+    {
+        try
+        {
+            view = await Mediator.Send(new GetArtifactQuery(Id, type)) ?? view;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            Logger.LogWarning("The document of initiative {InitiativeId} could not be read again ({ExceptionType}).", Id, exception.GetType().Name);
         }
     }
 }

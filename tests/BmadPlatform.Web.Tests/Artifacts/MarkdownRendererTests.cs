@@ -62,6 +62,19 @@ public sealed class MarkdownRendererTests
     }
 
     [Theory]
+    [InlineData("![logo de la empresa](https://example.com/a.png)")]
+    [InlineData("![logo de la empresa](/local.png)")]
+    [InlineData("![logo de la empresa][r]\n\n[r]: https://example.com/a.png")]
+    public void Images_are_never_rendered_and_show_their_alt_text(string markdown)
+    {
+        var html = Html(markdown);
+
+        Assert.DoesNotContain("<img", html);
+        Assert.DoesNotContain("src=", html);
+        Assert.Contains("logo de la empresa", html);
+    }
+
+    [Theory]
     [InlineData("# T", "<h2")]
     [InlineData("## T", "<h3")]
     [InlineData("###### T", "<h6")]

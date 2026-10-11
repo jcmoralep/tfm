@@ -73,6 +73,21 @@ public sealed class GetConversationAnswersTests
     }
 
     [Fact]
+    public async Task A_nothing_quick_reply_is_flagged_but_the_same_words_typed_are_not()
+    {
+        var id = await context.Initiatives.CreateClarifying("App");
+        var view = await context.AnswerUntilDecision(id, AssistantScript.Keys.OutOfScope);
+        await context.Send(id, view.Version, quickReplyKey: AssistantScript.ReplyKeys.Nothing);
+
+        var result = await context.Answers(id);
+
+        var outOfScope = Assert.Single(result!.Answers, a => a.TopicKey == AssistantScript.Keys.OutOfScope);
+        Assert.True(outOfScope.IsNone);
+        Assert.Equal("Nada por ahora", outOfScope.Text);
+        Assert.All(result.Answers.Where(a => a.TopicKey != AssistantScript.Keys.OutOfScope), a => Assert.False(a.IsNone));
+    }
+
+    [Fact]
     public async Task The_aclarar_flag_is_true_with_the_planificar_flag_false_on_a_clarifying_standard_initiative()
     {
         var id = await context.Initiatives.CreateClarifying("App");

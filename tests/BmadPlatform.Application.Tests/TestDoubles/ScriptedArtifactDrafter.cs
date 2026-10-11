@@ -15,6 +15,9 @@ public sealed class ScriptedArtifactDrafter : IArtifactDrafter
     /// <summary>Number of upcoming calls that throw.</summary>
     public int FailuresRemaining { get; set; }
 
+    /// <summary>What the failing calls throw; an unavailable drafter throws <c>AssistantUnavailableException</c> in production.</summary>
+    public Exception Failure { get; set; } = new InvalidOperationException("The drafter is unavailable.");
+
     /// <summary>Returned instead of the default text when set.</summary>
     public string? Output { get; set; }
 
@@ -26,7 +29,7 @@ public sealed class ScriptedArtifactDrafter : IArtifactDrafter
         {
             FailuresRemaining--;
 
-            throw new InvalidOperationException("The drafter is unavailable.");
+            throw Failure;
         }
 
         return Task.FromResult(Output ?? Draft(request));

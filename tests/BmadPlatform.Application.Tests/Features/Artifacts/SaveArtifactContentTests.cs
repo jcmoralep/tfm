@@ -151,7 +151,7 @@ public sealed class SaveArtifactContentTests
 
         var error = await Assert.ThrowsAsync<ConflictException>(() => context.Save(id, ArtifactType.Spec, 1, "# Segunda pestaña"));
 
-        Assert.Equal("El documento cambió en otra pestaña. Recargue la página.", error.Message);
+        Assert.Equal(ArtifactTexts.Conflict, error.Message);
         Assert.Equal("# Primera pestaña", context.StoredArtifact(id, ArtifactType.Spec).Content);
     }
 

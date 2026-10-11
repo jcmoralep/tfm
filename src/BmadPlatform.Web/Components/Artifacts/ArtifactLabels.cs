@@ -52,6 +52,9 @@ public static class ArtifactLabels
 
     public const string Generating = "Generando el documento…";
 
+    /// <summary>Shown when an action fails for a reason that is not a business rule; the details go to the log.</summary>
+    public const string ActionFailed = "No se pudo completar la acción. Intente de nuevo.";
+
     public const string CardTitle = "Artefactos";
 
     public const string CardIntro = "Documentos que su iniciativa necesita antes de pasar a desarrollo.";

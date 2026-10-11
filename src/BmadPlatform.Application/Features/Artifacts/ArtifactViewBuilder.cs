@@ -22,8 +22,11 @@ public static class ArtifactViewBuilder
         // A document of a type the level no longer requires is kept but hidden, and nothing can be done with it.
         var shown = artifact is not null && required ? artifact : null;
         var open = initiative.Status != InitiativeStatus.Draft;
-        var canApprove = shown is { Status: ArtifactStatus.Draft } && open;
+
+        // Approving needs the coverage of the document to still hold: an undone answer takes it back.
+        var canApprove = shown is { Status: ArtifactStatus.Draft } && open && availability == ArtifactAvailability.Available;
         var planning = initiative.Status == InitiativeStatus.Planning;
+        var covered = ArtifactCatalog.IsSetAvailable(initiative.Status, initiative.Depth, answers);
 
         return new ArtifactView(
             initiative.Id,
@@ -43,8 +46,8 @@ public static class ArtifactViewBuilder
             CanEdit: shown is not null && open,
             CanRegenerate: shown is not null && availability == ArtifactAvailability.Available,
             CanApprove: canApprove,
-            ApprovalCompletesSet: canApprove && planning && ArtifactCatalog.IsSetComplete(initiative.Depth, WithApproved(summaries, type)),
-            CompletionPending: planning && ArtifactCatalog.IsSetComplete(initiative.Depth, summaries));
+            ApprovalCompletesSet: canApprove && planning && covered && ArtifactCatalog.IsSetComplete(initiative.Depth, WithApproved(summaries, type)),
+            CompletionPending: planning && covered && ArtifactCatalog.IsSetComplete(initiative.Depth, summaries));
     }
 
     public static ArtifactsOverview BuildOverview(
@@ -63,7 +66,9 @@ public static class ArtifactViewBuilder
             initiative.Id,
             slots,
             null,
-            initiative.Status == InitiativeStatus.Planning && ArtifactCatalog.IsSetComplete(initiative.Depth, summaries));
+            initiative.Status == InitiativeStatus.Planning
+                && ArtifactCatalog.IsSetAvailable(initiative.Status, initiative.Depth, answers)
+                && ArtifactCatalog.IsSetComplete(initiative.Depth, summaries));
     }
 
     private static ArtifactSlotView SlotOf(

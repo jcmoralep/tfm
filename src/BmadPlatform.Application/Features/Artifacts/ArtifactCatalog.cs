@@ -84,6 +84,11 @@ public static class ArtifactCatalog
             : ArtifactAvailability.WaitingForClosing;
     }
 
+    /// <summary>True when every document of the level can be generated now, which means its coverage still holds.</summary>
+    public static bool IsSetAvailable(InitiativeStatus status, InitiativeDepth? depth, ConversationAnswers? answers) =>
+        RequiredFor(depth).All(slot => slot.Type is { } type
+            && Availability(type, status, depth, answers) == ArtifactAvailability.Available);
+
     /// <summary>True when every slot of the level has a type and its document is approved.</summary>
     public static bool IsSetComplete(InitiativeDepth? depth, IReadOnlyList<ArtifactSummary> summaries)
     {

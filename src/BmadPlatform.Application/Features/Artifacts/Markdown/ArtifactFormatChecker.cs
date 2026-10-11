@@ -12,6 +12,13 @@ namespace BmadPlatform.Application.Features.Artifacts.Markdown;
 /// </summary>
 public static partial class ArtifactFormatChecker
 {
+    /// <summary>The most warnings returned; a badly broken document gets the first ones and a count of the rest.</summary>
+    public const int MaxWarnings = 50;
+
+    // Identifiers written without a hyphen ("FR3") are read as an attempt at the scheme only for these prefixes. For
+    // the short ones (Q4, A4, SM2) the same text is an ordinary word, a quarter or a model name followed by prose.
+    private static readonly string[] UnhyphenatedPrefixes = [ItemPrefix.NonFunctionalRequirement, ItemPrefix.FunctionalRequirement, ItemPrefix.UserJourney];
+
     public static IReadOnlyList<FormatWarning> Check(ArtifactType type, string markdown)
     {
         var lines = (markdown ?? string.Empty).Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n').Split('\n');
@@ -60,7 +67,16 @@ public static partial class ArtifactFormatChecker
         }
 
         // Document order: whole-document findings first, then by line (the sort is stable).
-        return [.. warnings.OrderBy(w => w.Line ?? 0)];
+        var ordered = warnings.OrderBy(w => w.Line ?? 0).ToList();
+
+        if (ordered.Count <= MaxWarnings)
+        {
+            return ordered;
+        }
+
+        var rest = ordered.Count - MaxWarnings;
+
+        return [.. ordered.Take(MaxWarnings), new FormatWarning(null, $"y {rest} avisos más.")];
     }
 
     private static void CheckMarkers(string line, int number, Dictionary<string, int> markers, List<FormatWarning> warnings)
@@ -122,6 +138,12 @@ public static partial class ArtifactFormatChecker
         // Lowercase prefixes only count when a number follows, so ordinary words are never flagged. A single-letter
         // prefix followed by a longer word ("A-priori") is prose, not an identifier.
         if ((!exact && !hasDigit) || (prefix.Length == 1 && !hasDigit && rest.Count(char.IsLetter) > 1))
+        {
+            return;
+        }
+
+        // "Q4 Revenue" or "SM2 es un modelo" is prose: without a hyphen only the long prefixes count as an attempt.
+        if (!rest.Contains('-') && !UnhyphenatedPrefixes.Contains(prefix, StringComparer.Ordinal))
         {
             return;
         }

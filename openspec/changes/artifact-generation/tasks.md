@@ -104,29 +104,29 @@ Estimated lines per group:
 - [x] 6.9 `ChatPanel.razor` and `AssistantLabels`: call to action "Ir a los documentos" (link to `/iniciativas/{id}#section-artifacts`) when `Journey.NextTopic` is Closing, a Brief link as soon as the Aclarar flag is true on Standard, and "Ver documentos" when read-only; it generates nothing and does not change the quick replies. Test: ASI "Link after Aclarar on Standard", "Link at the closing", "No link before the documents are available", "Read-only conversation links to the documents" via Chrome [UI].
 - [x] 6.10 `README.md`: add the Artefactos section (what is generated per level, Draft/Approved, edit and regenerate rules, Large cannot finish until step 6, Markdown only, no export yet) and keep the demo-data notice (AGENTS 4.8) next to it, noting that the output is a deterministic fake until Gemini in step 5.
 - [x] 6.11 BMAD conformance check (standing user rule): compare the goldens and a live generated Spec, Brief and PRD against `docs/bmad-referencia.md` and `docs/hallazgos-simulaciones-bmad.md` (headings, order, identifier scheme, assumption index). Record deviations in the README or the follow-ups below; the known ones are `FR-n` instead of `CAP-n` and hyphenated `NFR-n` (ART Assumptions). Fix golden and drafter if a real gap appears. Done: conformance PASS with notes; batch C6c fixed the real gaps (integrations as requirement sentences, one shared journeys assumption, 6.1 without a computed FR range, one users bullet in the Spec, headings demoted, blocked links as plain text).
-- [x] 6.12 Final gate: `dotnet build` with zero warnings, `dotnet test` (all projects), then the Chrome checklist. Done: Chrome walkthrough for Small, Standard and Large; generate, edit, regenerate, approve and reopen all worked, HTML escaped and `javascript:` links neutralised, Escape closes the panel and returns focus, green notices, loading dots, unauthenticated redirect, unknown slug not found, no errors in `Logs/`. NOT observed: the Reintentar path (CompletionPending), two-tab conflicts in the browser, the `#section-artifacts` anchor scroll, a foreign user in the browser (unit-tested).
+- [x] 6.12 Final gate: `dotnet build` with zero code warnings (the 8 NU1507 NuGet source warnings come from the developer machine's private feed), `dotnet test` (all projects), then the Chrome checklist. Done: Chrome walkthrough for Small, Standard and Large; generate, edit, regenerate, approve and reopen all worked, HTML escaped and `javascript:` links neutralised, Escape closes the panel and returns focus, green notices, loading dots, unauthenticated redirect, unknown slug not found, no errors in `Logs/`. NOT observed: the Reintentar path (CompletionPending), two-tab conflicts in the browser, the `#section-artifacts` anchor scroll, a foreign user in the browser (unit-tested).
 
 ## Manual Chrome checklist (artifact flow)
 
 Setup: `docker compose` MySQL 8.4 with temporary credentials, apply migrations, run the app with the seed user. Never touch containers named `hcm_*`. Keep the project MySQL running at the end (user decision).
 
-- [ ] 1 Unauthenticated `/iniciativas/{id}/artefactos/prd` redirects to login.
+- [x] 1 Unauthenticated `/iniciativas/{id}/artefactos/prd` redirects to login.
 - [ ] 2 Draft initiative: card says to finish creating; no action.
-- [ ] 3 Small: complete the six topics, confirm; chat shows "lista para redactar" and "Ir a los documentos"; card shows Especificación "Disponible"; Spec is not offered while still Clarifying.
-- [ ] 4 Small: Generar shows the loading indicator, then the Spec opens in Borrador v1 with a green notice; headings in order, rendered with `.doc-prose`, no warnings; demo notice visible.
-- [ ] 5 Small: Editar, change text, Guardar gives v2; saving the same text again keeps v2; text over 20,000 shows the red error and keeps the typed text; Cancelar discards.
-- [ ] 6 Small: Aprobar, confirm, green notice, detail status reads "Lista para construir"; Editar after approval shows the hint, saving gives Borrador v3 and status "Planificando"; approve again returns to "Lista para construir".
-- [ ] 7 Small: Regenerar shows the panel; Cancelar changes nothing; confirming replaces edits, renumbers from `FR-1`, version rises, status back to "Planificando".
-- [ ] 8 Standard: after the five Aclarar topics the chat shows the Brief link while the confirmation is still offered; Brief is "Disponible", PRD "Aún no disponible" with its reason; generate the Brief while Clarifying, status stays "Aclarando"; confirmation still works.
-- [ ] 9 Standard: answer the three Planificar topics, generate the PRD, break a heading and an id (`FR1`) by editing: warnings listed as a non-blocking notice, save succeeds; Aprobar panel lists the warnings; approve both documents (PRD first, Brief second) and see "Lista para construir" only after the second.
-- [ ] 10 Large: card lists PRD plus Arquitectura and Épicas e historias as coming later with no action; generate and approve the PRD; the initiative stays "Planificando".
-- [ ] 11 Reopen: from a Ready-to-build initiative open the chat (read-only "Ver documentos"), then edit a document and confirm the chat accepts input again as Planning with no new question.
-- [ ] 12 Reintentar path: with the app stopped between the approval save and the ready transition (or by forcing the failure in a dev run), the page shows the approved document with "Reintentar"; pressing it moves the initiative to "Lista para construir".
-- [ ] 13 Two tabs: edit in tab A, then save in stale tab B: conflict message "El documento cambió en otra pestaña. Recargue la página." and the typed text kept.
-- [ ] 14 Injection: put `<script>alert(1)</script>`, `<img src=x onerror=alert(1)>` and `[x](javascript:alert(1))` in the editor; the read view shows text, no script runs, the link is inactive.
-- [ ] 15 Another user: open a foreign `/iniciativas/{id}/artefactos/prd` and an unknown slug: the same not-found message.
+- [x] 3 Small: complete the six topics, confirm; chat shows "lista para redactar" and "Ir a los documentos"; card shows Especificación "Disponible"; Spec is not offered while still Clarifying.
+- [x] 4 Small: Generar shows the loading indicator, then the Spec opens in Borrador v1 with a green notice; headings in order, rendered with `.doc-prose`, no warnings; demo notice visible.
+- [x] 5 Small: Editar, change text, Guardar gives v2; saving the same text again keeps v2; text over 20,000 shows the red error and keeps the typed text; Cancelar discards.
+- [x] 6 Small: Aprobar, confirm, green notice, detail status reads "Lista para construir"; Editar after approval shows the hint, saving gives Borrador v3 and status "Planificando"; approve again returns to "Lista para construir".
+- [x] 7 Small: Regenerar shows the panel; Cancelar changes nothing; confirming replaces edits, renumbers from `FR-1`, version rises, status back to "Planificando".
+- [x] 8 Standard: after the five Aclarar topics the chat shows the Brief link while the confirmation is still offered; Brief is "Disponible", PRD "Aún no disponible" with its reason; generate the Brief while Clarifying, status stays "Aclarando"; confirmation still works.
+- [x] 9 Standard: answer the three Planificar topics, generate the PRD, break a heading and an id (`FR1`) by editing: warnings listed as a non-blocking notice, save succeeds; Aprobar panel lists the warnings; approve both documents (PRD first, Brief second) and see "Lista para construir" only after the second.
+- [x] 10 Large: card lists PRD plus Arquitectura and Épicas e historias as coming later with no action; generate and approve the PRD; the initiative stays "Planificando".
+- [x] 11 Reopen: from a Ready-to-build initiative open the chat (read-only "Ver documentos"), then edit a document and confirm the chat accepts input again as Planning with no new question.
+- [ ] 12 Reintentar path: with the app stopped between the approval save and the ready transition (or by forcing the failure in a dev run), the page shows the approved document with "Reintentar"; pressing it moves the initiative to "Lista para construir". Not observed in the Chrome walkthrough; covered by unit tests only.
+- [ ] 13 Two tabs: edit in tab A, then save in stale tab B: conflict message "El documento cambió en otra pestaña. Si estaba editando, su texto sigue en el cuadro: cópielo, cancele y edite de nuevo la versión actual." and the typed text kept; saving again conflicts again until Cancelar and Editar. Not observed in the Chrome walkthrough; covered by unit tests only.
+- [x] 14 Injection: put `<script>alert(1)</script>`, `<img src=x onerror=alert(1)>`, `![logo](https://example.com/a.png)` and `[x](javascript:alert(1))` in the editor; the read view shows text, no script runs, the link is inactive and the image shows only its alt text.
+- [ ] 15 Another user: open a foreign `/iniciativas/{id}/artefactos/prd` and an unknown slug: the same not-found message. Unknown slug observed in the walkthrough; a foreign user was not observed in the browser (unit-tested).
 - [ ] 16 Screen-reader roles: labelled textarea, status regions for notices and warnings, dialog panels reachable and dismissible by keyboard; double-clicking Generar or Guardar stores one change.
-- [ ] 17 `Logs/` contains no document content and no answer text.
+- [ ] 17 `Logs/` contains no document content and no answer text. Walkthrough showed no errors in `Logs/`; the absence of document content was not inspected.
 - [ ] 18 Teardown: stop the app, remove temporary credentials and any scratch data; leave the project MySQL container running; do not touch any `hcm_*` container.
 
 ## Follow-ups (not edited here)
@@ -140,6 +140,11 @@ Setup: `docker compose` MySQL 8.4 with temporary credentials, apply migrations, 
 - Decide the Brief vs PRD overlap (both repeat the idea, users and problem).
 - Frontmatter and the usage note belong to the step 8 export.
 - A real journey question for step 5 can replace the shared journeys assumption (D1).
+- Repeated reads per command (about ten sequential reads on Approve): latency only, left as is.
+- Add a Content-Security-Policy header when Gemini arrives (the document view already renders no images and no raw HTML).
+- Implement the drafter timeout with Gemini; the contract is on `IArtifactDrafter` (an unavailable or timed-out drafter throws `AssistantUnavailableException`).
+- The format checker does not treat en dash or comma-terminated identifiers (`FR-1,`) as definitions; skipped as not trivial.
+- Check the Reintentar path and the two-tab conflict in the browser when the Chrome walkthrough is repeated.
 
 ## Key Learnings
 

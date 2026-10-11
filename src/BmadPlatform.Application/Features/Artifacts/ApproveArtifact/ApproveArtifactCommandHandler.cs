@@ -9,7 +9,9 @@ namespace BmadPlatform.Application.Features.Artifacts.ApproveArtifact;
 /// <summary>
 /// The approval is stored first and the initiative is marked ready afterwards. A failure in between leaves Planning
 /// with every document approved, which a repeated approval completes; the opposite order could leave Ready to build
-/// with a Draft document. The completion check runs on every approval, including a repeated one.
+/// with a Draft document. The completion check runs on every approval, including a repeated one. Approving needs the
+/// coverage of the document to still hold (an undone answer takes it back), and the initiative is completed only
+/// while every document of the level is covered.
 /// </summary>
 public sealed class ApproveArtifactCommandHandler(
     ISender sender,
@@ -28,6 +30,9 @@ public sealed class ApproveArtifactCommandHandler(
             await repository.GetAsync(initiative.Id, request.Type, ownerId, cancellationToken));
         ArtifactGuards.RequireVersion(artifact, request.ExpectedVersion);
 
+        var answers = await ArtifactGuards.GetAnswersAsync(sender, request.InitiativeId, cancellationToken);
+        ArtifactGuards.RequireAvailable(ArtifactCatalog.Availability(request.Type, initiative.Status, initiative.Depth, answers));
+
         if (artifact.Status != ArtifactStatus.Approved)
         {
             artifact.Approve(timeProvider.GetUtcNow());
@@ -36,7 +41,9 @@ public sealed class ApproveArtifactCommandHandler(
 
         var summaries = await repository.ListAsync(initiative.Id, ownerId, cancellationToken);
 
-        if (initiative.Status == InitiativeStatus.Planning && ArtifactCatalog.IsSetComplete(initiative.Depth, summaries))
+        if (initiative.Status == InitiativeStatus.Planning
+            && ArtifactCatalog.IsSetAvailable(initiative.Status, initiative.Depth, answers)
+            && ArtifactCatalog.IsSetComplete(initiative.Depth, summaries))
         {
             await sender.Send(new MarkReadyToBuildCommand(initiative.Id), cancellationToken);
         }

@@ -23,6 +23,10 @@ internal static class DraftSamples
     public static TopicAnswer Answer(string key, string text, bool unknown = false) =>
         new(key, AssistantScript.Get(key).Prompt, text, unknown);
 
+    /// <summary>A "nothing to list" quick reply such as "Ninguno": its label is the text, flagged so no document makes an item of it.</summary>
+    public static TopicAnswer None(string key, string label) =>
+        new(key, AssistantScript.Get(key).Prompt, label, IsUnknown: false, IsNone: true);
+
     public static TopicAnswer Unknown(string key) => Answer(key, AssistantScript.UnknownLabel, unknown: true);
 
     /// <summary>Every topic answered with a text derived from its key, unless overridden.</summary>

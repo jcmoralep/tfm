@@ -118,7 +118,7 @@ else
 
     <div class="mt-6 grid gap-4 md:grid-cols-3">
         <ConversationCard InitiativeId="details.Id" View="conversation" />
-        <ArtifactsCard InitiativeId="details.Id" Overview="artifacts" />
+        <ArtifactsCard InitiativeId="details.Id" Overview="artifacts" OnChanged="ReloadArtifactsAsync" />
         @foreach (var section in Placeholders)
         {
             <section aria-labelledby="section-@section.Key" class="rounded-card border border-dashed border-line bg-surface-raised p-5">
@@ -202,6 +202,10 @@ else
             return null;
         }
     }
+
+    // The card asks for a fresh overview after a refusal (for example the document already exists), so a row never
+    // keeps offering an action that no longer applies.
+    private async Task ReloadArtifactsAsync() => artifacts = await TryGetArtifactsAsync();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
