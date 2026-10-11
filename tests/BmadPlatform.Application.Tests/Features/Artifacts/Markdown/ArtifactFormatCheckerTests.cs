@@ -302,6 +302,17 @@ public sealed class ArtifactFormatCheckerTests
         Assert.Single(warnings);
     }
 
+    [Theory]
+    [InlineData("- **Q-1**: ¿Quién aprueba?")]
+    [InlineData("- **Q-1**: ¿Quién aprueba? (Responsable: ; Revisar")]
+    [InlineData("- **Q-1**: ¿Quién aprueba? (Responsable: por asignar; Revisar: por definir)")]
+    public void The_triage_suffix_state_is_never_a_warning(string question)
+    {
+        var markdown = CleanSpec(m => m.Replace("- **Q-1**: ¿Quién aprueba?", question, StringComparison.Ordinal));
+
+        Assert.Empty(CheckSpec(markdown));
+    }
+
     [Fact]
     public void Without_an_index_only_the_missing_heading_is_reported()
     {

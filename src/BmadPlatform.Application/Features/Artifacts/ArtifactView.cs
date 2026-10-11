@@ -14,6 +14,8 @@ namespace BmadPlatform.Application.Features.Artifacts;
 /// The required set is approved but the initiative is still Planning (a failed transition); resending the approval
 /// completes it.
 /// </param>
+/// <param name="Questions">The open questions read from the Markdown, in document order.</param>
+/// <param name="UnassignedQuestions">The distinct ids still to assign; while any remain the draft cannot be approved.</param>
 public sealed record ArtifactView(
     Guid InitiativeId,
     string InitiativeName,
@@ -33,7 +35,9 @@ public sealed record ArtifactView(
     bool CanRegenerate,
     bool CanApprove,
     bool ApprovalCompletesSet,
-    bool CompletionPending)
+    bool CompletionPending,
+    IReadOnlyList<OpenQuestion> Questions,
+    IReadOnlyList<string> UnassignedQuestions)
 {
     // The synthesized ToString would print the document, which can contain initiative information.
     public override string ToString() =>

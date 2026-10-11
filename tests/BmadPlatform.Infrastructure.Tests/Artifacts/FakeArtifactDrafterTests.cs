@@ -137,6 +137,22 @@ public sealed partial class FakeArtifactDrafterTests
         Assert.DoesNotContain("No sé", brief, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData(ArtifactType.Brief, InitiativeDepth.Standard)]
+    [InlineData(ArtifactType.Prd, InitiativeDepth.Standard)]
+    [InlineData(ArtifactType.Spec, InitiativeDepth.Small)]
+    public async Task Every_generated_question_ends_with_the_default_suffix_and_reads_as_unassigned(ArtifactType type, InitiativeDepth depth)
+    {
+        var unknown = new[] { AssistantScript.Keys.Users, AssistantScript.Keys.Success };
+
+        var document = await Draft(Request(type, depth, Answers(depth, unknown: unknown)));
+
+        var questions = Definitions(document, "Q").ToList();
+        Assert.Equal(2, questions.Count);
+        Assert.All(questions, q => Assert.EndsWith("(Responsable: por asignar; Revisar: por definir)", q, StringComparison.Ordinal));
+        Assert.Equal(["Q-1", "Q-2"], OpenQuestions.Unassigned(document));
+    }
+
     [Fact]
     public async Task The_spec_always_has_a_non_goal_with_an_assumption_and_a_question_when_unknown()
     {
@@ -527,6 +543,7 @@ public sealed partial class FakeArtifactDrafterTests
                 var artifact = Artifact.Create(Guid.NewGuid(), "user-a", type, document, DateTimeOffset.UnixEpoch);
                 Assert.Equal(document, artifact.Content);
                 Assert.Empty(ArtifactFormatChecker.Check(type, document));
+                Assert.Equal(Definitions(document, "Q").Select(q => q[4..q.IndexOf("**:", StringComparison.Ordinal)]), OpenQuestions.Unassigned(document));
             }
         }
     }

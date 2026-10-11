@@ -23,8 +23,12 @@ public static class ArtifactViewBuilder
         var shown = artifact is not null && required ? artifact : null;
         var open = initiative.Status != InitiativeStatus.Draft;
 
-        // Approving needs the coverage of the document to still hold: an undone answer takes it back.
-        var canApprove = shown is { Status: ArtifactStatus.Draft } && open && availability == ArtifactAvailability.Available;
+        var questions = shown is null ? [] : OpenQuestions.Parse(shown.Content);
+        var unassigned = shown is null ? [] : OpenQuestions.Unassigned(shown.Content);
+
+        // Approving needs the coverage of the document to still hold (an undone answer takes it back) and every open
+        // question to have an owner and a revisit condition.
+        var canApprove = shown is { Status: ArtifactStatus.Draft } && open && availability == ArtifactAvailability.Available && unassigned.Count == 0;
         var planning = initiative.Status == InitiativeStatus.Planning;
         var covered = ArtifactCatalog.IsSetAvailable(initiative.Status, initiative.Depth, answers);
 
@@ -47,7 +51,9 @@ public static class ArtifactViewBuilder
             CanRegenerate: shown is not null && availability == ArtifactAvailability.Available,
             CanApprove: canApprove,
             ApprovalCompletesSet: canApprove && planning && covered && ArtifactCatalog.IsSetComplete(initiative.Depth, WithApproved(summaries, type)),
-            CompletionPending: planning && covered && ArtifactCatalog.IsSetComplete(initiative.Depth, summaries));
+            CompletionPending: planning && covered && ArtifactCatalog.IsSetComplete(initiative.Depth, summaries),
+            questions,
+            unassigned);
     }
 
     public static ArtifactsOverview BuildOverview(

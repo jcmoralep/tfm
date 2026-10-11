@@ -1,6 +1,8 @@
 using BmadPlatform.Application.Abstractions.Authentication;
+using BmadPlatform.Application.Features.Artifacts.Markdown;
 using BmadPlatform.Application.Features.Initiatives.MarkReadyToBuild;
 using BmadPlatform.Domain.Artifacts;
+using BmadPlatform.Domain.Common;
 using BmadPlatform.Domain.Initiatives;
 using MediatR;
 
@@ -35,6 +37,12 @@ public sealed class ApproveArtifactCommandHandler(
 
         if (artifact.Status != ArtifactStatus.Approved)
         {
+            // Only the Draft-to-Approved step is gated: a repeated approval and the completion retry must keep working.
+            if (OpenQuestions.Unassigned(artifact.Content) is { Count: > 0 } unassigned)
+            {
+                throw new DomainException(ArtifactTexts.UnassignedQuestions(unassigned));
+            }
+
             artifact.Approve(timeProvider.GetUtcNow());
             await repository.SaveAsync(artifact, request.ExpectedVersion, cancellationToken);
         }

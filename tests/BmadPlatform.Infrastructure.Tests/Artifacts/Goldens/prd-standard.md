@@ -69,7 +69,7 @@ Límites, reglas y condiciones de calidad que debe cumplir la solución.
 
 ## 8 Preguntas abiertas
 
-- **Q-1**: Falta saber los límites o reglas que se deben respetar: «¿Hay límites o reglas que debamos respetar?»
+- **Q-1**: Falta saber los límites o reglas que se deben respetar: «¿Hay límites o reglas que debamos respetar?» (Responsable: por asignar; Revisar: por definir)
 
 ## 9 Índice de suposiciones
 

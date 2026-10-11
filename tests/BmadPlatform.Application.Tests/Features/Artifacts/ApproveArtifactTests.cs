@@ -212,4 +212,79 @@ public sealed class ApproveArtifactTests
         await Assert.ThrowsAsync<DomainException>(() => context.Approve(id, ArtifactType.Prd, 1));
         Assert.Equal(InitiativeStatus.Planning, await context.StatusOf(id));
     }
+
+    private const string Assigned = " (Responsable: TI; Revisar: antes de la arquitectura)";
+
+    private static string WithQuestions(params string[] lines) =>
+        "# Documento\n\n## Preguntas abiertas\n\n" + string.Join('\n', lines.Select((line, i) => $"- **Q-{i + 1}**: {line}")) + "\n";
+
+    private async Task<Guid> SpecWith(string content)
+    {
+        var id = await context.AtClosing(InitiativeDepth.Small);
+        await context.Generate(id, ArtifactType.Spec);
+        await context.Save(id, ArtifactType.Spec, 1, content);
+
+        return id;
+    }
+
+    [Theory]
+    [InlineData("Q-1, Q-3", "uno|dos" + Assigned + "|tres")]
+    [InlineData("Q-1", "uno (Responsable: TI; Revisar: por definir)")]
+    [InlineData("Q-2", "uno" + Assigned + "|dos (Responsable: por asignar; Revisar: algún día)")]
+    [InlineData(null, "uno" + Assigned + "|dos" + Assigned)]
+    [InlineData(null, "")]
+    public async Task Approving_needs_every_open_question_assigned(string? blocked, string questions)
+    {
+        var id = await SpecWith(WithQuestions(questions.Length == 0 ? [] : questions.Split('|')));
+
+        if (blocked is null)
+        {
+            Assert.Equal(ArtifactStatus.Approved, (await context.Approve(id, ArtifactType.Spec, 2)).Status);
+            Assert.Equal(InitiativeStatus.ReadyToBuild, await context.StatusOf(id));
+
+            return;
+        }
+
+        var error = await Assert.ThrowsAsync<DomainException>(() => context.Approve(id, ArtifactType.Spec, 2));
+
+        Assert.Equal(ArtifactTexts.UnassignedQuestions(blocked.Split(", ")), error.Message);
+        Assert.Equal((2, ArtifactStatus.Draft), (context.StoredArtifact(id, ArtifactType.Spec).Version, context.StoredArtifact(id, ArtifactType.Spec).Status));
+        Assert.Equal(InitiativeStatus.Planning, await context.StatusOf(id));
+        Assert.DoesNotContain(context.Sender.Sent, request => request is MarkReadyToBuildCommand);
+    }
+
+    [Fact]
+    public async Task Format_warnings_do_not_trigger_the_gate_and_a_conflict_is_not_masked_by_it()
+    {
+        var id = await SpecWith(WithQuestions("uno" + Assigned) + "FR1 mal escrito\n");
+
+        var conflict = await Assert.ThrowsAsync<ConflictException>(() => context.Approve(id, ArtifactType.Spec, 1));
+        var view = await context.Approve(id, ArtifactType.Spec, 2);
+
+        Assert.Equal(ArtifactTexts.Conflict, conflict.Message);
+        Assert.NotEmpty(view.Warnings);
+        Assert.Equal(ArtifactStatus.Approved, view.Status);
+    }
+
+    [Fact]
+    public async Task Documents_approved_before_the_gate_keep_working_and_an_edit_brings_the_gate_back()
+    {
+        var id = await SpecWith(WithQuestions("uno"));
+        context.StoredArtifact(id, ArtifactType.Spec).Approve(context.Clock.GetUtcNow());
+        var saves = context.Artifacts.SaveCount;
+
+        // The retry of a failed ready transition completes the initiative even though the question is unassigned.
+        var view = await context.Approve(id, ArtifactType.Spec, 2);
+
+        Assert.Equal(saves, context.Artifacts.SaveCount);
+        Assert.Equal(InitiativeStatus.ReadyToBuild, await context.StatusOf(id));
+        Assert.Equal(ArtifactStatus.Approved, view.Status);
+
+        // Approving again is idempotent; an edit returns the document to Draft and the gate applies at its next approval.
+        await context.Approve(id, ArtifactType.Spec, 2);
+        await context.Save(id, ArtifactType.Spec, 2, WithQuestions("uno cambiado"));
+
+        var error = await Assert.ThrowsAsync<DomainException>(() => context.Approve(id, ArtifactType.Spec, 3));
+        Assert.Equal(ArtifactTexts.UnassignedQuestions(["Q-1"]), error.Message);
+    }
 }

@@ -47,4 +47,4 @@ Iniciativa «Consulta de pedidos»: Consultar el estado de los pedidos sin llama
 
 ## Preguntas pendientes
 
-- **Q-1**: Falta saber cómo se medirá el éxito: «¿Cómo sabremos que funcionó?»
+- **Q-1**: Falta saber cómo se medirá el éxito: «¿Cómo sabremos que funcionó?» (Responsable: por asignar; Revisar: por definir)

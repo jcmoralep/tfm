@@ -102,7 +102,7 @@ public sealed class ArtifactPipelineTests : IDisposable
         var command = new SaveArtifactContentCommand(Guid.NewGuid(), ArtifactType.Spec, 2, DistinctiveText);
         var view = new ArtifactView(
             Guid.NewGuid(), "App", InitiativeStatus.Planning, InitiativeDepth.Small, ArtifactType.Spec, true,
-            ArtifactAvailability.Available, 2, ArtifactStatus.Draft, DistinctiveText, null, null, [], false, false, false, false, false, false);
+            ArtifactAvailability.Available, 2, ArtifactStatus.Draft, DistinctiveText, null, null, [], false, false, false, false, false, false, [], []);
 
         Assert.DoesNotContain(DistinctiveText, command.ToString(), StringComparison.Ordinal);
         Assert.DoesNotContain(DistinctiveText, view.ToString(), StringComparison.Ordinal);

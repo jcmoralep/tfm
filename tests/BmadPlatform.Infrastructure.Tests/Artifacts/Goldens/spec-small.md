@@ -33,4 +33,4 @@
 
 ## Preguntas abiertas
 
-- **Q-1**: Falta saber qué queda fuera del alcance: «¿Qué queda fuera, al menos por ahora?»
+- **Q-1**: Falta saber qué queda fuera del alcance: «¿Qué queda fuera, al menos por ahora?» (Responsable: por asignar; Revisar: por definir)

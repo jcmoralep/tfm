@@ -78,7 +78,7 @@ Sistemas y equipos con los que debe coordinarse la solución.
 
 ## 8 Preguntas abiertas
 
-- **Q-1**: Falta saber las condiciones de velocidad o seguridad: «¿Necesita algo especial de velocidad o seguridad?»
+- **Q-1**: Falta saber las condiciones de velocidad o seguridad: «¿Necesita algo especial de velocidad o seguridad?» (Responsable: por asignar; Revisar: por definir)
 
 ## 9 Índice de suposiciones
 

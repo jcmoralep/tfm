@@ -22,6 +22,9 @@ public static class ArtifactTexts
 
     public const string ComingLater = "Disponible en un paso posterior.";
 
+    public static string UnassignedQuestions(IEnumerable<string> ids) =>
+        $"Asigne un responsable y una condición de revisión a las preguntas pendientes antes de aprobar: {string.Join(", ", ids)}.";
+
     /// <summary>The plain reason a document cannot be generated now; null when it can.</summary>
     public static string? ReasonFor(ArtifactAvailability availability) => availability switch
     {
