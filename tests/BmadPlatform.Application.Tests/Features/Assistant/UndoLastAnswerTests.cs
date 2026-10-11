@@ -111,7 +111,7 @@ public sealed class UndoLastAnswerTests
     }
 
     [Fact]
-    public async Task An_accepted_depth_cannot_be_undone_and_mode_and_depth_stay()
+    public async Task An_accepted_depth_cannot_be_undone_and_the_automatic_mode_and_level_stay()
     {
         var id = await context.CreateAutomatic("App");
         var proposal = await context.AnswerUntilDecision(id);
@@ -121,7 +121,7 @@ public sealed class UndoLastAnswerTests
 
         Assert.Equal("No se puede deshacer una respuesta que ya cambió el estado de la iniciativa.", error.Message);
         var details = await context.Details(id);
-        Assert.Equal(DepthMode.Manual, details.DepthMode);
+        Assert.Equal(DepthMode.Automatic, details.DepthMode);
         Assert.Equal(InitiativeDepth.Standard, details.Depth);
     }
 

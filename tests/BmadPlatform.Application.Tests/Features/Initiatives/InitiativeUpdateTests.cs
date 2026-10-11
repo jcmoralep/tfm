@@ -57,6 +57,35 @@ public sealed class InitiativeUpdateTests
     }
 
     [Fact]
+    public async Task Automatic_with_a_level_is_kept_when_the_same_pair_is_sent_again()
+    {
+        var id = await context.CreateClarifying("Portal");
+        await context.Update(id, "Portal", null, DepthMode.Automatic, InitiativeDepth.Large);
+
+        await context.Update(id, "Portal", null, DepthMode.Automatic, InitiativeDepth.Large);
+
+        var details = await context.Get(id);
+        Assert.Equal(DepthMode.Automatic, details!.DepthMode);
+        Assert.Equal(InitiativeDepth.Large, details.Depth);
+        Assert.Equal(InitiativeStatus.Clarifying, details.Status);
+    }
+
+    [Theory]
+    [InlineData(DepthMode.Manual, InitiativeDepth.Large)]
+    [InlineData(DepthMode.Automatic, null)]
+    public async Task Changing_from_automatic_with_a_level_applies_what_is_sent(DepthMode sentMode, InitiativeDepth? sentDepth)
+    {
+        var id = await context.CreateClarifying("Portal");
+        await context.Update(id, "Portal", null, DepthMode.Automatic, InitiativeDepth.Large);
+
+        await context.Update(id, "Portal", null, sentMode, sentDepth);
+
+        var details = await context.Get(id);
+        Assert.Equal(sentMode, details!.DepthMode);
+        Assert.Equal(sentDepth, details.Depth);
+    }
+
+    [Fact]
     public async Task Name_edit_is_allowed_in_planning_while_unchanged_mode_and_depth_pass()
     {
         var id = await context.CreateClarifying("Portal");

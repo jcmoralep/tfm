@@ -266,7 +266,7 @@ else
             if (!ReferenceEquals(renderedFor, view))
             {
                 renderedFor = view;
-                rendered = Renderer.Render(view?.Content ?? "");
+                rendered = Renderer.Render(view?.Content ?? "", skipTitle: true);
             }
 
             return rendered;

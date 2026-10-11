@@ -22,16 +22,10 @@ internal static class InitiativeValidationRules
         System.Linq.Expressions.Expression<Func<T, DepthMode?>> mode,
         System.Linq.Expressions.Expression<Func<T, InitiativeDepth?>> depth)
     {
-        var readMode = mode.Compile();
-
         validator.RuleFor(mode)
             .IsInEnum().WithMessage("El modo de profundidad no es válido.");
 
         validator.RuleFor(depth)
             .IsInEnum().WithMessage("El nivel de profundidad no es válido.");
-
-        validator.RuleFor(depth)
-            .Must((request, value) => !(readMode(request) == DepthMode.Automatic && value is not null))
-            .WithMessage("En modo automático no se puede elegir un nivel de profundidad.");
     }
 }

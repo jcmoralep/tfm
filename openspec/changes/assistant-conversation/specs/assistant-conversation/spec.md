@@ -246,17 +246,17 @@ The system MUST offer "Deshacer mi última respuesta". Invoking it MUST make the
 
 ### Requirement: Depth suggestion in Automatic mode (RF-28, RF-47)
 
-When mode is Automatic and depth empty, after the other Aclarar topics (idea, users, problem, success, out of scope) the assistant MUST ask the sizing question with quick replies "Un ajuste pequeño", "Una funcionalidad completa" and "Un producto o varias áreas", then propose a level (Small, Standard, Large respectively) with quick replies to accept it or to choose another level. Accepting MUST switch the initiative to Manual with that level and recompute the required set. Rejecting ("Elegir otro nivel") MUST keep mode Automatic and depth empty, MUST present the three levels as quick replies, and choosing one MUST set Manual with that level. The confirmation MUST NOT be offered while depth is empty.
+When mode is Automatic and depth empty, after the other Aclarar topics (idea, users, problem, success, out of scope) the assistant MUST ask the sizing question with quick replies "Un ajuste pequeño", "Una funcionalidad completa" and "Un producto o varias áreas", then propose a level (Small, Standard, Large respectively) with quick replies to accept it or to choose another level. Accepting MUST keep the initiative in Automatic mode, set that level and recompute the required set. Rejecting ("Elegir otro nivel") MUST keep mode Automatic and depth empty, MUST present the three levels as quick replies, and choosing one MUST set that level and keep Automatic. The confirmation MUST NOT be offered while depth is empty.
 
 #### Scenario: Suggestion follows the size answer [UNIT]
 - GIVEN Automatic with empty depth and the sizing answer "Una funcionalidad completa"
 - WHEN the assistant replies
 - THEN the reply suggests Standard (Brief y PRD) with accept and choose-another quick replies
 
-#### Scenario: Accepting switches to Manual [UNIT]
+#### Scenario: Accepting keeps Automatic [UNIT]
 - GIVEN a pending Standard suggestion
 - WHEN the user accepts
-- THEN the initiative is Manual with depth Standard, the sizing step leaves the required set, and the next topic is the next uncovered one
+- THEN the initiative stays Automatic with depth Standard, the sizing step leaves the required set, and the next topic is the next uncovered one
 
 #### Scenario: Accepting Small adds its missing Aclarar topic [UNIT]
 - GIVEN a suggestion of Small accepted before capabilities was answered
@@ -271,7 +271,7 @@ When mode is Automatic and depth empty, after the other Aclarar topics (idea, us
 #### Scenario: Choosing another level [UNIT]
 - GIVEN the three levels are offered
 - WHEN the user chooses Large
-- THEN the initiative is Manual with depth Large
+- THEN the initiative stays Automatic with depth Large
 
 #### Scenario: Confirmation withheld without depth [UNIT]
 - GIVEN Automatic with empty depth and all other Aclarar topics covered

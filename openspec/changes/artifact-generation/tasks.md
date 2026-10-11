@@ -153,3 +153,10 @@ Setup: `docker compose` MySQL 8.4 with temporary credentials, apply migrations, 
 3. Goldens need LF line endings enforced through gitattributes to stay byte-exact on Windows checkouts.
 4. A single PR above the 400-line budget is acceptable here only because the delivery exception was accepted by the sole committer.
 5. BMAD conformance and the Chrome walkthrough are separate gates because no bUnit tests cover the screens.
+
+## Follow-up fixes after the Chrome evidence review (2026-10-11)
+
+- Chat documents link restyled as an arrow text link under a short lead-in, apart from the quick replies.
+- Format warnings quote a short excerpt of the offending line instead of "Línea N".
+- Meta description added to the document head.
+- Document read view omits the leading title heading (`skipTitle`); stored Markdown and edit mode are unchanged.

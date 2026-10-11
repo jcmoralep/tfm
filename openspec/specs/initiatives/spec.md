@@ -78,7 +78,7 @@ The system MUST offer exactly three depth levels with these expected outputs, ex
 
 ### Requirement: Depth mode and automatic depth (RF-06, RF-28)
 
-At creation the user MUST be able to choose Manual (the user picks the level) or Automatic (the assistant will suggest it later). In Manual mode a depth level MUST be set when the wizard is finished. In Automatic mode depth MUST remain empty, and the UI MUST display it as "Pendiente de sugerencia". Suggestion by the assistant is out of scope.
+At creation the user MUST be able to choose Manual (the user picks the level) or Automatic (the assistant will suggest it later). In Manual mode a depth level MUST be set when the wizard is finished. In Automatic mode depth MUST remain empty until the assistant suggests a level and the person accepts it (RF-47) or chooses one in the conversation, and while empty the UI MUST display it as "Pendiente de sugerencia". The domain accepts Automatic with a level; accepting keeps Automatic.
 
 #### Scenario: Manual mode stores chosen level [UNIT]
 - GIVEN an initiative in Manual mode
@@ -90,10 +90,10 @@ At creation the user MUST be able to choose Manual (the user picks the level) or
 - WHEN the wizard is completed
 - THEN depth is empty and the depth label shown for the initiative is "Pendiente de sugerencia"
 
-#### Scenario: Switching to Automatic clears depth [UNIT]
+#### Scenario: Switching to Automatic in the selector clears depth [UI]
 - GIVEN a Draft initiative in Manual mode with depth Large
-- WHEN the mode is changed to Automatic
-- THEN depth becomes empty
+- WHEN the person switches the mode to Automatic in the wizard or the edit page
+- THEN the level is cleared in the form and, once saved, depth is empty (the domain itself accepts Automatic with a level, which only the conversation sets)
 
 #### Scenario: Manual mode requires a level to finish [UNIT]
 - GIVEN a Draft initiative in Manual mode with no depth
@@ -342,7 +342,7 @@ A navigation link to the initiatives list MUST be available to authenticated use
 - Manual mode requires a depth to finish the wizard; a Draft may exist without one.
 - Search is case-insensitive substring on name only.
 - A finished initiative moving back to Draft is not possible; wizard completion is the only status transition in this change.
-- Switching to Automatic mode clears depth; switching to Manual leaves it empty until chosen.
+- The wizard and edit page selector clear the level when the person switches to Automatic (UI-only rule; the domain accepts Automatic with a level set from the conversation, RF-47); switching to Manual leaves it empty until chosen.
 
 ## Out of Scope
 

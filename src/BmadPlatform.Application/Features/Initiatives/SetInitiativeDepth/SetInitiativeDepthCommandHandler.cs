@@ -17,7 +17,7 @@ public sealed class SetInitiativeDepthCommandHandler(
         var initiative = await repository.GetAsync(request.Id, ownerId, cancellationToken)
             ?? throw new NotFoundException(InitiativeTexts.NotFound);
 
-        initiative.SetDepth(DepthMode.Manual, request.Depth, timeProvider.GetUtcNow());
+        initiative.SetDepth(initiative.DepthMode, request.Depth, timeProvider.GetUtcNow());
         await repository.UpdateAsync(initiative, cancellationToken);
     }
 }

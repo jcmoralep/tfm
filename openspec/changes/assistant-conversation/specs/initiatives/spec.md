@@ -40,17 +40,17 @@ The initiative MUST provide a transition from Clarifying to Planning, invoked on
 
 ### Requirement: Set initiative depth (RF-47)
 
-The system MUST provide an operation that sets depth mode to Manual and the depth to a given valid level in one step, used when the user accepts a level suggested by the assistant. It MUST succeed only while status is Draft or Clarifying, MUST refresh the last-modified time, and MUST NOT change status, name or description. In Planning or ReadyToBuild it MUST be rejected with a Spanish message and leave mode and depth unchanged. An undefined level MUST be rejected. Owner-only, deleted and unknown behave as not found.
+The system MUST provide an operation that sets the depth to a given valid level and keeps the current mode, used when the person accepts or chooses a level in the conversation (RF-47). It MUST succeed only while status is Draft or Clarifying, MUST refresh the last-modified time, and MUST NOT change status, name or description. In Planning or ReadyToBuild it MUST be rejected with a Spanish message and leave mode and depth unchanged. An undefined level MUST be rejected. Owner-only, deleted and unknown behave as not found.
 
-#### Scenario: Automatic with empty depth becomes Manual with level [UNIT]
+#### Scenario: Automatic with empty depth keeps Automatic and gets the level [UNIT]
 - GIVEN an owned Clarifying Automatic initiative with empty depth
 - WHEN the operation sets Standard
-- THEN mode is Manual, depth is Standard, status is Clarifying and the label shown is "Manual" with the level
+- THEN mode stays Automatic, depth is Standard, status is Clarifying and the detail shows "Automático" with the level
 
 #### Scenario: Replaces an existing level [UNIT]
-- GIVEN an owned Clarifying Manual initiative with depth Small
+- GIVEN an owned Clarifying initiative with depth Small
 - WHEN the operation sets Large
-- THEN depth is Large and mode stays Manual
+- THEN depth is Large and the mode is unchanged
 
 #### Scenario: Locked statuses reject [UNIT]
 - GIVEN owned initiatives in Planning and in ReadyToBuild
@@ -80,8 +80,8 @@ Editing mode or depth of a Clarifying initiative through the existing edit opera
 
 ### Requirement: Depth mode and automatic depth (RF-06, RF-28, RF-47)
 
-At creation the user MUST be able to choose Manual (the user picks the level) or Automatic (the assistant suggests it during the conversation). In Manual mode a depth level MUST be set when the wizard is finished. In Automatic mode depth MUST remain empty until the user accepts a level suggested by the assistant, and the UI MUST display it as "Pendiente de sugerencia". Accepting a suggested level MUST change the initiative to Manual mode with that level (see "Set initiative depth"); the origin "suggested by the assistant" is not kept.
-(Previously: "Suggestion by the assistant is out of scope"; the suggestion is now delivered by the assistant conversation and its acceptance switches to Manual.)
+At creation the user MUST be able to choose Manual (the user picks the level) or Automatic (the assistant suggests it during the conversation). In Manual mode a depth level MUST be set when the wizard is finished. In Automatic mode depth MUST remain empty until the user accepts a level suggested by the assistant, and the UI MUST display it as "Pendiente de sugerencia". Accepting a suggested level MUST keep the initiative in Automatic mode and set that level (see "Set initiative depth"); the origin "suggested by the assistant" is not kept. A change of mode or level from the edit page applies as chosen.
+(Previously: "Suggestion by the assistant is out of scope"; the suggestion is now delivered by the assistant conversation and its acceptance keeps Automatic and sets the level.)
 
 #### Scenario: Manual mode stores chosen level [UNIT]
 - GIVEN an initiative in Manual mode
@@ -93,20 +93,20 @@ At creation the user MUST be able to choose Manual (the user picks the level) or
 - WHEN the wizard is completed
 - THEN depth is empty and the depth label shown for the initiative is "Pendiente de sugerencia"
 
-#### Scenario: Switching to Automatic clears depth [UNIT]
+#### Scenario: Switching to Automatic in the selector clears depth [UI]
 - GIVEN a Draft initiative in Manual mode with depth Large
-- WHEN the mode is changed to Automatic
-- THEN depth becomes empty
+- WHEN the person switches the mode to Automatic in the wizard or the edit page
+- THEN the level is cleared in the form and, once saved, depth is empty (the domain itself accepts Automatic with a level, which only the conversation sets)
 
 #### Scenario: Manual mode requires a level to finish [UNIT]
 - GIVEN a Draft initiative in Manual mode with no depth
 - WHEN the wizard is finished
 - THEN the operation is rejected and status remains Draft
 
-#### Scenario: Accepting a suggestion shows Manual [UNIT]
+#### Scenario: Accepting a suggestion keeps Automatic [UNIT]
 - GIVEN a Clarifying Automatic initiative with empty depth
 - WHEN the suggested level Large is accepted
-- THEN the detail shows mode Manual and depth Large, not "Pendiente de sugerencia"
+- THEN the detail shows mode Automático and depth Large, not "Pendiente de sugerencia"
 
 ### Requirement: Mode and depth editability (RF-29, RF-50)
 

@@ -19,14 +19,24 @@ public sealed class MarkdownRenderer
         .UsePipeTables()
         .Build();
 
-    public MarkupString Render(string markdown)
+    /// <param name="skipTitle">Leaves out the leading level-1 heading, for a page that already shows the title.</param>
+    public MarkupString Render(string markdown, bool skipTitle = false)
     {
         var document = Markdown.Parse(markdown ?? string.Empty, pipeline);
 
-        // The page already has an h1, so the document headings start at h2.
+        var shift = 1;
+
+        if (skipTitle && document.FirstOrDefault() is HeadingBlock { Level: 1 } title)
+        {
+            document.Remove(title);
+            shift = 0;
+        }
+
+        // The page already has an h1. Without the document title removed the headings drop one level so there is never
+        // a second h1; with it removed the sections start at h2 as they are.
         foreach (var heading in document.Descendants<HeadingBlock>())
         {
-            heading.Level = Math.Min(heading.Level + 1, 6);
+            heading.Level = Math.Min(heading.Level + shift, 6);
         }
 
         // An image, or a link with a blocked address, becomes plain text (the alt or the link text). A blocked anchor

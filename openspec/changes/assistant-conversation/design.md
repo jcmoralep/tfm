@@ -117,7 +117,7 @@ public sealed record AssistantReply(string Text, InitiativeDepth? SuggestedDepth
 | `SendMessageCommand(InitiativeId, ExpectedVersion, Text?, QuickReplyKey?)` | `ConversationView` | Validator: exactly one of the two ("Escriba una respuesta o elija una opción."), at most 2000 ("La respuesta no puede superar los 2.000 caracteres."), key at most 50. Status must be Clarifying or Planning. The key must be among the last assistant message's quick replies. `confirm:yes` only when confirmation is next. Save, then the effect, then the advancer. `ToString` redacts `Text` |
 | `UndoLastAnswerCommand(InitiativeId, ExpectedVersion)` | `ConversationView` | Version check, `UndoLastAnswer`, save |
 | `StartPlanningCommand(Id)` (Initiatives) | none | Sent only by the assistant (RF-34). Idempotent |
-| `SetInitiativeDepthCommand(Id, Depth)` (Initiatives) | none | `SetDepth(Manual, depth)`, which gives Manual plus the level (RF-47). Validator: `IsInEnum` |
+| `SetInitiativeDepthCommand(Id, Depth)` (Initiatives) | none | `SetDepth(currentMode, depth)`, which keeps the mode and sets the level (RF-47); `SetDepth` accepts Automatic with a level. Validator: `IsInEnum` |
 
 `ConversationAdvancer.AdvanceAsync(conversation, details)` does three things:
 
@@ -233,7 +233,7 @@ Note on commit 3: handlers call Initiatives through `ISender`. The tests use a h
 | Layer | What | Approach |
 |---|---|---|
 | Domain | Sequence, undo (chain, applied, empty), the pending guard, versioning, `StartPlanning` | xUnit, fixed time |
-| Application | Script data, journey per level and level change, the four handlers (owner isolation, stale version leads to `ConflictException`, confirmation order and retry, depth acceptance gives Manual, service failure leaves a pending reply then resume, ReadyToBuild read-only) | Hand-written doubles with detached copies. A mutation check per persistence call |
+| Application | Script data, journey per level and level change, the four handlers (owner isolation, stale version leads to `ConflictException`, confirmation order and retry, depth acceptance keeps Automatic, service failure leaves a pending reply then resume, ReadyToBuild read-only) | Hand-written doubles with detached copies. A mutation check per persistence call |
 | Infrastructure | Model, indexes, token, json, migration; fake determinism | Model tests without a database |
 | Architecture | Module boundary | Source scan |
 | Web | `AssistantLabels`, `UserMessages` | Pure C#. No bUnit |

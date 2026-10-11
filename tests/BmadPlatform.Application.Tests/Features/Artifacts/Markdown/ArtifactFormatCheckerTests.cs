@@ -103,7 +103,9 @@ public sealed class ArtifactFormatCheckerTests
 
         var warning = Assert.Single(warnings);
         Assert.Equal(expectedLine, warning.Line);
-        Assert.Equal($"Línea {expectedLine}: «{token}» no sigue el formato {prefix}-n.", warning.Message);
+        Assert.StartsWith("En «", warning.Message, StringComparison.Ordinal);
+        Assert.EndsWith($"»: «{token}» no sigue el formato {prefix}-n.", warning.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("Línea", warning.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -139,8 +141,57 @@ public sealed class ArtifactFormatCheckerTests
         Assert.Null(warnings[^1].Line);
     }
 
+    [Theory]
+    [InlineData("- **FR1**: Bajar las llamadas a soporte", "En «FR1: Bajar las llamadas a soporte»")]
+    [InlineData("- **FR1**: Una descripción bastante larga que supera los cincuenta caracteres del extracto", "En «FR1: Una descripción bastante larga que supera")]
+    public void Warning_quotes_a_clean_excerpt_of_the_line(string line, string expectedStart)
+    {
+        var markdown = CleanSpec(m => m.Replace("- **FR-2**: Ver su estado", "- **FR-2**: Ver su estado\n" + line, StringComparison.Ordinal));
+
+        var warning = Assert.Single(CheckSpec(markdown));
+
+        Assert.StartsWith(expectedStart, warning.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
-    public void Duplicate_identifier_is_reported_once_with_both_lines()
+    public void Long_excerpt_ends_with_an_ellipsis_within_the_limit()
+    {
+        var line = "- **FR1**: " + new string('x', 200);
+        var markdown = CleanSpec(m => m.Replace("- **FR-2**: Ver su estado", "- **FR-2**: Ver su estado\n" + line, StringComparison.Ordinal));
+
+        var message = Assert.Single(CheckSpec(markdown)).Message;
+        var excerpt = message[(message.IndexOf('«') + 1)..message.IndexOf('»')];
+
+        Assert.EndsWith("…", excerpt, StringComparison.Ordinal);
+        Assert.True(excerpt.Length <= 51);
+    }
+
+    [Fact]
+    public void Excerpt_never_splits_a_surrogate_pair()
+    {
+        // "FR1: " is 5 characters, so the emoji sits at positions 49 and 50, straddling the 50-character limit.
+        var line = "- **FR1**: " + new string('x', 44) + "😀 resto del texto";
+        var markdown = CleanSpec(m => m.Replace("- **FR-2**: Ver su estado", "- **FR-2**: Ver su estado\n" + line, StringComparison.Ordinal));
+
+        var message = Assert.Single(CheckSpec(markdown)).Message;
+
+        for (var i = 0; i < message.Length; i++)
+        {
+            Assert.False(char.IsHighSurrogate(message[i]) && (i + 1 == message.Length || !char.IsLowSurrogate(message[i + 1])));
+            Assert.False(char.IsLowSurrogate(message[i]) && (i == 0 || !char.IsHighSurrogate(message[i - 1])));
+        }
+    }
+
+    [Fact]
+    public void Line_without_text_after_removing_markup_omits_the_quote()
+    {
+        var markdown = CleanSpec(m => m.Replace("- **FR-2**: Ver su estado", "- **FR-2**: Ver su estado\n**\n[ASSUMPTION]", StringComparison.Ordinal));
+
+        Assert.DoesNotContain("«»", string.Concat(CheckSpec(markdown).Select(w => w.Message)), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Duplicate_identifier_is_reported_once_quoting_the_repeated_line()
     {
         var markdown = CleanSpec(m => m.Replace("- **FR-2**: Ver su estado", "- **FR-2**: Ver su estado\n- **FR-2**: Otra vez", StringComparison.Ordinal));
         var lines = markdown.Split('\n').ToList();
@@ -149,7 +200,7 @@ public sealed class ArtifactFormatCheckerTests
         var warning = Assert.Single(CheckSpec(markdown));
 
         Assert.Equal(first + 1, warning.Line);
-        Assert.Equal($"Línea {first + 1}: FR-2 ya está definido en la línea {first}.", warning.Message);
+        Assert.Equal("En «FR-2: Otra vez»: FR-2 ya está definido antes en el documento.", warning.Message);
     }
 
     [Fact]
@@ -161,7 +212,7 @@ public sealed class ArtifactFormatCheckerTests
         var warning = Assert.Single(CheckSpec(markdown));
 
         Assert.Equal(line, warning.Line);
-        Assert.Equal($"Línea {line}: el supuesto A-5 no aparece en el Índice de suposiciones.", warning.Message);
+        Assert.EndsWith("»: el supuesto A-5 no aparece en el Índice de suposiciones.", warning.Message, StringComparison.Ordinal);
     }
 
     [Fact]

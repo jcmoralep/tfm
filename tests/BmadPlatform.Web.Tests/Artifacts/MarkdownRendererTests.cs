@@ -86,6 +86,37 @@ public sealed class MarkdownRendererTests
         Assert.DoesNotContain("<h1", html);
     }
 
+    [Theory]
+    [InlineData("# T\n\n## Visión\n\n### Sub", true, new[] { "<h2", "<h3" }, new[] { "<h1", "<h4", ">T<" })]
+    [InlineData("# T\n\n## Visión", false, new[] { "<h2", "<h3" }, new[] { "<h1" })]
+    [InlineData("Intro\n\n# T\n\n## Visión", true, new[] { "<h2", "<h3" }, new[] { "<h1" })]
+    [InlineData("## Visión", true, new[] { "<h3" }, new[] { "<h1", "<h2" })]
+    [InlineData("Titulo\n======\n\n## Visión", true, new[] { "<h2" }, new[] { "<h1", "<h3", "Titulo" })]
+    [InlineData("\n\n# T\n\n## Visión", true, new[] { "<h2" }, new[] { "<h1", "<h3", ">T<" })]
+    public void Heading_levels_depend_on_whether_the_document_title_was_removed(
+        string markdown, bool skipTitle, string[] present, string[] absent)
+    {
+        var html = renderer.Render(markdown, skipTitle).Value;
+
+        foreach (var expected in present)
+        {
+            Assert.Contains(expected, html);
+        }
+
+        foreach (var forbidden in absent)
+        {
+            Assert.DoesNotContain(forbidden, html);
+        }
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("\n\n")]
+    public void Empty_document_renders_nothing(string markdown)
+    {
+        Assert.Equal(string.Empty, renderer.Render(markdown, skipTitle: true).Value.Trim());
+    }
+
     [Fact]
     public void Markdown_is_presented_as_a_document()
     {
@@ -96,5 +127,24 @@ public sealed class MarkdownRendererTests
         Assert.Contains("<li>", html);
         Assert.Contains("<table>", html);
         Assert.Contains("<th>", html);
+    }
+
+    [Theory]
+    [InlineData("# Brief: Mi idea\n\n## Visión\n\nTexto", "Brief: Mi idea", "Visión")]
+    [InlineData("\n\n# Brief: Mi idea\n\nTexto\n\n# Otro\n", "Brief: Mi idea", "Otro")]
+    public void Skip_title_omits_only_the_leading_level_one_heading(string markdown, string omitted, string kept)
+    {
+        var html = renderer.Render(markdown, skipTitle: true).Value;
+
+        Assert.DoesNotContain(omitted, html);
+        Assert.Contains(kept, html);
+    }
+
+    [Theory]
+    [InlineData("Texto\n\n# Brief: Mi idea")]
+    [InlineData("## Brief: Mi idea")]
+    public void Skip_title_keeps_headings_when_the_first_block_is_not_a_level_one_heading(string markdown)
+    {
+        Assert.Contains("Brief: Mi idea", renderer.Render(markdown, skipTitle: true).Value);
     }
 }

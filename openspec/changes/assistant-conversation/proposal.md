@@ -12,7 +12,7 @@ An initiative in *Aclarando* has nowhere to go: the detail page shows a "Convers
 - Guided mode only (RF-48): one question per turn, an example, quick replies including "No sé", a short "why" and progress (RF-41).
 - Free text up to 2000 characters next to quick replies; "Deshacer mi última respuesta" for the last answer only, never for one that changed the initiative (RF-49).
 - Derived progress that survives a level change during *Aclarando* without restart (RF-50).
-- Automatic mode: sizing question, depth suggestion; accepting switches to Manual with that level (RF-47, RF-28).
+- Automatic mode: sizing question, depth suggestion; accepting keeps Automatic and sets that level (RF-47, RF-28).
 - Explicit, non-expiring confirmation "Sí, pasar a Planificar" or "Quiero añadir algo" (RF-45).
 - Page `/iniciativas/{id}/asistente` (chat plus journey panel), detail "Conversación" card, visible demo-data note.
 - Module boundary architecture test; xUnit tests with hand-written doubles.
@@ -30,7 +30,7 @@ An initiative in *Aclarando* has nowhere to go: the detail page shows a "Convers
 - `assistant-conversation`: conversation lifecycle, script and topic coverage per level, guided turns, quick replies, undo, journey and progress, depth suggestion, confirmation to plan, ownership and privacy note.
 
 ### Modified Capabilities
-- `initiatives`: new `StartPlanning` transition (*Aclarando* to *Planificando*, requires a depth, only via the assistant's confirmation, RF-34/RF-45); new `SetInitiativeDepthCommand` that sets Manual plus level (RF-47); depth stays editable in *Aclarando* without resetting the conversation and locks from *Planificando* (RF-29, RF-50); detail "Conversación" section is no longer a placeholder.
+- `initiatives`: new `StartPlanning` transition (*Aclarando* to *Planificando*, requires a depth, only via the assistant's confirmation, RF-34/RF-45); new `SetInitiativeDepthCommand` that sets the level and keeps the mode (RF-47); depth stays editable in *Aclarando* without resetting the conversation and locks from *Planificando* (RF-29, RF-50); detail "Conversación" section is no longer a placeholder.
 
 ## Approach
 
@@ -74,7 +74,7 @@ An initiative in *Aclarando* has nowhere to go: the detail page shows a "Convers
 | Prerender runs lifecycle twice | Med | Start in `OnAfterRenderAsync(firstRender)`; idempotent command |
 | Undo and level change corrupt progress | Med | Progress derived from visible answers only; unit tests per level |
 | Cross-module leak | Med | Boundary test in this change |
-| Users read "Manual" after accepting a suggestion as surprising | Low | Accepted by RF-47 |
+| Users expect the mode to change after accepting a suggestion | Low | Resolved by RF-47: the mode stays Automatic |
 | Real data typed into a demo | Med | Visible chat note; fake sends nothing out |
 | Chat UI untested (no bUnit) | Med | Logic kept in handlers and pure classes |
 
@@ -96,7 +96,7 @@ An initiative in *Aclarando* has nowhere to go: the detail page shows a "Convers
 
 ## Rollback Plan
 
-Revert the PR(s) and run `dotnet ef database update <previous migration>` to drop the `asi_` tables. The only change to existing data is initiatives moved to *Planificando*/Manual by users; reverting code leaves them valid, since those values already exist in the schema.
+Revert the PR(s) and run `dotnet ef database update <previous migration>` to drop the `asi_` tables. The only change to existing data is initiatives moved to *Planificando* by users; reverting code leaves them valid, since those values already exist in the schema.
 
 ## Dependencies
 
@@ -108,7 +108,7 @@ Revert the PR(s) and run `dotnet ef database update <previous migration>` to dro
 - [ ] Each level asks its topic set one at a time with example and quick replies; leaving and returning restores history and progress.
 - [ ] Changing the level in *Aclarando* keeps answers and asks only missing topics.
 - [ ] Undo removes only the last answer and is refused after the status change.
-- [ ] Automatic: accepting the suggestion leaves Manual plus that level.
+- [ ] Automatic: accepting the suggestion keeps Automatic plus that level.
 - [ ] *Planificando* happens only after "Sí, pasar a Planificar"; the level then locks.
 - [ ] Boundary test passes; `dotnet build` and `dotnet test` (Release) pass with zero warnings.
 
