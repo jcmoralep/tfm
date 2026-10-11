@@ -63,9 +63,9 @@ public static partial class ArtifactFormatChecker
         if (index is not null)
         {
             warnings.AddRange(markers.Where(m => !entries.ContainsKey(m.Key))
-                .Select(m => new FormatWarning(m.Value, $"{At(lines[m.Value - 1])}: el supuesto {m.Key} no aparece en el Índice de suposiciones.")));
+                .Select(m => new FormatWarning(m.Value, $"{At(lines[m.Value - 1])}el supuesto {m.Key} no aparece en el Índice de suposiciones.")));
             warnings.AddRange(entries.Where(e => !markers.ContainsKey(e.Key))
-                .Select(e => new FormatWarning(e.Value, $"{At(lines[e.Value - 1])}: {e.Key} está en el Índice de suposiciones pero no tiene marcador {ArtifactOutline.AssumptionMarker(e.Key)} en el texto.")));
+                .Select(e => new FormatWarning(e.Value, $"{At(lines[e.Value - 1])}{e.Key} está en el Índice de suposiciones pero no tiene marcador {ArtifactOutline.AssumptionMarker(e.Key)} en el texto.")));
         }
 
         // Document order: whole-document findings first, then by line (the sort is stable).
@@ -81,13 +81,20 @@ public static partial class ArtifactFormatChecker
         return [.. ordered.Take(MaxWarnings), new FormatWarning(null, $"y {rest} avisos más.")];
     }
 
-    // The read view has no line numbers, so a warning quotes the start of the offending line instead.
+    // The read view has no line numbers, so a warning quotes the start of the offending line instead (nothing when the
+    // line has no text left once the markup is removed).
     private static string At(string line)
     {
         var text = MarkupRegex().Replace(ListMarkerRegex().Replace(line, string.Empty), string.Empty).Trim();
         text = WhitespaceRegex().Replace(text, " ");
 
-        return $"En «{(text.Length > ExcerptLength ? text[..ExcerptLength].TrimEnd() + "…" : text)}»";
+        if (text.Length > ExcerptLength)
+        {
+            var cut = char.IsHighSurrogate(text[ExcerptLength - 1]) ? ExcerptLength - 1 : ExcerptLength;
+            text = text[..cut].TrimEnd() + "…";
+        }
+
+        return text.Length == 0 ? string.Empty : $"En «{text}»: ";
     }
 
     private static void CheckMarkers(string line, int number, Dictionary<string, int> markers, List<FormatWarning> warnings)
@@ -98,7 +105,7 @@ public static partial class ArtifactFormatChecker
 
             if (!valid.Success)
             {
-                warnings.Add(new FormatWarning(number, $"{At(line)}: el marcador [ASSUMPTION] no indica un identificador A-n válido."));
+                warnings.Add(new FormatWarning(number, $"{At(line)}el marcador [ASSUMPTION] no indica un identificador A-n válido."));
                 continue;
             }
 
@@ -106,11 +113,11 @@ public static partial class ArtifactFormatChecker
 
             if (valid.Groups["n"].Value == "0")
             {
-                warnings.Add(new FormatWarning(number, $"{At(line)}: «{id}» no es válido: la numeración empieza en 1."));
+                warnings.Add(new FormatWarning(number, $"{At(line)}«{id}» no es válido: la numeración empieza en 1."));
             }
             else if (markers.ContainsKey(id))
             {
-                warnings.Add(new FormatWarning(number, $"{At(line)}: {id} ya está definido antes en el documento."));
+                warnings.Add(new FormatWarning(number, $"{At(line)}{id} ya está definido antes en el documento."));
             }
             else
             {
@@ -163,14 +170,14 @@ public static partial class ArtifactFormatChecker
 
         if (!valid.Success)
         {
-            warnings.Add(new FormatWarning(number, $"{At(line)}: «{token}» no sigue el formato {prefix}-n."));
+            warnings.Add(new FormatWarning(number, $"{At(line)}«{token}» no sigue el formato {prefix}-n."));
 
             return;
         }
 
         if (valid.Groups["n"].Value == "0")
         {
-            warnings.Add(new FormatWarning(number, $"{At(line)}: «{token}» no es válido: la numeración empieza en 1."));
+            warnings.Add(new FormatWarning(number, $"{At(line)}«{token}» no es válido: la numeración empieza en 1."));
 
             return;
         }
@@ -185,7 +192,7 @@ public static partial class ArtifactFormatChecker
 
         if (target.ContainsKey(token))
         {
-            warnings.Add(new FormatWarning(number, $"{At(line)}: {token} ya está definido antes en el documento."));
+            warnings.Add(new FormatWarning(number, $"{At(line)}{token} ya está definido antes en el documento."));
         }
         else
         {

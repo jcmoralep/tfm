@@ -87,10 +87,12 @@ public sealed class InitiativeTests
         Assert.Equal(InitiativeDepth.Standard, initiative.Depth);
     }
 
-    [Fact]
-    public void Automatic_mode_keeps_the_level_it_is_given()
+    [Theory]
+    [InlineData(InitiativeStatus.Draft)]
+    [InlineData(InitiativeStatus.Clarifying)]
+    public void Automatic_mode_keeps_the_level_it_is_given(InitiativeStatus status)
     {
-        var initiative = InStatus(InitiativeStatus.Clarifying);
+        var initiative = status == InitiativeStatus.Draft ? NewDraft() : InStatus(status);
 
         initiative.SetDepth(DepthMode.Automatic, InitiativeDepth.Large, T1);
 

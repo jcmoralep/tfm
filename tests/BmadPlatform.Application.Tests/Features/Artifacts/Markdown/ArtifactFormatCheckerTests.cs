@@ -154,6 +154,43 @@ public sealed class ArtifactFormatCheckerTests
     }
 
     [Fact]
+    public void Long_excerpt_ends_with_an_ellipsis_within_the_limit()
+    {
+        var line = "- **FR1**: " + new string('x', 200);
+        var markdown = CleanSpec(m => m.Replace("- **FR-2**: Ver su estado", "- **FR-2**: Ver su estado\n" + line, StringComparison.Ordinal));
+
+        var message = Assert.Single(CheckSpec(markdown)).Message;
+        var excerpt = message[(message.IndexOf('«') + 1)..message.IndexOf('»')];
+
+        Assert.EndsWith("…", excerpt, StringComparison.Ordinal);
+        Assert.True(excerpt.Length <= 51);
+    }
+
+    [Fact]
+    public void Excerpt_never_splits_a_surrogate_pair()
+    {
+        // "FR1: " is 5 characters, so the emoji sits at positions 49 and 50, straddling the 50-character limit.
+        var line = "- **FR1**: " + new string('x', 44) + "😀 resto del texto";
+        var markdown = CleanSpec(m => m.Replace("- **FR-2**: Ver su estado", "- **FR-2**: Ver su estado\n" + line, StringComparison.Ordinal));
+
+        var message = Assert.Single(CheckSpec(markdown)).Message;
+
+        for (var i = 0; i < message.Length; i++)
+        {
+            Assert.False(char.IsHighSurrogate(message[i]) && (i + 1 == message.Length || !char.IsLowSurrogate(message[i + 1])));
+            Assert.False(char.IsLowSurrogate(message[i]) && (i == 0 || !char.IsHighSurrogate(message[i - 1])));
+        }
+    }
+
+    [Fact]
+    public void Line_without_text_after_removing_markup_omits_the_quote()
+    {
+        var markdown = CleanSpec(m => m.Replace("- **FR-2**: Ver su estado", "- **FR-2**: Ver su estado\n**\n[ASSUMPTION]", StringComparison.Ordinal));
+
+        Assert.DoesNotContain("«»", string.Concat(CheckSpec(markdown).Select(w => w.Message)), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Duplicate_identifier_is_reported_once_quoting_the_repeated_line()
     {
         var markdown = CleanSpec(m => m.Replace("- **FR-2**: Ver su estado", "- **FR-2**: Ver su estado\n- **FR-2**: Otra vez", StringComparison.Ordinal));

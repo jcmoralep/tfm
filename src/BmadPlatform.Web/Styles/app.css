@@ -47,19 +47,16 @@
     @apply mt-0;
   }
 
-  /* The page owns the h1, so the document headings start at h2. */
+  /* The page owns the h1 and the document title is not rendered, so sections are h2 and sub-sections h3. */
   .doc-prose h2 {
-    @apply mb-4 mt-8 text-2xl font-semibold text-ink;
-  }
-
-  .doc-prose h3 {
     @apply mb-3 mt-8 border-b border-line pb-2 text-xl font-semibold text-ink;
   }
 
-  .doc-prose h4 {
+  .doc-prose h3 {
     @apply mb-2 mt-6 text-lg font-semibold text-ink;
   }
 
+  .doc-prose h4,
   .doc-prose h5,
   .doc-prose h6 {
     @apply mb-2 mt-4 text-base font-semibold text-ink;

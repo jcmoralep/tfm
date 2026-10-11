@@ -86,6 +86,37 @@ public sealed class MarkdownRendererTests
         Assert.DoesNotContain("<h1", html);
     }
 
+    [Theory]
+    [InlineData("# T\n\n## Visión\n\n### Sub", true, new[] { "<h2", "<h3" }, new[] { "<h1", "<h4", ">T<" })]
+    [InlineData("# T\n\n## Visión", false, new[] { "<h2", "<h3" }, new[] { "<h1" })]
+    [InlineData("Intro\n\n# T\n\n## Visión", true, new[] { "<h2", "<h3" }, new[] { "<h1" })]
+    [InlineData("## Visión", true, new[] { "<h3" }, new[] { "<h1", "<h2" })]
+    [InlineData("Titulo\n======\n\n## Visión", true, new[] { "<h2" }, new[] { "<h1", "<h3", "Titulo" })]
+    [InlineData("\n\n# T\n\n## Visión", true, new[] { "<h2" }, new[] { "<h1", "<h3", ">T<" })]
+    public void Heading_levels_depend_on_whether_the_document_title_was_removed(
+        string markdown, bool skipTitle, string[] present, string[] absent)
+    {
+        var html = renderer.Render(markdown, skipTitle).Value;
+
+        foreach (var expected in present)
+        {
+            Assert.Contains(expected, html);
+        }
+
+        foreach (var forbidden in absent)
+        {
+            Assert.DoesNotContain(forbidden, html);
+        }
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("\n\n")]
+    public void Empty_document_renders_nothing(string markdown)
+    {
+        Assert.Equal(string.Empty, renderer.Render(markdown, skipTitle: true).Value.Trim());
+    }
+
     [Fact]
     public void Markdown_is_presented_as_a_document()
     {
