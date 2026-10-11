@@ -15,6 +15,8 @@ public static partial class ArtifactFormatChecker
     /// <summary>The most warnings returned; a badly broken document gets the first ones and a count of the rest.</summary>
     public const int MaxWarnings = 50;
 
+    private const int ExcerptLength = 50;
+
     // Identifiers written without a hyphen ("FR3") are read as an attempt at the scheme only for these prefixes. For
     // the short ones (Q4, A4, SM2) the same text is an ordinary word, a quarter or a model name followed by prose.
     private static readonly string[] UnhyphenatedPrefixes = [ItemPrefix.NonFunctionalRequirement, ItemPrefix.FunctionalRequirement, ItemPrefix.UserJourney];
@@ -61,9 +63,9 @@ public static partial class ArtifactFormatChecker
         if (index is not null)
         {
             warnings.AddRange(markers.Where(m => !entries.ContainsKey(m.Key))
-                .Select(m => new FormatWarning(m.Value, $"Línea {m.Value}: el supuesto {m.Key} no aparece en el Índice de suposiciones.")));
+                .Select(m => new FormatWarning(m.Value, $"{At(lines[m.Value - 1])}: el supuesto {m.Key} no aparece en el Índice de suposiciones.")));
             warnings.AddRange(entries.Where(e => !markers.ContainsKey(e.Key))
-                .Select(e => new FormatWarning(e.Value, $"Línea {e.Value}: {e.Key} está en el Índice de suposiciones pero no tiene marcador {ArtifactOutline.AssumptionMarker(e.Key)} en el texto.")));
+                .Select(e => new FormatWarning(e.Value, $"{At(lines[e.Value - 1])}: {e.Key} está en el Índice de suposiciones pero no tiene marcador {ArtifactOutline.AssumptionMarker(e.Key)} en el texto.")));
         }
 
         // Document order: whole-document findings first, then by line (the sort is stable).
@@ -79,6 +81,15 @@ public static partial class ArtifactFormatChecker
         return [.. ordered.Take(MaxWarnings), new FormatWarning(null, $"y {rest} avisos más.")];
     }
 
+    // The read view has no line numbers, so a warning quotes the start of the offending line instead.
+    private static string At(string line)
+    {
+        var text = MarkupRegex().Replace(ListMarkerRegex().Replace(line, string.Empty), string.Empty).Trim();
+        text = WhitespaceRegex().Replace(text, " ");
+
+        return $"En «{(text.Length > ExcerptLength ? text[..ExcerptLength].TrimEnd() + "…" : text)}»";
+    }
+
     private static void CheckMarkers(string line, int number, Dictionary<string, int> markers, List<FormatWarning> warnings)
     {
         foreach (Match match in MarkerRegex().Matches(line))
@@ -87,7 +98,7 @@ public static partial class ArtifactFormatChecker
 
             if (!valid.Success)
             {
-                warnings.Add(new FormatWarning(number, $"Línea {number}: el marcador [ASSUMPTION] no indica un identificador A-n válido."));
+                warnings.Add(new FormatWarning(number, $"{At(line)}: el marcador [ASSUMPTION] no indica un identificador A-n válido."));
                 continue;
             }
 
@@ -95,11 +106,11 @@ public static partial class ArtifactFormatChecker
 
             if (valid.Groups["n"].Value == "0")
             {
-                warnings.Add(new FormatWarning(number, $"Línea {number}: «{id}» no es válido: la numeración empieza en 1."));
+                warnings.Add(new FormatWarning(number, $"{At(line)}: «{id}» no es válido: la numeración empieza en 1."));
             }
-            else if (markers.TryGetValue(id, out var first))
+            else if (markers.ContainsKey(id))
             {
-                warnings.Add(new FormatWarning(number, $"Línea {number}: {id} ya está definido en la línea {first}."));
+                warnings.Add(new FormatWarning(number, $"{At(line)}: {id} ya está definido antes en el documento."));
             }
             else
             {
@@ -152,14 +163,14 @@ public static partial class ArtifactFormatChecker
 
         if (!valid.Success)
         {
-            warnings.Add(new FormatWarning(number, $"Línea {number}: «{token}» no sigue el formato {prefix}-n."));
+            warnings.Add(new FormatWarning(number, $"{At(line)}: «{token}» no sigue el formato {prefix}-n."));
 
             return;
         }
 
         if (valid.Groups["n"].Value == "0")
         {
-            warnings.Add(new FormatWarning(number, $"Línea {number}: «{token}» no es válido: la numeración empieza en 1."));
+            warnings.Add(new FormatWarning(number, $"{At(line)}: «{token}» no es válido: la numeración empieza en 1."));
 
             return;
         }
@@ -172,9 +183,9 @@ public static partial class ArtifactFormatChecker
 
         var target = prefix == ItemPrefix.Assumption ? entries : definitions;
 
-        if (target.TryGetValue(token, out var first))
+        if (target.ContainsKey(token))
         {
-            warnings.Add(new FormatWarning(number, $"Línea {number}: {token} ya está definido en la línea {first}."));
+            warnings.Add(new FormatWarning(number, $"{At(line)}: {token} ya está definido antes en el documento."));
         }
         else
         {
@@ -242,6 +253,15 @@ public static partial class ArtifactFormatChecker
 
     [GeneratedRegex(@"^\s{0,3}(?<hashes>#{1,6})\s+(?<title>.*)$")]
     private static partial Regex HeadingRegex();
+
+    [GeneratedRegex(@"^\s*[-+*]\s+")]
+    private static partial Regex ListMarkerRegex();
+
+    [GeneratedRegex(@"[*_`#]")]
+    private static partial Regex MarkupRegex();
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex WhitespaceRegex();
 
     [GeneratedRegex(@"^\d+(\.\d+)*\.?\s+")]
     private static partial Regex NumberPrefixRegex();

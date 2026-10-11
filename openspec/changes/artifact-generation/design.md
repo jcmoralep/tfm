@@ -59,8 +59,8 @@ Generation needs `Available`. Edit, regenerate and approve need an existing row 
 - `ArtifactOutline.Sections(type)`: the required headings (Spanish), from `docs/bmad-referencia.md` section 2. Canonical item line: `- **FR-1**: texto`; inline assumption: `[ASSUMPTION: A-1]`.
 - `ArtifactFormatChecker.Check(type, markdown)` returns `FormatWarning(int? Line, string Message)`:
   - a missing required heading: "Falta la sección «Alcance del MVP»."
-  - a malformed id (`FR1`, `FR -1`, `fr-1`, `FR-`, `FR-01`): "Línea 12: «FR1» no sigue el formato FR-n."
-  - the same id defined twice: "Línea 30: FR-2 ya está definido en la línea 14."
+  - a malformed id (`FR1`, `FR -1`, `fr-1`, `FR-`, `FR-01`): "En «FR1: Bajar las llamadas a soporte»: «FR1» no sigue el formato FR-n." (the message quotes about 50 characters of the line, without markup, because the read view has no line numbers; `Line` stays as data)
+  - the same id defined twice: "En «FR-2: Otra vez»: FR-2 ya está definido antes en el documento."
   - an `[ASSUMPTION` marker without a valid `A-n`.
   - at most 50 warnings, then a final "y N avisos más."; a hyphenless token such as `Q4`, `A4` or `SM2` is prose, only `FR1`, `NFR1` and `UJ1` count as malformed without a hyphen.
   - It never changes the text.

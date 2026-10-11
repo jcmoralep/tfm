@@ -97,4 +97,23 @@ public sealed class MarkdownRendererTests
         Assert.Contains("<table>", html);
         Assert.Contains("<th>", html);
     }
+
+    [Theory]
+    [InlineData("# Brief: Mi idea\n\n## Visión\n\nTexto", "Brief: Mi idea", "Visión")]
+    [InlineData("\n\n# Brief: Mi idea\n\nTexto\n\n# Otro\n", "Brief: Mi idea", "Otro")]
+    public void Skip_title_omits_only_the_leading_level_one_heading(string markdown, string omitted, string kept)
+    {
+        var html = renderer.Render(markdown, skipTitle: true).Value;
+
+        Assert.DoesNotContain(omitted, html);
+        Assert.Contains(kept, html);
+    }
+
+    [Theory]
+    [InlineData("Texto\n\n# Brief: Mi idea")]
+    [InlineData("## Brief: Mi idea")]
+    public void Skip_title_keeps_headings_when_the_first_block_is_not_a_level_one_heading(string markdown)
+    {
+        Assert.Contains("Brief: Mi idea", renderer.Render(markdown, skipTitle: true).Value);
+    }
 }

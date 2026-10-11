@@ -67,12 +67,13 @@ else
 
             @if (AssistantLabels.DocumentsLinkFor(view) is { } documents)
             {
-                <p class="mt-3">
+                <div class="mt-3">
+                    <p class="text-xs text-ink-muted">Documentos de esta iniciativa</p>
                     <a href="@documents.Href"
-                       class="inline-block rounded-full border border-primary bg-surface-raised px-5 py-2 text-sm font-medium text-primary-ink hover:bg-primary-soft">
-                        @documents.Label
+                       class="mt-1 inline-flex items-center gap-1 rounded-control text-sm font-medium text-primary-ink hover:underline focus-visible:underline">
+                        <span aria-hidden="true">→</span>@documents.Label
                     </a>
-                </p>
+                </div>
             }
 
             @if (errors.Count > 0)
