@@ -175,6 +175,46 @@ public sealed class Initiative
         UpdatedAt = now;
     }
 
+    /// <summary>
+    /// Planning becomes ReadyToBuild. Repeating it on a ReadyToBuild initiative succeeds without changing
+    /// anything (not even <see cref="UpdatedAt"/>). The caller checks that the required set is complete.
+    /// </summary>
+    public void MarkReadyToBuild(DateTimeOffset now)
+    {
+        if (Status == InitiativeStatus.ReadyToBuild)
+        {
+            return;
+        }
+
+        if (Status != InitiativeStatus.Planning)
+        {
+            throw new DomainException("La iniciativa debe estar en Planificando para pasar a Lista para construir.");
+        }
+
+        Status = InitiativeStatus.ReadyToBuild;
+        UpdatedAt = now;
+    }
+
+    /// <summary>
+    /// ReadyToBuild goes back to Planning. Mode and depth stay locked. Repeating it on a Planning
+    /// initiative succeeds without changing anything.
+    /// </summary>
+    public void ReopenPlanning(DateTimeOffset now)
+    {
+        if (Status == InitiativeStatus.Planning)
+        {
+            return;
+        }
+
+        if (Status != InitiativeStatus.ReadyToBuild)
+        {
+            throw new DomainException("La iniciativa debe estar en Lista para construir para volver a Planificando.");
+        }
+
+        Status = InitiativeStatus.Planning;
+        UpdatedAt = now;
+    }
+
     /// <summary>Soft delete. Deleting an already deleted initiative changes nothing.</summary>
     public void Delete(DateTimeOffset now)
     {

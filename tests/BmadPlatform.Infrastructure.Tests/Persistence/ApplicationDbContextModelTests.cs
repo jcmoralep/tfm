@@ -1,6 +1,8 @@
 using System.Linq.Expressions;
+using BmadPlatform.Domain.Artifacts;
 using BmadPlatform.Domain.Assistant;
 using BmadPlatform.Domain.Initiatives;
+using BmadPlatform.Infrastructure.Artifacts;
 using BmadPlatform.Infrastructure.Assistant;
 using BmadPlatform.Infrastructure.Initiatives;
 using BmadPlatform.Infrastructure.Persistence;
@@ -65,7 +67,7 @@ public sealed class ApplicationDbContextModelTests : IDisposable
             .ToArray();
 
         Assert.Equal<string>(
-            ["AspNetUserClaims", "AspNetUserLogins", "AspNetUserTokens", "AspNetUsers", "asi_conversations", "asi_messages", "ini_initiatives"],
+            ["AspNetUserClaims", "AspNetUserLogins", "AspNetUserTokens", "AspNetUsers", "art_artifacts", "asi_conversations", "asi_messages", "ini_initiatives"],
             tables);
     }
 
@@ -312,6 +314,56 @@ public sealed class ApplicationDbContextModelTests : IDisposable
         var repository = scope.ServiceProvider.GetRequiredService<BmadPlatform.Application.Features.Assistant.IConversationRepository>();
 
         Assert.IsType<ConversationRepository>(repository);
+    }
+
+    [Fact]
+    public void Artifact_is_unique_per_initiative_and_type_with_a_version_token_longtext_content_and_no_foreign_key()
+    {
+        using var context = CreateContext();
+        var entityType = context.Model.FindEntityType(typeof(Artifact))!;
+
+        var index = Assert.Single(entityType.GetIndexes());
+        Assert.True(index.IsUnique);
+        Assert.Equal(
+            [nameof(Artifact.InitiativeId), nameof(Artifact.Type)],
+            index.Properties.Select(property => property.Name));
+
+        Assert.True(entityType.FindProperty(nameof(Artifact.Version))!.IsConcurrencyToken);
+        Assert.Equal(255, entityType.FindProperty(nameof(Artifact.OwnerId))!.GetMaxLength());
+        Assert.Equal("longtext", entityType.FindProperty(nameof(Artifact.Content))!.GetColumnType());
+        Assert.Empty(entityType.GetForeignKeys());
+        Assert.Empty(entityType.GetNavigations());
+
+        foreach (var name in new[] { nameof(Artifact.Type), nameof(Artifact.Status) })
+        {
+            var property = entityType.FindProperty(name)!;
+
+            Assert.Equal(typeof(string), property.GetProviderClrType());
+            Assert.Equal(20, property.GetMaxLength());
+        }
+
+        foreach (var name in new[] { nameof(Artifact.CreatedAt), nameof(Artifact.UpdatedAt), nameof(Artifact.ApprovedAt) })
+        {
+            Assert.Equal("datetime(6)", entityType.FindProperty(name)!.GetRelationalTypeMapping().StoreType);
+        }
+    }
+
+    [Fact]
+    public void Artifacts_migration_is_present()
+    {
+        using var context = new DesignTimeDbContextFactory().CreateDbContext([]);
+
+        Assert.Contains(context.Database.GetMigrations(), migration => migration.EndsWith("_AddArtifacts", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Artifact_repository_is_registered_per_scope_for_the_application_port()
+    {
+        using var scope = provider.CreateScope();
+
+        var repository = scope.ServiceProvider.GetRequiredService<BmadPlatform.Application.Features.Artifacts.IArtifactRepository>();
+
+        Assert.IsType<ArtifactRepository>(repository);
     }
 
     [Fact]

@@ -287,6 +287,99 @@ public sealed class InitiativeTests
     }
 
     [Fact]
+    public void MarkReadyToBuild_moves_a_planning_initiative_and_refreshes_updated_at()
+    {
+        var initiative = InStatus(InitiativeStatus.Planning);
+
+        initiative.MarkReadyToBuild(T1);
+
+        Assert.Equal(InitiativeStatus.ReadyToBuild, initiative.Status);
+        Assert.Equal("App de pagos", initiative.Name);
+        Assert.Equal(DepthMode.Manual, initiative.DepthMode);
+        Assert.Equal(InitiativeDepth.Standard, initiative.Depth);
+        Assert.Equal(T1, initiative.UpdatedAt);
+    }
+
+    [Fact]
+    public void MarkReadyToBuild_is_idempotent_and_does_not_refresh_updated_at()
+    {
+        var initiative = InStatus(InitiativeStatus.Planning);
+        initiative.MarkReadyToBuild(T1);
+
+        initiative.MarkReadyToBuild(T1.AddHours(1));
+
+        Assert.Equal(InitiativeStatus.ReadyToBuild, initiative.Status);
+        Assert.Equal(T1, initiative.UpdatedAt);
+    }
+
+    [Theory]
+    [InlineData(InitiativeStatus.Draft)]
+    [InlineData(InitiativeStatus.Clarifying)]
+    public void MarkReadyToBuild_outside_planning_is_rejected_and_leaves_the_initiative_unchanged(InitiativeStatus status)
+    {
+        var initiative = status == InitiativeStatus.Draft ? NewDraft() : InStatus(status);
+        var updatedAt = initiative.UpdatedAt;
+
+        var error = Assert.Throws<DomainException>(() => initiative.MarkReadyToBuild(T1));
+
+        Assert.Equal("La iniciativa debe estar en Planificando para pasar a Lista para construir.", error.Message);
+        Assert.Equal(status, initiative.Status);
+        Assert.Equal(updatedAt, initiative.UpdatedAt);
+    }
+
+    [Fact]
+    public void ReopenPlanning_moves_a_ready_initiative_back_and_refreshes_updated_at()
+    {
+        var initiative = InStatus(InitiativeStatus.ReadyToBuild);
+
+        initiative.ReopenPlanning(T1);
+
+        Assert.Equal(InitiativeStatus.Planning, initiative.Status);
+        Assert.Equal(DepthMode.Manual, initiative.DepthMode);
+        Assert.Equal(InitiativeDepth.Standard, initiative.Depth);
+        Assert.Equal(T1, initiative.UpdatedAt);
+    }
+
+    [Fact]
+    public void ReopenPlanning_is_idempotent_on_a_planning_initiative()
+    {
+        var initiative = InStatus(InitiativeStatus.Planning);
+
+        initiative.ReopenPlanning(T1);
+
+        Assert.Equal(InitiativeStatus.Planning, initiative.Status);
+        Assert.Equal(T0, initiative.UpdatedAt);
+    }
+
+    [Theory]
+    [InlineData(InitiativeStatus.Draft)]
+    [InlineData(InitiativeStatus.Clarifying)]
+    public void ReopenPlanning_outside_ready_to_build_is_rejected_and_leaves_the_initiative_unchanged(InitiativeStatus status)
+    {
+        var initiative = status == InitiativeStatus.Draft ? NewDraft() : InStatus(status);
+        var updatedAt = initiative.UpdatedAt;
+
+        var error = Assert.Throws<DomainException>(() => initiative.ReopenPlanning(T1));
+
+        Assert.Equal("La iniciativa debe estar en Lista para construir para volver a Planificando.", error.Message);
+        Assert.Equal(status, initiative.Status);
+        Assert.Equal(updatedAt, initiative.UpdatedAt);
+    }
+
+    [Fact]
+    public void A_reopened_initiative_keeps_mode_and_depth_locked()
+    {
+        var initiative = InStatus(InitiativeStatus.Planning);
+        initiative.MarkReadyToBuild(T1);
+        initiative.ReopenPlanning(T1.AddMinutes(1));
+
+        Assert.Throws<DomainException>(() => initiative.SetDepth(DepthMode.Manual, InitiativeDepth.Large, T1));
+        Assert.Throws<DomainException>(() => initiative.SetDepth(DepthMode.Automatic, null, T1));
+        Assert.Equal(DepthMode.Manual, initiative.DepthMode);
+        Assert.Equal(InitiativeDepth.Standard, initiative.Depth);
+    }
+
+    [Fact]
     public void Every_mutator_refreshes_updated_at()
     {
         var initiative = NewDraft();

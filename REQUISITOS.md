@@ -19,7 +19,7 @@ Cada requisito es verificable. Etiquetas: **[CONFIRMADO]** decidido por el equip
 ### Iniciativas
 - **RF-05** El usuario puede crear una iniciativa con nombre y descripción corta. [CONFIRMADO]
 - **RF-06** Al crearla, el usuario elige si la profundidad la define él o la sugiere el asistente. [CONFIRMADO]
-- **RF-07** Una iniciativa pasa a *Lista para construir* cuando sus artefactos están aprobados. [SUPUESTO]
+- **RF-07** Una iniciativa pasa a *Lista para construir* cuando están aprobados **todos** los artefactos que exige su nivel (RF-51, RF-52). [CONFIRMADO]
 - **RF-08** El usuario puede listar, ver y editar iniciativas; los estados son *Borrador*, *Aclarando*, *Planificando* y *Lista para construir*. [CONFIRMADO]
 - **RF-09** El detalle de la iniciativa muestra Conversación, Artefactos y Contexto. [CONFIRMADO]
 - **RF-26** Cada usuario ve, edita y elimina únicamente sus propias iniciativas. Abrir la de otro usuario responde como "no encontrada", sin revelar que existe. La iniciativa guarda el identificador de quien la creó. [CONFIRMADO]
@@ -34,7 +34,7 @@ Cada requisito es verificable. Etiquetas: **[CONFIRMADO]** decidido por el equip
 - **RF-35** El guion del asistente es propio de la plataforma: BMAD no define una lista fija de preguntas, sino reglas de conducta. El asistente hace **una pregunta por vez**, en orden de dependencia, sugiere su mejor respuesta cuando ayuda, no elogia y pide más cuando una respuesta es débil. [VALIDADO EN BMAD 6.12.1]
 - **RF-36** Los artefactos generados siguen las convenciones de BMAD 6.12.1: carpeta `<tipo>-<proyecto>-<fecha>`, frontmatter con título, estado, creación y actualización, requisitos funcionales numerados globalmente (`FR-1`), recorridos `UJ-N`, y suposiciones en línea como `[ASSUMPTION: ...]` con un índice al final del PRD. Los requisitos no funcionales no tienen formato de identificador en BMAD; la plataforma usa el suyo (RF-44). [VALIDADO EN BMAD 6.12.1]
 - **RF-37** La versión de BMAD de la que se tomó el formato queda registrada en `docs/bmad-referencia.md` y se revisa cuando salga una versión nueva. [CONFIRMADO]
-- **RF-38** En el nivel Estándar el Brief se **genera automáticamente** a partir del volcado inicial de la idea, sin una ronda de preguntas propia: el asistente lo muestra ("Esto es lo que entendí") y la persona lo corrige o lo aprueba (RF-19). Las preguntas del PRD parten de lo aprobado en el Brief y no repiten lo ya respondido. Las suposiciones que el asistente añada al Brief se marcan como tales. Motivo: en las simulaciones con BMAD el Brief y el PRD compartían entre el 60 y el 70% de su contenido. [CONFIRMADO]
+- **RF-38** En el nivel Estándar el Brief se **genera automáticamente** a partir del volcado inicial de la idea, sin una ronda de preguntas propia: el asistente lo muestra ("Esto es lo que entendí") y la persona lo corrige o lo aprueba (RF-19). Las preguntas del PRD parten de lo aprobado en el Brief y no repiten lo ya respondido. Las suposiciones que el asistente añada al Brief se marcan como tales. Motivo: en las simulaciones con BMAD el Brief y el PRD compartían entre el 60 y el 70% de su contenido. Precisión: el Brief no aparece solo; se genera con el botón **Generar** en cuanto termina Aclarar (RF-53). [CONFIRMADO]
 - **RF-39** Los desarrolladores **no tienen rol ni acceso** en la plataforma. Quien registra la iniciativa es quien entrega los artefactos a desarrollo, por el medio que use (descarga, correo, chat o repositorio). La exportación debe poder entregarse sola: los archivos `.md` llevan al inicio una nota de uso ("Para construir: abra su repositorio y pase este archivo a `bmad-build`" o la habilidad que corresponda) y, cuando se generan borradores de Arquitectura y Épicas, una sección **Preguntas para desarrollo** con lo que la persona de producto no pudo responder. No hay revisión dentro de la plataforma. [CONFIRMADO]
 - **RF-40** En el nivel Pequeña se entrega **solo la especificación** (`SPEC.md`); no se genera el plan técnico de `bmad-build`, porque requiere conocer el código del producto, que la plataforma no tiene. Los casos límite que se puedan deducir se incluyen como criterios de éxito dentro de la especificación. [CONFIRMADO]
 - **RF-41** El asistente **guía**; no examina. Los usuarios incluirán perfiles junior, así que debe: usar lenguaje de negocio sin jerga (sin "spine", "épica", "invariantes" ni "slug" sin explicarlos), dar un **ejemplo** o una opción sugerida en cada pregunta, ofrecer respuestas rápidas concretas, aceptar "no sé" sin presionar (queda como pregunta pendiente con un responsable propuesto, RF-35), explicar brevemente por qué pregunta y cuánto falta, y decidir por la persona lo que no necesita decidir (modo, punto de entrada, nombre interno de archivos, idioma). [CONFIRMADO]
@@ -59,10 +59,17 @@ Cada requisito es verificable. Etiquetas: **[CONFIRMADO]** decidido por el equip
 ### Artefactos
 - **RF-16** La plataforma genera Brief, PRD, Arquitectura y Épicas e historias. Los dos últimos son borradores para revisión de desarrollo. Con el formato de BMAD: Brief (`brief.md`), PRD (`prd.md`), Arquitectura (`ARCHITECTURE-SPINE.md`) y Épicas e historias (un solo `epics.md`), con las secciones de `docs/bmad-referencia.md`. [CONFIRMADO; formato VALIDADO EN BMAD 6.12.1]
 - **RF-17** El usuario puede editar un artefacto y pedir al asistente que lo regenere. [CONFIRMADO]
-- **RF-18** Cada artefacto tiene número de versión; el historial completo y la comparación entre versiones quedan fuera del MVP. [SUPUESTO]
+- **RF-18** Cada artefacto tiene número de versión, que sube con cada cambio de su contenido (edición o regeneración), y aprobar no la cambia; el historial completo y la comparación entre versiones quedan fuera del MVP. [CONFIRMADO]
 - **RF-19** El usuario aprueba manualmente cada artefacto antes de marcarlo como final. [CONFIRMADO]
 - **RF-20** El contenido se guarda como Markdown, que es la fuente única de verdad **del texto** de cada documento. La plataforma mantiene además un índice estructurado, derivado del Markdown, para lo que necesita seguir (ver RF-43). [CONFIRMADO]
 - **RF-21** Exportación a `.md` (para developers) y `.pdf` (para el usuario), con descarga; el `.md` también se puede copiar. [CONFIRMADO]
+- **RF-51** Cada nivel exige un conjunto de artefactos: *Pequeña*, la especificación (`SPEC.md`); *Estándar*, Brief y PRD; *Grande*, PRD, Arquitectura y Épicas e historias (RF-27). La especificación de *Pequeña* se construye junto con el Brief y el PRD (paso 4 de `PROPUESTA-MVP.md` §7). [CONFIRMADO]
+- **RF-52** La iniciativa pasa sola a *Lista para construir* cuando el último artefacto exigido por su nivel queda aprobado; nunca con un conjunto incompleto. Por eso una iniciativa *Grande* no puede terminar hasta que existan Arquitectura y Épicas e historias (paso 6). [CONFIRMADO]
+- **RF-53** El Brief (nivel *Estándar*) queda disponible en cuanto se han cubierto los temas de Aclarar, aún en *Aclarando* y antes de pasar a *Planificando* (RF-45), y se genera con un botón explícito **Generar**; no se genera de forma automática. El guion del asistente no cambia de orden por esto: las preguntas de Planificar siguen igual (RF-46). [CONFIRMADO]
+- **RF-54** Un artefacto aprobado se puede seguir editando. Al guardar un cambio vuelve a *Borrador* con la versión siguiente (vN+1), y si la iniciativa estaba en *Lista para construir* vuelve a *Planificando* hasta que el artefacto se apruebe de nuevo. [CONFIRMADO]
+- **RF-55** Cada artefacto se muestra en una **vista de lectura** con el Markdown ya presentado como documento, y tiene un **modo de edición** con un área de texto que muestra el Markdown. Al presentar el documento no se interpreta HTML incrustado en el texto. [CONFIRMADO]
+- **RF-56** Alcance del índice estructurado (RF-43) en el paso 4: los documentos generados numeran sus elementos con el esquema de RF-44 (`FR`, `NFR`, `UJ`, `SM`, `A`, `Q`) y la plataforma lee el Markdown para **avisar** cuando una edición rompe ese formato, sin perder el texto. La tabla de elementos y el seguimiento de responsable y estado de preguntas y suposiciones quedan para un cambio posterior. [CONFIRMADO]
+- **RF-57** **Regenerar** un artefacto reemplaza su contenido, incluidas las ediciones manuales, y solo ocurre después de que la persona lo confirma en un aviso que explica que perderá esos cambios. [CONFIRMADO]
 
 ### Contexto adjunto
 - **RF-22** El adjunto es opcional y admite cualquier tipo de contenido (archivos, enlaces, notas); los tipos que proponga el usuario son prioritarios. [CONFIRMADO]
@@ -77,6 +84,11 @@ Cada requisito es verificable. Etiquetas: **[CONFIRMADO]** decidido por el equip
 - **RN-03** El Markdown es la única fuente de verdad del texto; el índice estructurado se reconstruye a partir de él y el PDF se genera bajo demanda. Nunca se guarda una copia del texto en otro formato.
 - **RN-04** El adjunto de contexto nunca es obligatorio.
 - **RN-05** Mientras se use la capa gratuita de Gemini, solo se usan datos de ejemplo o no sensibles.
+- **RF-58** La especificación (*Pequeña*) y el PRD (*Estándar* y *Grande*) se pueden generar solo al cierre de la conversación, cuando están cubiertos todos los temas del nivel y el asistente la da por lista para redactar. [CONFIRMADO]
+- **RF-59** Un artefacto con avisos de formato (RF-56) se puede aprobar: los avisos se muestran en la confirmación de la aprobación y no bloquean. [CONFIRMADO]
+- **RF-60** Al regenerar (RF-57) los elementos se numeran de nuevo desde cero, porque el documento se reemplaza por completo; la regla de RF-44 de no reutilizar ni reordenar números rige para las ediciones, no para la regeneración. [CONFIRMADO]
+- **RN-06** Una iniciativa solo está *Lista para construir* mientras todos los artefactos que exige su nivel estén aprobados; cualquier cambio en uno de ellos la devuelve a *Planificando* (RF-52, RF-54).
+- **RN-07** Regenerar nunca sobrescribe ediciones manuales sin confirmación explícita de la persona (RF-57).
 
 ## 4. Requerimientos no funcionales
 
@@ -113,4 +125,4 @@ Fase "Aprender y ajustar"; roles, administración y SSO; comentarios y notificac
 
 ## 8. Puntos por definir
 
-Ver `AGENTS.md` §6 y `PROPUESTA-MVP.md` §9.
+Ver `AGENTS.md` §6 y `PROPUESTA-MVP.md` §9. Las preguntas abiertas de la generación de artefactos (paso 4) están en `openspec/changes/artifact-generation/proposal.md`.

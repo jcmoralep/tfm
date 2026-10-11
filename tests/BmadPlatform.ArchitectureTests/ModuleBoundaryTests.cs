@@ -12,6 +12,9 @@ public sealed class ModuleBoundaryTests
     // The entity type, not a member that merely carries the name (a DTO property "Initiative" or "request.Initiative.Depth").
     private const string InitiativeEntityToken = @"(?<!\.)\bInitiative\b(?!\s*[,;)])";
 
+    // The entity type, not a member that merely carries the name ("Artifact," in a parameter list or "Artifact)" in a cast).
+    private const string ArtifactEntityToken = @"(?<!\.)\bArtifact\b(?!\s*[,;)])";
+
     private static readonly Module[] Modules =
     [
         new(
@@ -22,6 +25,10 @@ public sealed class ModuleBoundaryTests
             "Assistant",
             ["Domain/Assistant", "Application/Features/Assistant", "Infrastructure/Assistant"],
             [@"\bConversation\b", @"\bIConversationRepository\b", @"Infrastructure\.Assistant", @"\basi_"]),
+        new(
+            "Artifacts",
+            ["Domain/Artifacts", "Application/Features/Artifacts", "Infrastructure/Artifacts"],
+            [ArtifactEntityToken, @"\bIArtifactRepository\b", @"Infrastructure\.Artifacts", @"\bart_"]),
     ];
 
     public static TheoryData<string, string> ModulePairs()
@@ -54,6 +61,7 @@ public sealed class ModuleBoundaryTests
     [Theory]
     [InlineData("Initiatives")]
     [InlineData("Assistant")]
+    [InlineData("Artifacts")]
     public void Every_module_has_sources_in_each_layer_so_the_scan_cannot_pass_vacuously(string moduleName)
     {
         var module = Modules.Single(candidate => candidate.Name == moduleName);
@@ -88,6 +96,22 @@ public sealed class ModuleBoundaryTests
         };
 
         var violations = FindViolations(sources, [InitiativeEntityToken]);
+
+        Assert.Equal(["Entity.cs", "Param.cs"], violations.Select(violation => violation.Split(' ')[0]));
+    }
+
+    [Fact]
+    public void The_artifact_token_matches_the_entity_type_but_not_a_member_or_a_list_item_named_after_it()
+    {
+        var sources = new[]
+        {
+            new Source("Entity.cs", "var x = Artifact.Create();"),
+            new Source("Param.cs", "void Do(Artifact artifact) { }"),
+            new Source("Member.cs", "var d = view.Artifact;\nvoid Do(Artifact, int level);"),
+            new Source("Plural.cs", "var s = ArtifactSummary.Empty; IArtifactDrafter d;"),
+        };
+
+        var violations = FindViolations(sources, [ArtifactEntityToken]);
 
         Assert.Equal(["Entity.cs", "Param.cs"], violations.Select(violation => violation.Split(' ')[0]));
     }

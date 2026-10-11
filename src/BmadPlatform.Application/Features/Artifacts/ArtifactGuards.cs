@@ -1,0 +1,91 @@
+using BmadPlatform.Application.Common.Exceptions;
+using BmadPlatform.Application.Features.Assistant;
+using BmadPlatform.Application.Features.Assistant.GetConversationAnswers;
+using BmadPlatform.Application.Features.Initiatives;
+using BmadPlatform.Application.Features.Initiatives.GetInitiative;
+using BmadPlatform.Domain.Artifacts;
+using BmadPlatform.Domain.Common;
+using BmadPlatform.Domain.Initiatives;
+using MediatR;
+
+namespace BmadPlatform.Application.Features.Artifacts;
+
+/// <summary>Checks and reads shared by the document use cases, so each rule is worded and enforced once.</summary>
+internal static class ArtifactGuards
+{
+    /// <summary>The initiative of the current user; the same not-found whether it is foreign, deleted or unknown.</summary>
+    public static async Task<InitiativeDetails> GetInitiativeAsync(ISender sender, Guid initiativeId, CancellationToken cancellationToken) =>
+        await sender.Send(new GetInitiativeQuery(initiativeId), cancellationToken)
+            ?? throw new NotFoundException(InitiativeTexts.NotFound);
+
+    public static async Task<ConversationAnswers> GetAnswersAsync(ISender sender, Guid initiativeId, CancellationToken cancellationToken) =>
+        await sender.Send(new GetConversationAnswersQuery(initiativeId), cancellationToken)
+            ?? throw new NotFoundException(InitiativeTexts.NotFound);
+
+    /// <summary>Edit, regenerate and approve need a started initiative and a type its level still requires.</summary>
+    public static void RequireManageable(InitiativeDetails initiative, ArtifactType type)
+    {
+        if (initiative.Status == InitiativeStatus.Draft)
+        {
+            throw new DomainException(ArtifactTexts.DraftInitiative);
+        }
+
+        if (!ArtifactCatalog.RequiredFor(initiative.Depth).Any(slot => slot.Type == type))
+        {
+            throw new DomainException(ArtifactTexts.NotForLevel);
+        }
+    }
+
+    public static void RequireAvailable(ArtifactAvailability availability)
+    {
+        if (ArtifactTexts.ReasonFor(availability) is { } reason)
+        {
+            throw new DomainException(reason);
+        }
+    }
+
+    public static Artifact RequireGenerated(Artifact? artifact) =>
+        artifact ?? throw new DomainException(ArtifactTexts.NotGenerated);
+
+    public static void RequireVersion(Artifact artifact, int expectedVersion)
+    {
+        if (artifact.Version != expectedVersion)
+        {
+            throw new ConflictException(ArtifactTexts.Conflict);
+        }
+    }
+
+    /// <summary>Reads everything the view needs, fresh. Null when the initiative does not exist for the caller.</summary>
+    public static async Task<ArtifactView?> LoadViewAsync(
+        ISender sender,
+        IArtifactRepository repository,
+        string ownerId,
+        Guid initiativeId,
+        ArtifactType type,
+        CancellationToken cancellationToken)
+    {
+        var initiative = await sender.Send(new GetInitiativeQuery(initiativeId), cancellationToken);
+
+        if (initiative is null)
+        {
+            return null;
+        }
+
+        var answers = await sender.Send(new GetConversationAnswersQuery(initiativeId), cancellationToken);
+        var artifact = await repository.GetAsync(initiativeId, type, ownerId, cancellationToken);
+        var summaries = await repository.ListAsync(initiativeId, ownerId, cancellationToken);
+
+        return ArtifactViewBuilder.Build(initiative, answers, type, artifact, summaries);
+    }
+
+    /// <summary>The result of a command: the stored state, read again after the writes.</summary>
+    public static async Task<ArtifactView> ReloadViewAsync(
+        ISender sender,
+        IArtifactRepository repository,
+        string ownerId,
+        Guid initiativeId,
+        ArtifactType type,
+        CancellationToken cancellationToken) =>
+        await LoadViewAsync(sender, repository, ownerId, initiativeId, type, cancellationToken)
+            ?? throw new NotFoundException(InitiativeTexts.NotFound);
+}

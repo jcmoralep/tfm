@@ -36,6 +36,10 @@ public static class AssistantScript
     public static class ReplyKeys
     {
         public const string Unknown = "unknown";
+
+        /// <summary>The "nothing to list" replies; their label is not an item of the answer.</summary>
+        public const string None = "none";
+        public const string Nothing = "nothing";
         public const string ConfirmYes = "confirm:yes";
         public const string ConfirmAdd = "confirm:add";
         public const string DepthOther = "depth:other";
@@ -225,7 +229,7 @@ public static class AssistantScript
             "¿Qué queda fuera, al menos por ahora?",
             "«No incluye pagos ni devoluciones, solo la consulta del estado del pedido.»",
             "Dejar claro lo que no se hará evita malentendidos y retrasos.",
-            [new QuickReply("nothing", "Nada por ahora"), Unknown]);
+            [new QuickReply(ReplyKeys.Nothing, "Nada por ahora"), Unknown]);
 
         yield return new AssistantTopic(
             Keys.Capabilities,
@@ -241,7 +245,7 @@ public static class AssistantScript
             "¿Hay límites o reglas que debamos respetar?",
             "«Debe funcionar desde el celular y no puede mostrar datos de otros clientes.»",
             "Los límites cambian la forma de construirlo, y es mejor conocerlos antes de empezar.",
-            [new QuickReply("none", "Ninguno que yo sepa"), Unknown]);
+            [new QuickReply(ReplyKeys.None, "Ninguno que yo sepa"), Unknown]);
 
         yield return new AssistantTopic(
             Keys.Priorities,
@@ -257,7 +261,7 @@ public static class AssistantScript
             "¿Qué otros sistemas o equipos participan?",
             "«El sistema de inventario y el equipo de logística.»",
             "Cada sistema o equipo involucrado suma trabajo de coordinación que conviene prever.",
-            [new QuickReply("none", "Ninguno"), Unknown]);
+            [new QuickReply(ReplyKeys.None, "Ninguno"), Unknown]);
 
         yield return new AssistantTopic(
             Keys.Qualities,
@@ -265,7 +269,7 @@ public static class AssistantScript
             "¿Necesita algo especial de velocidad o seguridad?",
             "«Debe responder en pocos segundos y pedir inicio de sesión.»",
             "Estas condiciones influyen en cómo se diseña y en cuánto cuesta construirlo.",
-            [new QuickReply("nothing", "Nada especial"), Unknown]);
+            [new QuickReply(ReplyKeys.Nothing, "Nada especial"), Unknown]);
 
         yield return new AssistantTopic(
             Keys.Size,

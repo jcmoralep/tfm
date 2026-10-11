@@ -1,0 +1,178 @@
+using BmadPlatform.Application.Features.Artifacts;
+using BmadPlatform.Application.Features.Assistant;
+using BmadPlatform.Application.Features.Initiatives;
+using BmadPlatform.Domain.Artifacts;
+using BmadPlatform.Domain.Initiatives;
+
+namespace BmadPlatform.Application.Tests.Features.Artifacts;
+
+public sealed class ArtifactCatalogTests
+{
+    private static ConversationAnswers Answers(bool clarify, bool plan) => new(clarify, plan, []);
+
+    private static ArtifactSummary Summary(ArtifactType type, ArtifactStatus status) => new(type, status, 1);
+
+    [Fact]
+    public void Required_set_per_level()
+    {
+        Assert.Equal(new ArtifactType?[] { ArtifactType.Spec }, Types(InitiativeDepth.Small));
+        Assert.Equal(new ArtifactType?[] { ArtifactType.Brief, ArtifactType.Prd }, Types(InitiativeDepth.Standard));
+
+        var large = ArtifactCatalog.RequiredFor(InitiativeDepth.Large);
+
+        Assert.Equal(new[] { "PRD", "Arquitectura", "Épicas e historias" }, large.Select(s => s.Label));
+        Assert.Equal(new ArtifactType?[] { ArtifactType.Prd, null, null }, large.Select(s => s.Type));
+    }
+
+    [Theory]
+    [InlineData(InitiativeDepth.Small)]
+    [InlineData(InitiativeDepth.Standard)]
+    [InlineData(InitiativeDepth.Large)]
+    public void Catalog_agrees_with_the_level_deliverables(InitiativeDepth depth)
+    {
+        var slots = ArtifactCatalog.RequiredFor(depth);
+        var deliverables = InitiativeTexts.Deliverables(depth);
+
+        Assert.Equal(deliverables.Count, slots.Count);
+
+        for (var i = 0; i < slots.Count; i++)
+        {
+            Assert.Contains(slots[i].Label, deliverables[i], StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    public void Empty_depth_has_no_set()
+    {
+        Assert.Empty(ArtifactCatalog.RequiredFor(null));
+        Assert.False(ArtifactCatalog.IsSetComplete(null, []));
+        Assert.Equal(
+            ArtifactAvailability.LevelNotSet,
+            ArtifactCatalog.Availability(ArtifactType.Brief, InitiativeStatus.Clarifying, null, Answers(true, true)));
+    }
+
+    [Fact]
+    public void Brief_is_available_after_Aclarar_while_Clarifying()
+    {
+        var answers = Answers(clarify: true, plan: false);
+
+        Assert.Equal(
+            ArtifactAvailability.Available,
+            ArtifactCatalog.Availability(ArtifactType.Brief, InitiativeStatus.Clarifying, InitiativeDepth.Standard, answers));
+        Assert.Equal(
+            ArtifactAvailability.WaitingForClosing,
+            ArtifactCatalog.Availability(ArtifactType.Prd, InitiativeStatus.Clarifying, InitiativeDepth.Standard, answers));
+    }
+
+    [Fact]
+    public void Brief_waits_for_a_missing_Aclarar_topic()
+    {
+        Assert.Equal(
+            ArtifactAvailability.WaitingForClarify,
+            ArtifactCatalog.Availability(ArtifactType.Brief, InitiativeStatus.Clarifying, InitiativeDepth.Standard, Answers(false, false)));
+        Assert.Equal(
+            ArtifactAvailability.WaitingForClarify,
+            ArtifactCatalog.Availability(ArtifactType.Brief, InitiativeStatus.Clarifying, InitiativeDepth.Standard, null));
+    }
+
+    [Fact]
+    public void Spec_is_available_only_at_the_closing()
+    {
+        Assert.Equal(
+            ArtifactAvailability.WaitingForClosing,
+            ArtifactCatalog.Availability(ArtifactType.Spec, InitiativeStatus.Clarifying, InitiativeDepth.Small, Answers(true, false)));
+        Assert.Equal(
+            ArtifactAvailability.WaitingForClosing,
+            ArtifactCatalog.Availability(ArtifactType.Spec, InitiativeStatus.Clarifying, InitiativeDepth.Small, Answers(true, true)));
+        Assert.Equal(
+            ArtifactAvailability.Available,
+            ArtifactCatalog.Availability(ArtifactType.Spec, InitiativeStatus.Planning, InitiativeDepth.Small, Answers(true, true)));
+    }
+
+    [Fact]
+    public void Prd_waits_for_the_Planificar_topics()
+    {
+        Assert.Equal(
+            ArtifactAvailability.WaitingForClosing,
+            ArtifactCatalog.Availability(ArtifactType.Prd, InitiativeStatus.Planning, InitiativeDepth.Standard, Answers(true, false)));
+        Assert.Equal(
+            ArtifactAvailability.Available,
+            ArtifactCatalog.Availability(ArtifactType.Prd, InitiativeStatus.Planning, InitiativeDepth.Standard, Answers(true, true)));
+    }
+
+    [Fact]
+    public void Large_prd_is_available_at_the_closing()
+    {
+        Assert.Equal(
+            ArtifactAvailability.Available,
+            ArtifactCatalog.Availability(ArtifactType.Prd, InitiativeStatus.Planning, InitiativeDepth.Large, Answers(true, true)));
+    }
+
+    [Theory]
+    [InlineData(ArtifactType.Brief)]
+    [InlineData(ArtifactType.Spec)]
+    [InlineData(ArtifactType.Prd)]
+    public void Draft_initiative_has_nothing_available(ArtifactType type)
+    {
+        Assert.Equal(
+            ArtifactAvailability.InitiativeDraft,
+            ArtifactCatalog.Availability(type, InitiativeStatus.Draft, InitiativeDepth.Standard, Answers(true, true)));
+    }
+
+    [Fact]
+    public void Ready_to_build_keeps_documents_available_for_regeneration()
+    {
+        Assert.Equal(
+            ArtifactAvailability.Available,
+            ArtifactCatalog.Availability(ArtifactType.Spec, InitiativeStatus.ReadyToBuild, InitiativeDepth.Small, Answers(true, true)));
+        Assert.Equal(
+            ArtifactAvailability.Available,
+            ArtifactCatalog.Availability(ArtifactType.Brief, InitiativeStatus.ReadyToBuild, InitiativeDepth.Standard, Answers(true, true)));
+    }
+
+    [Theory]
+    [InlineData(ArtifactType.Brief, InitiativeDepth.Small)]
+    [InlineData(ArtifactType.Brief, InitiativeDepth.Large)]
+    [InlineData(ArtifactType.Spec, InitiativeDepth.Standard)]
+    [InlineData(ArtifactType.Prd, InitiativeDepth.Small)]
+    public void Type_outside_the_level_is_not_required(ArtifactType type, InitiativeDepth depth)
+    {
+        Assert.Equal(
+            ArtifactAvailability.NotRequired,
+            ArtifactCatalog.Availability(type, InitiativeStatus.Planning, depth, Answers(true, true)));
+    }
+
+    [Fact]
+    public void Small_set_completes_with_the_approved_spec()
+    {
+        Assert.False(ArtifactCatalog.IsSetComplete(InitiativeDepth.Small, []));
+        Assert.False(ArtifactCatalog.IsSetComplete(InitiativeDepth.Small, [Summary(ArtifactType.Spec, ArtifactStatus.Draft)]));
+        Assert.True(ArtifactCatalog.IsSetComplete(InitiativeDepth.Small, [Summary(ArtifactType.Spec, ArtifactStatus.Approved)]));
+    }
+
+    [Fact]
+    public void Standard_set_needs_both_documents_approved()
+    {
+        var approvedBrief = Summary(ArtifactType.Brief, ArtifactStatus.Approved);
+
+        Assert.False(ArtifactCatalog.IsSetComplete(InitiativeDepth.Standard, [approvedBrief]));
+        Assert.False(ArtifactCatalog.IsSetComplete(InitiativeDepth.Standard, [approvedBrief, Summary(ArtifactType.Prd, ArtifactStatus.Draft)]));
+        Assert.True(ArtifactCatalog.IsSetComplete(InitiativeDepth.Standard, [approvedBrief, Summary(ArtifactType.Prd, ArtifactStatus.Approved)]));
+    }
+
+    [Fact]
+    public void Orphan_documents_do_not_count_for_completion()
+    {
+        Assert.False(ArtifactCatalog.IsSetComplete(
+            InitiativeDepth.Small,
+            [Summary(ArtifactType.Brief, ArtifactStatus.Approved), Summary(ArtifactType.Prd, ArtifactStatus.Approved)]));
+    }
+
+    [Fact]
+    public void Large_never_completes_in_this_change()
+    {
+        Assert.False(ArtifactCatalog.IsSetComplete(InitiativeDepth.Large, [Summary(ArtifactType.Prd, ArtifactStatus.Approved)]));
+    }
+
+    private static ArtifactType?[] Types(InitiativeDepth depth) => [.. ArtifactCatalog.RequiredFor(depth).Select(s => s.Type)];
+}

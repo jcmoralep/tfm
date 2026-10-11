@@ -1,0 +1,69 @@
+@* Inline confirmation panel (same pattern as the delete panel of the initiative detail). It is not modal: focus moves
+   to the title when it opens, Tab reaches its buttons and Escape closes it. Red tone for destructive actions,
+   blue for the rest. *@
+<div id="@Id" role="dialog" aria-labelledby="@TitleId" aria-describedby="@TextId" @onkeydown="OnKeyDown"
+     class="mt-4 rounded-control border p-4 @(Destructive ? "border-danger-line bg-danger-surface" : "border-line bg-primary-soft")">
+    <h2 id="@TitleId" tabindex="-1" @ref="title"
+        class="text-base font-semibold @(Destructive ? "text-danger" : "text-primary-ink")">@Title</h2>
+    <div id="@TextId" class="mt-1 text-sm text-ink">@ChildContent</div>
+    <div class="mt-4 flex flex-wrap gap-3">
+        <button type="button" disabled="@Busy" @onclick="OnConfirm"
+                class="rounded-full px-5 py-2 text-sm font-semibold text-on-primary disabled:opacity-60 @(Destructive ? "bg-danger hover:opacity-90" : "bg-primary hover:bg-primary-hover")">
+            @ConfirmLabel
+        </button>
+        <button type="button" disabled="@Busy" @onclick="OnCancel"
+                class="rounded-full border border-line bg-surface-raised px-5 py-2 text-sm font-medium text-ink hover:bg-surface disabled:opacity-60">
+            Cancelar
+        </button>
+    </div>
+</div>
+
+@code {
+    private ElementReference title;
+
+    [Parameter, EditorRequired]
+    public string Id { get; set; } = "confirm-panel";
+
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string ConfirmLabel { get; set; } = string.Empty;
+
+    /// <summary>Red panel for actions that lose something (regenerate); blue otherwise (approve).</summary>
+    [Parameter]
+    public bool Destructive { get; set; }
+
+    /// <summary>True while the confirmed operation runs: both buttons are disabled so it cannot be sent twice.</summary>
+    [Parameter]
+    public bool Busy { get; set; }
+
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private string TitleId => Id + "-title";
+
+    private string TextId => Id + "-text";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await title.FocusAsync();
+        }
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape" && !Busy)
+        {
+            await OnCancel.InvokeAsync();
+        }
+    }
+}

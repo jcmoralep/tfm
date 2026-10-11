@@ -20,6 +20,9 @@ public sealed record JourneyStepInfo(JourneyStep Step, string Name, StepState St
 /// <param name="ActionLabel">The link text; null when the card offers no action.</param>
 public sealed record ConversationCardContent(string Text, string? ActionLabel);
 
+/// <summary>A link from the chat to the Artefactos of the initiative.</summary>
+public sealed record DocumentsLink(string Label, string Href);
+
 /// <summary>Spanish texts of the chat page, kept as pure functions so they can be tested without rendering.</summary>
 public static class AssistantLabels
 {
@@ -57,6 +60,41 @@ public static class AssistantLabels
     public const string ContinueAction = "Continuar conversación";
 
     public const string ViewAction = "Ver conversación";
+
+    public const string DocumentsCallToAction = "Ir a los documentos";
+
+    public const string ViewDocumentsAction = "Ver documentos";
+
+    public const string BriefLinkLabel = "Ir al Brief";
+
+    /// <summary>
+    /// The link from the chat to the documents, or null while none can exist yet. It only navigates: it never
+    /// generates anything and does not depend on the quick replies. A finished conversation links to the whole set;
+    /// a Standard one points at the Brief as soon as its Aclarar topics are covered.
+    /// </summary>
+    public static DocumentsLink? DocumentsLinkFor(ConversationView view)
+    {
+        if (view.Status == InitiativeStatus.Draft)
+        {
+            return null;
+        }
+
+        var set = $"/iniciativas/{view.InitiativeId}#section-artifacts";
+
+        if (view.ReadOnly)
+        {
+            return new(ViewDocumentsAction, set);
+        }
+
+        if (view.Journey.NextTopic is { Kind: TopicKind.Closing })
+        {
+            return new(DocumentsCallToAction, set);
+        }
+
+        return view.Depth == InitiativeDepth.Standard && view.Journey.Clarify.IsComplete
+            ? new(BriefLinkLabel, $"/iniciativas/{view.InitiativeId}/artefactos/brief")
+            : null;
+    }
 
     /// <summary>
     /// Notes shown when unsent answers were given back to the composer: the buttons that were not sent (they
