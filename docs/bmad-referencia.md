@@ -44,7 +44,8 @@ BMAD no tiene una taxonomía explícita pequeño / épica / proyecto en los arch
 ## 4. Diferencias con lo que se había supuesto
 
 - **No existen** `bmad-ticket` ni `tickets.toml` en esta versión. Las "Épicas e historias" corresponden a `bmad-create-epics-and-stories` y a `epics.md`.
-- Los requisitos no funcionales **no tienen formato de identificador** en el PRD; el paso de épicas espera `FR1:` y `NFR1:` sin guion al extraerlos, y el PRD usa `FR-1`. Hay que reconciliar el formato al generar los artefactos.
+- Los requisitos no funcionales **no tienen formato de identificador** en el PRD; el paso de épicas espera `FR1:` y `NFR1:` sin guion al extraerlos, y el PRD usa `FR-1`. La propia plantilla del PRD (`bmad-prd/assets/prd-template.md`) usa `FR-1`, `UJ-1` y `SM-1` con guion; solo el paso 1 de `bmad-create-epics-and-stories` escribe `FR1:`/`NFR1:`, en el inventario que arma dentro de `epics.md`, y su extracción es flexible ("FR1:", "Functional Requirement 1:", "or similar").
+- **Decisión (cambio `bmad-alignment`, 2026-10-11):** la plataforma y el PRD conservan el guion; el generador de épicas (paso 6) escribe el inventario de `epics.md` como `FR1:`/`NFR1:` **con el mismo número** (`FR-3` pasa a `FR3:`); la exportación (paso 8) copia el PRD tal cual. `NFR-n` es una extensión de la plataforma. Base: lectura del código de BMAD, no una ejecución; se comprueba en la instalación real antes del paso 6.
 - No hay carpetas por "iniciativa" en BMAD: la palabra solo aparece como altura de la arquitectura y en un menú del PRD.
 - La salida usa nombres inconsistentes entre artefactos (carpetas con fecha, `spec-<slug>` sin fecha, `epics.md` plano).
 
