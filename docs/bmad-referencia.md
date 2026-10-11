@@ -56,3 +56,23 @@ Muestras de salida (la carpeta de salida está vacía), el detalle de `bmad-ux` 
 ## 6. Seguridad de la instalación
 
 Todo corre con `uv run` y scripts de Python locales; no se encontró código de red, `eval` ni descargas en esos scripts. No hay hooks ni archivos de permisos en `.claude`. Los accesos a la red vienen de **instrucciones** de las habilidades (investigación en la web) y no de código. `bmad-build` hace una confirmación de git con mensaje convencional cuando hay un repositorio. Se leyó con búsquedas, no línea por línea.
+
+## 7. Verificación pendiente en una instalación real (antes del paso 6)
+
+Estas tres comprobaciones necesitan ejecutar BMAD de verdad. **No se han ejecutado**: el cambio `bmad-alignment` solo dejó escrita la lista. Cómo prepararlas: instalar BMAD 6.12.1 (módulo `bmm`) en una carpeta desechable **fuera de este repositorio**, inicializar un repositorio git vacío allí y copiar los archivos de ejemplo desde `tests/BmadPlatform.Infrastructure.Tests/Artifacts/Goldens/`. Si una comprobación contradice este documento, corregir el §4 y el punto 3 de la sección 6 de `AGENTS.md` antes de construir el paso 6.
+
+1. **`bmad-build` acepta una especificación de nivel Pequeña.**
+   - Cómo: copiar `spec-small.md` como `specs/spec-demo/SPEC.md` y pedir a `bmad-build` que construya a partir de esa carpeta (`{spec_folder}`), o pasarle la ruta del archivo.
+   - Esperado: la lee como contexto de planificación sin quejarse de la estructura (Por qué, Capacidades con `FR-n`, Restricciones, No objetivos, Señal de éxito) y sin exigir `CAP-N` ni el frontmatter de su plantilla. Anotar qué pide si se queja.
+2. **El paso de épicas lee los `FR-n` de un PRD exportado.**
+   - Cómo: copiar `prd-large.md` como `planning-artifacts/prds/prd-demo/prd.md` y ejecutar el paso 1 de `bmad-create-epics-and-stories` (validar requisitos).
+   - Esperado: extrae los requisitos funcionales y no funcionales del PRD y escribe en el inventario `FR1:`, `FR2:`… y `NFR1:`… con **los mismos números** que `FR-1`, `NFR-1`… del PRD. Anotar si pierde alguno o los renumera.
+3. **BMAD tolera los encabezados en español y el sufijo de las preguntas.**
+   - Cómo: con el mismo `prd-large.md`, editar una línea de la sección 8 para que lea `- **Q-1**: … (Responsable: Legal; Revisar: antes de la arquitectura)` y pedir a `bmad-prd` (o al paso de épicas) que lea el documento.
+   - Esperado: los encabezados en español (`## 8 Preguntas abiertas`, etc.) y la línea `Q-n` con su sufijo se leen sin pérdida ni reescritura; el sufijo se conserva como texto de la pregunta.
+
+| Comprobación | Fecha | Versión | Resultado | Evidencia |
+|---|---|---|---|---|
+| 1. `bmad-build` con `SPEC.md` | — | 6.12.1 | no ejecutado | — |
+| 2. Épicas: `FR-n` a `FR1:` con el mismo número | — | 6.12.1 | no ejecutado | — |
+| 3. Encabezados en español y sufijo `Q-n` | — | 6.12.1 | no ejecutado | — |

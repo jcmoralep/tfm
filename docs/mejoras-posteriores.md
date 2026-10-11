@@ -10,3 +10,4 @@ Regla del proyecto (decisión del 2026-10-11): primero se sigue lo que BMAD ya h
 | Medida de densidad de preguntas abiertas frente a lo que está en juego como bloqueo | Lo hace la validación independiente (paso 5) | hallazgos BMAD |
 | Validación independiente antes de aprobar y revisión tipo "party mode" | Paso 5 en adelante | valoración BMAD |
 | Directorio de personas y roles | Fuera del MVP (RF-03) | `bmad-alignment` |
+| Archivar `assistant-conversation` y `artifact-generation` en `openspec/specs/` | Es una práctica de la herramienta SDD, no de BMAD: BMAD deja la especificación de cada cambio con `status: done` y su `baseline_commit`, sin fusionarla en una especificación global. El review nativo no puede completarse en Claude Code, así que el archivado oficial queda bloqueado | `bmad-alignment` |

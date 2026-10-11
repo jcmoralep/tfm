@@ -6,7 +6,7 @@ namespace BmadPlatform.Infrastructure.Artifacts;
 
 /// <summary>
 /// The PRD: sections 0 to 9 of BMAD in order. Each answer is quoted once; later sections that draw on the same
-/// answer point to the identifiers it produced (FR, UJ) or to the section that holds it.
+/// answer point to the identifiers it produced (FR) or to the section that holds it.
 /// </summary>
 internal static class PrdLayout
 {
@@ -85,38 +85,9 @@ internal static class PrdLayout
         c.AssumptionIndex();
     }
 
-    // One journey per line of the users answer. The script never asks for a real journey, so the whole section carries
-    // one shared assumption to confirm (decision D1), not one per journey.
-    private static void WriteJourneys(DraftComposer c)
-    {
-        var users = c.Answer(AssistantScript.Keys.Users);
-
-        if (users is { IsUnknown: false })
-        {
-            // The answer itself is quoted once, in section 2; each journey points to its line by position.
-            var count = c.Lines(users.Text, out var omitted).Count;
-
-            for (var position = 1; position <= count; position++)
-            {
-                var id = c.Next(ItemPrefix.UserJourney);
-
-                c.Line(ArtifactOutline.Item(id, $"Recorrido de la persona o grupo n.º {position} del usuario objetivo (sección 2) para cumplir los trabajos por hacer."));
-            }
-
-            if (omitted > 0)
-            {
-                c.Line("- " + DraftComposer.MoreText(omitted));
-            }
-
-            c.Line("- " + c.Assumption("Los recorridos de esta sección son un punto de partida; se confirman con las personas usuarias."));
-
-            return;
-        }
-
-        var pending = users is null ? string.Empty : $" Ver {c.Question(AssistantScript.Keys.Users)}.";
-
-        c.Line("- " + c.Assumption("Los recorridos clave se describirán cuando se conozca quién usará la solución.") + pending);
-    }
+    // The script never asks for a real journey, so the section holds one honest assumption and no UJ-n (RF-64).
+    private static void WriteJourneys(DraftComposer c) =>
+        c.Line("- " + c.Assumption("Aún no se describió un recorrido concreto de uso; se completa con un caso real (una persona con nombre) al revisar el documento."));
 
     // Constraints and, for Large, qualities. A source without any answer is skipped while another one has one.
     private static void WriteNonFunctional(DraftComposer c, bool large)
