@@ -66,5 +66,6 @@ Fecha: 2026-10-11. Código: `main` tras fusionar el PR #7. Datos: solo de ejempl
 1. **Enlace "Ir al Brief" parece una respuesta rápida** (captura 14): usa el mismo estilo de píldora que las respuestas, aunque es navegación.
 2. **Avisos de formato citan "Línea N"** (captura 19), pero la vista de lectura no muestra números de línea.
 3. **Modo "Manual" tras aceptar el nivel sugerido** (captura 26): iniciativa creada en Automático aparece como Manual. Es la decisión RF-47 pendiente del paso 3.
+   **Resuelto:** aceptar el nivel sugerido mantiene el modo Automático y fija el nivel (RF-47).
 4. **Falta `meta description`** (Lighthouse SEO 90): arreglo trivial.
 5. **Título repetido** (captura 17): la página muestra "Brief" y luego el título del documento "Brief: …".
