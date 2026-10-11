@@ -20,12 +20,15 @@ public static partial class OpenQuestions
     public static string Suffix(string owner, string revisit) => $" (Responsable: {owner}; Revisar: {revisit})";
 
     /// <summary>Every open question in document order; a duplicated id appears once per line.</summary>
-    public static IReadOnlyList<OpenQuestion> Parse(string markdown)
+    public static IReadOnlyList<OpenQuestion> Parse(string markdown) =>
+        [.. Scan(MarkdownLines.Split(markdown)).Select(scanned => scanned.Question)];
+
+    /// <summary>The questions with the definition prefix as written, so a rewrite can keep it.</summary>
+    internal static List<ScannedQuestion> Scan(string[] lines)
     {
-        var lines = MarkdownLines.Split(markdown);
         var fenced = MarkdownLines.FencedLines(lines);
         var index = MarkdownLines.FindIndexRange(MarkdownLines.ReadHeadings(lines), lines.Length);
-        var found = new List<OpenQuestion>();
+        var found = new List<ScannedQuestion>();
 
         for (var i = 0; i < lines.Length; i++)
         {
@@ -36,9 +39,9 @@ public static partial class OpenQuestions
                 continue;
             }
 
-            if (Read(lines[i], number) is { } question)
+            if (Read(lines[i], number) is { } scanned)
             {
-                found.Add(question);
+                found.Add(scanned);
             }
         }
 
@@ -49,7 +52,7 @@ public static partial class OpenQuestions
     public static IReadOnlyList<string> Unassigned(string markdown) =>
         [.. Parse(markdown).Where(q => !q.IsAssigned).Select(q => q.Id).Distinct(StringComparer.Ordinal)];
 
-    private static OpenQuestion? Read(string line, int number)
+    private static ScannedQuestion? Read(string line, int number)
     {
         var definition = DefinitionRegex().Match(line);
 
@@ -63,17 +66,19 @@ public static partial class OpenQuestions
 
         if (!suffix.Success)
         {
-            return new OpenQuestion(definition.Groups["id"].Value, number, rest.Trim(), null, null);
+            return new ScannedQuestion(new OpenQuestion(definition.Groups["id"].Value, number, rest.Trim(), null, null), definition.Value);
         }
 
         var revisit = suffix.Groups["revisit"];
 
-        return new OpenQuestion(
-            definition.Groups["id"].Value,
-            number,
-            rest[..suffix.Index].Trim(),
-            suffix.Groups["owner"].Value.Trim(),
-            revisit.Success ? revisit.Value.Trim() : null);
+        return new ScannedQuestion(
+            new OpenQuestion(
+                definition.Groups["id"].Value,
+                number,
+                rest[..suffix.Index].Trim(),
+                suffix.Groups["owner"].Value.Trim(),
+                revisit.Success ? revisit.Value.Trim() : null),
+            definition.Value);
     }
 
     [GeneratedRegex(@"^\s*(?:[-*+]\s+)?(?:\*\*)?(?<id>Q-[1-9][0-9]*)(?=\*\*|\s|:|\.|\)|$)(?:\*\*)?[:.)]?(?:\*\*)?")]
@@ -82,3 +87,6 @@ public static partial class OpenQuestions
     [GeneratedRegex(@"\(\s*Responsable\s*:\s*(?<owner>[^();]*?)\s*(?:;\s*Revisar\s*:\s*(?<revisit>[^();]*?)\s*)?\)$", RegexOptions.IgnoreCase)]
     private static partial Regex SuffixRegex();
 }
+
+/// <summary>An open question with the text that precedes its body on the line (indent, marker, bold id, colon).</summary>
+internal sealed record ScannedQuestion(OpenQuestion Question, string Head);

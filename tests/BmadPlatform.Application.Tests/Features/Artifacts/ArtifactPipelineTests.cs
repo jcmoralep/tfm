@@ -2,9 +2,11 @@ using BmadPlatform.Application.Abstractions.Authentication;
 using BmadPlatform.Application.Common.Exceptions;
 using BmadPlatform.Application.Features.Artifacts;
 using BmadPlatform.Application.Features.Artifacts.ApproveArtifact;
+using BmadPlatform.Application.Features.Artifacts.AssignQuestionOwners;
 using BmadPlatform.Application.Features.Artifacts.GenerateArtifact;
 using BmadPlatform.Application.Features.Artifacts.GetArtifact;
 using BmadPlatform.Application.Features.Artifacts.GetArtifactsOverview;
+using BmadPlatform.Application.Features.Artifacts.Markdown;
 using BmadPlatform.Application.Features.Artifacts.RegenerateArtifact;
 using BmadPlatform.Application.Features.Artifacts.SaveArtifactContent;
 using BmadPlatform.Application.Features.Assistant;
@@ -94,6 +96,31 @@ public sealed class ArtifactPipelineTests : IDisposable
         Assert.NotEmpty(logs.Entries);
         Assert.All(logs.Entries, entry => Assert.DoesNotContain(DistinctiveText, entry.AllText, StringComparison.Ordinal));
         Assert.Contains(logs.Entries, entry => entry.Message.StartsWith("Handled SaveArtifactContentCommand in", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Owner_and_revisit_text_never_reaches_the_logs_the_validation_errors_or_the_string_form()
+    {
+        const string Owner = "dueno-distintivo-7c1e";
+        const string Revisit = "revision-distintiva-9a3f";
+        var id = await context.AtClosing(InitiativeDepth.Small);
+        context.Drafter.Output = "# Spec\n- **Q-1**: uno (Responsable: por asignar; Revisar: por definir)";
+        using var scope = provider.CreateScope();
+        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+        await mediator.Send(new GenerateArtifactCommand(id, ArtifactType.Spec));
+        var assignment = new QuestionAssignment("Q-1", Owner, Revisit);
+
+        var saved = await mediator.Send(new AssignQuestionOwnersCommand(id, ArtifactType.Spec, 1, [assignment]));
+        await Assert.ThrowsAsync<ConflictException>(() => mediator.Send(new AssignQuestionOwnersCommand(id, ArtifactType.Spec, 1, [assignment])));
+        var invalid = await Assert.ThrowsAsync<ValidationException>(
+            () => mediator.Send(new AssignQuestionOwnersCommand(id, ArtifactType.Spec, 2, [assignment with { Owner = Owner + "(" }])));
+
+        Assert.Contains($"(Responsable: {Owner}; Revisar: {Revisit})", saved.Content, StringComparison.Ordinal);
+        Assert.NotEmpty(logs.Entries);
+        Assert.All(logs.Entries, entry => Assert.DoesNotContain("distintiv", entry.AllText, StringComparison.Ordinal));
+        Assert.Contains(logs.Entries, entry => entry.Message.StartsWith("Handled AssignQuestionOwnersCommand in", StringComparison.Ordinal));
+        Assert.DoesNotContain("distintiv", invalid.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("distintiv", new AssignQuestionOwnersCommand(id, ArtifactType.Spec, 1, [assignment]).ToString(), StringComparison.Ordinal);
     }
 
     [Fact]

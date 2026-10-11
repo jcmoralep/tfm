@@ -25,6 +25,8 @@ public static class ArtifactTexts
     public static string UnassignedQuestions(IEnumerable<string> ids) =>
         $"Asigne un responsable y una condición de revisión a las preguntas pendientes antes de aprobar: {string.Join(", ", ids)}.";
 
+    public static string QuestionNotFound(string id) => $"La pregunta {id} no existe en este documento.";
+
     /// <summary>The plain reason a document cannot be generated now; null when it can.</summary>
     public static string? ReasonFor(ArtifactAvailability availability) => availability switch
     {
