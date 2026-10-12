@@ -20,4 +20,11 @@ internal static class LocalRedirect
 
         return isLocal ? returnUrl : Fallback;
     }
+
+    /// <summary>Builds a link to another sign-in page that keeps a safe return address, if there is one.</summary>
+    public static string WithReturnUrl(string path, string? returnUrl)
+    {
+        var safe = Sanitize(returnUrl);
+        return safe == Fallback ? path : $"{path}?returnUrl={Uri.EscapeDataString(safe)}";
+    }
 }
