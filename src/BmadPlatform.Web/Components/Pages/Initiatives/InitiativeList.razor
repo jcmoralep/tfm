@@ -1,6 +1,8 @@
 @page "/iniciativas"
 @attribute [Authorize]
+@using BmadPlatform.Application.Common.Exceptions
 @using BmadPlatform.Application.Features.Initiatives
+@using BmadPlatform.Application.Features.Initiatives.DeleteInitiative
 @using BmadPlatform.Application.Features.Initiatives.ListInitiatives
 @using BmadPlatform.Domain.Initiatives
 @inject IMediator Mediator
@@ -90,6 +92,18 @@ else if (items.Count > 0)
 {
     <p class="mt-6 text-sm text-ink-muted" role="status">@(items.Count == 1 ? "1 iniciativa" : $"{items.Count} iniciativas")</p>
 
+    @* One confirmation for both layouts (the card list and the table never show at the same time). *@
+    @if (pendingDelete is not null)
+    {
+        <div class="mt-4">
+            <ConfirmPanel @key="pendingDelete.Id" Id="delete-panel" Destructive="true" Busy="deleting"
+                          Title="@($"¿Eliminar «{pendingDelete.Name}»?")" ConfirmLabel="Sí, eliminar"
+                          OnConfirm="DeleteAsync" OnCancel="CancelDelete">
+                La iniciativa dejará de aparecer en su lista y no podrá recuperarla desde la plataforma.
+            </ConfirmPanel>
+        </div>
+    }
+
     @* Below md each initiative is a stacked card; the table takes over from md. "hidden" removes the inactive layout from the accessibility tree. *@
     <ul class="mt-2 space-y-3 md:hidden" aria-label="Sus iniciativas, de la modificada más recientemente a la más antigua">
         @foreach (var item in items)
@@ -97,7 +111,10 @@ else if (items.Count > 0)
             var isDraft = item.Status == InitiativeStatus.Draft;
             @* Stretched link: the name link's ::after covers the whole card, so the card is the click target. *@
             <li class="relative cursor-pointer rounded-card border border-line bg-surface-raised p-4 shadow-card hover:bg-surface focus-within:bg-surface">
-                <a href="@ItemHref(item)" class="break-words font-medium text-ink after:absolute after:inset-0 after:content-[''] hover:underline">@item.Name</a>
+                <div class="flex items-start justify-between gap-2">
+                    <a href="@ItemHref(item)" class="min-w-0 break-words font-medium text-ink after:absolute after:inset-0 after:content-[''] hover:underline">@item.Name</a>
+                    <InitiativeRowActions Name="@item.Name" EditHref="@EditHref(item)" Disabled="deleting" OnDelete="() => AskDelete(item)" />
+                </div>
                 <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                     <StatusBadge Status="item.Status" />
                     <span class="text-ink">@InitiativeLabels.DepthSummary(item.DepthMode, item.Depth)</span>
@@ -136,11 +153,14 @@ else if (items.Count > 0)
                         <td class="px-4 py-3 text-ink">@InitiativeLabels.DepthSummary(item.DepthMode, item.Depth)</td>
                         <td class="px-4 py-3"><StatusBadge Status="item.Status" /></td>
                         <td class="px-4 py-3 text-ink-muted"><time datetime="@item.UpdatedAt.ToString("O")">@InitiativeLabels.Date(item.UpdatedAt)</time></td>
-                        <td class="px-4 py-3 text-right">
-                            @if (isDraft)
-                            {
-                                <a href="@ItemHref(item)" class="font-semibold text-primary-ink hover:underline">Continuar<span class="sr-only"> con @item.Name</span></a>
-                            }
+                        <td class="px-4 py-3">
+                            <div class="flex items-center justify-end gap-3">
+                                @if (isDraft)
+                                {
+                                    <a href="@ItemHref(item)" class="relative z-10 font-semibold text-primary-ink hover:underline">Continuar<span class="sr-only"> con @item.Name</span></a>
+                                }
+                                <InitiativeRowActions Name="@item.Name" EditHref="@EditHref(item)" Disabled="deleting" OnDelete="() => AskDelete(item)" />
+                            </div>
                         </td>
                     </tr>
                 }
@@ -155,6 +175,8 @@ else if (items.Count > 0)
     private IReadOnlyList<string> errors = [];
     private bool loading = true;
     private bool loaded;
+    private InitiativeSummary? pendingDelete;
+    private bool deleting;
 
     // Local copies of the form controls; they only reach the address (and the list) when applied.
     private string? searchText;
@@ -211,6 +233,57 @@ else if (items.Count > 0)
     // Drafts resume the creation wizard; everything else opens the detail.
     private static string ItemHref(InitiativeSummary item) =>
         item.Status == InitiativeStatus.Draft ? $"/iniciativas/{item.Id}/crear" : $"/iniciativas/{item.Id}";
+
+    private static string EditHref(InitiativeSummary item) => $"/iniciativas/{item.Id}/editar";
+
+    private void AskDelete(InitiativeSummary item)
+    {
+        if (!deleting)
+        {
+            pendingDelete = item;
+        }
+    }
+
+    private void CancelDelete()
+    {
+        if (!deleting)
+        {
+            pendingDelete = null;
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (deleting || pendingDelete is null)
+        {
+            return;
+        }
+
+        deleting = true;
+        errors = [];
+        var target = pendingDelete;
+
+        try
+        {
+            await Mediator.Send(new DeleteInitiativeCommand(target.Id));
+            items = items.Where(item => item.Id != target.Id).ToList();
+        }
+        catch (Exception exception) when (UserMessages.TryGet(exception, out var messages))
+        {
+            errors = messages;
+
+            // Already deleted or never visible to this user: it should not stay in the list either.
+            if (exception is NotFoundException)
+            {
+                items = items.Where(item => item.Id != target.Id).ToList();
+            }
+        }
+        finally
+        {
+            deleting = false;
+            pendingDelete = null;
+        }
+    }
 
     private Task ApplyAsync()
     {
