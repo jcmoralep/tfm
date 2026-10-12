@@ -7,6 +7,7 @@ namespace BmadPlatform.Web.Authentication;
 internal static class AuthenticationEndpoints
 {
     public const string LoginPath = "/login";
+    public const string RegisterPath = "/registro";
     public const string LogoutPath = "/logout";
 
     /// <summary>

@@ -106,7 +106,7 @@ Reglas de dependencia: Web → Application → Domain; Infrastructure → Applic
 - Los tokens visuales viven en un único archivo de tema de Tailwind, de modo que cualquier ajuste (acento, tipografía) sea un cambio de un solo archivo.
 
 ### 4.6 Autenticación
-- Inicio de sesión básico con ASP.NET Core Identity (correo + contraseña). **Sin roles, sin administración de usuarios, sin pantallas de configuración.**
+- Inicio de sesión básico con ASP.NET Core Identity (correo + contraseña). **Sin roles, sin administración de usuarios, sin pantallas de configuración.** Existe registro propio abierto en `/registro` (REQUISITOS RF-67); la verificación del correo queda para después.
 - Usuarios iniciales se **siembran al arrancar desde variables de entorno**.
 - Dejar puntos de extensión para crecer sin reescribir: `ICurrentUser` e `IAuthService` (futuro SSO o roles).
 

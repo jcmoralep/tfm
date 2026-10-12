@@ -13,7 +13,7 @@ Cada requisito es verificable. Etiquetas: **[CONFIRMADO]** decidido por el equip
 ### Acceso
 - **RF-01** El sistema permite iniciar sesión con correo y contraseña (ASP.NET Core Identity). [CONFIRMADO]
 - **RF-02** Los usuarios iniciales se crean al arrancar desde variables de entorno. [CONFIRMADO]
-- **RF-03** No existen pantallas de administración de usuarios ni de configuración. [CONFIRMADO]
+- **RF-03** No existen pantallas de administración de usuarios ni de configuración. El registro propio (RF-67) no es administración: cada persona solo crea su cuenta. [CONFIRMADO]
 - **RF-04** Existen `ICurrentUser` e `IAuthService` como puntos de extensión para SSO o roles futuros. [CONFIRMADO]
 
 ### Iniciativas
@@ -96,6 +96,7 @@ Cada requisito es verificable. Etiquetas: **[CONFIRMADO]** decidido por el equip
 - **RN-06** Una iniciativa solo está *Lista para construir* mientras todos los artefactos que exige su nivel estén aprobados; cualquier cambio en uno de ellos la devuelve a *Planificando* (RF-52, RF-54).
 - **RN-07** Regenerar nunca sobrescribe ediciones manuales sin confirmación explícita de la persona (RF-57).
 - **RN-08** Ningún artefacto pasa a *Aprobado* con preguntas pendientes sin responsable o sin condición de revisión (RF-61, RF-62).
+- **RF-67** Cualquier persona puede crear su cuenta en `/registro` con correo electrónico, contraseña y confirmación de la contraseña (mismas reglas de contraseña de Identity: mínimo 6 caracteres con mayúscula, minúscula, número y símbolo, con mensajes en español). Al crearla entra directamente a la plataforma. Un correo ya registrado se rechaza con un aviso que invita a iniciar sesión. El registro es **abierto**: decisión del usuario para que una persona externa pueda probar la plataforma. Las cuentas nuevas quedan con el correo sin confirmar (`EmailConfirmed = false`) para distinguirlas de las sembradas (RF-02) cuando se agregue la verificación. Mejoras posteriores acordadas o evidentes: verificación del correo con mensajería, recuperación de contraseña, un captcha en el registro (pendiente por decisión del usuario), limitación de intentos de registro y, antes de abrirlo en un entorno público, un código de invitación o la verificación (la capa gratuita de Gemini puede usar los datos). [CONFIRMADO]
 
 ## 4. Requerimientos no funcionales
 

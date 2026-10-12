@@ -8,6 +8,9 @@ public interface IAuthService
 {
     Task<AuthenticationResult> SignInAsync(string email, string password, bool rememberMe, CancellationToken cancellationToken = default);
 
+    /// <summary>Creates an account. It does not sign the person in.</summary>
+    Task<RegistrationResult> RegisterAsync(string email, string password, CancellationToken cancellationToken = default);
+
     Task SignOutAsync(CancellationToken cancellationToken = default);
 }
 
@@ -17,4 +20,22 @@ public enum AuthenticationResult
     InvalidCredentials,
     LockedOut,
     NotAllowed,
+}
+
+public enum RegistrationStatus
+{
+    Succeeded,
+    EmailTaken,
+    InvalidPassword,
+}
+
+/// <param name="Status">Outcome of the registration.</param>
+/// <param name="PasswordErrors">Spanish messages for the password rules that failed; empty unless the status is InvalidPassword.</param>
+public sealed record RegistrationResult(RegistrationStatus Status, IReadOnlyList<string> PasswordErrors)
+{
+    public static RegistrationResult Succeeded { get; } = new(RegistrationStatus.Succeeded, []);
+
+    public static RegistrationResult EmailTaken { get; } = new(RegistrationStatus.EmailTaken, []);
+
+    public static RegistrationResult InvalidPassword(IReadOnlyList<string> errors) => new(RegistrationStatus.InvalidPassword, errors);
 }
