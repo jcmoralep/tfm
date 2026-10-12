@@ -243,7 +243,7 @@ Every identifier in every generated document MUST use the hyphenated scheme (`FR
 - WHEN their text is scanned for FR, NFR, UJ or SM followed directly by digits
 - THEN there is none
 
-#### Scenario: No mapper exists [UNIT]
+#### Scenario: No mapper exists [DOC]
 - GIVEN the Artifacts module sources
 - WHEN searched for a converter between `FR-n` and `FRn`
 - THEN none exists
