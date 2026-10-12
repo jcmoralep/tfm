@@ -11,6 +11,8 @@ internal static class ArtifactValidationTexts
 
     public const string NoQuestions = "No hay preguntas para guardar.";
 
+    public const string DuplicateQuestions = "Hay preguntas repetidas en el envío.";
+
     public const string TooManyQuestions = "Hay demasiadas preguntas para guardar a la vez.";
 
     public const string QuestionIdInvalid = "Alguna pregunta no tiene un identificador válido.";
@@ -19,7 +21,7 @@ internal static class ArtifactValidationTexts
 
     public const string RevisitTooLong = "La condición de revisión no puede superar los 80 caracteres.";
 
-    public const string OwnerForbidden = "El responsable no puede contener paréntesis, *, |, ; ni saltos de línea.";
+    public const string OwnerForbidden = "El responsable no puede contener paréntesis, corchetes, comillas invertidas, ni los signos ; * | \\ < >, ni caracteres de control o saltos de línea.";
 
-    public const string RevisitForbidden = "La condición de revisión no puede contener paréntesis ni saltos de línea.";
+    public const string RevisitForbidden = "La condición de revisión no puede contener paréntesis, corchetes, comillas invertidas, ni los signos ; * | \\ < >, ni caracteres de control o saltos de línea.";
 }

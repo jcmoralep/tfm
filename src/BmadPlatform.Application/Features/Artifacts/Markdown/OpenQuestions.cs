@@ -14,6 +14,14 @@ public static partial class OpenQuestions
 
     public const string RevisitPlaceholder = "por definir";
 
+    /// <summary>The one grammar of a question id, shared by the reader and the assign command (up to 6 digits).</summary>
+    public const string IdPattern = "Q-[1-9][0-9]{0,5}";
+
+    // Safety net: the patterns are linear, but they run on text people edit.
+    private const int MatchTimeoutMs = 250;
+
+    public static bool IsValidId(string? id) => id is not null && IdRegex().IsMatch(id);
+
     /// <summary>The suffix every generated question carries until someone assigns it.</summary>
     public static string DefaultSuffix { get; } = Suffix(OwnerPlaceholder, RevisitPlaceholder);
 
@@ -54,15 +62,26 @@ public static partial class OpenQuestions
 
     private static ScannedQuestion? Read(string line, int number)
     {
-        var definition = DefinitionRegex().Match(line);
+        Match definition;
+        Match suffix;
+        string rest;
 
-        if (!definition.Success)
+        try
+        {
+            definition = DefinitionRegex().Match(line);
+
+            if (!definition.Success)
+            {
+                return null;
+            }
+
+            rest = line[definition.Length..].TrimEnd();
+            suffix = SuffixRegex().Match(rest);
+        }
+        catch (RegexMatchTimeoutException)
         {
             return null;
         }
-
-        var rest = line[definition.Length..].TrimEnd();
-        var suffix = SuffixRegex().Match(rest);
 
         if (!suffix.Success)
         {
@@ -81,11 +100,15 @@ public static partial class OpenQuestions
             definition.Value);
     }
 
-    [GeneratedRegex(@"^\s*(?:[-*+]\s+)?(?:\*\*)?(?<id>Q-[1-9][0-9]*)(?=\*\*|\s|:|\.|\)|$)(?:\*\*)?[:.)]?(?:\*\*)?")]
+    [GeneratedRegex(@"^\s*(?:[-*+]\s+)?(?:\*\*)?(?<id>" + IdPattern + @")(?=\*\*|\s|:|\.|\)|$)(?:\*\*)?[:.)]?(?:\*\*)?", RegexOptions.None, MatchTimeoutMs)]
     private static partial Regex DefinitionRegex();
 
-    [GeneratedRegex(@"\(\s*Responsable\s*:\s*(?<owner>[^();]*?)\s*(?:;\s*Revisar\s*:\s*(?<revisit>[^();]*?)\s*)?\)$", RegexOptions.IgnoreCase)]
+    // No lazy quantifiers and no whitespace run beside a class that also matches whitespace: the values are trimmed in code.
+    [GeneratedRegex(@"\(\s*Responsable\s*:(?<owner>[^();]*)(?:;\s*Revisar\s*:(?<revisit>[^();]*))?\)\z", RegexOptions.IgnoreCase, MatchTimeoutMs)]
     private static partial Regex SuffixRegex();
+
+    [GeneratedRegex(@"^" + IdPattern + @"\z", RegexOptions.None, MatchTimeoutMs)]
+    private static partial Regex IdRegex();
 }
 
 /// <summary>An open question with the text that precedes its body on the line (indent, marker, bold id, colon).</summary>

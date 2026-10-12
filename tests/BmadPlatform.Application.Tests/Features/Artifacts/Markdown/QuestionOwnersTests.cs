@@ -1,4 +1,5 @@
 using BmadPlatform.Application.Features.Artifacts.Markdown;
+using BmadPlatform.Domain.Artifacts;
 using BmadPlatform.Domain.Common;
 
 namespace BmadPlatform.Application.Tests.Features.Artifacts.Markdown;
@@ -42,7 +43,52 @@ public sealed class QuestionOwnersTests
         var once = QuestionOwners.Apply(markdown, assignments);
 
         Assert.Equal(once, QuestionOwners.Apply(once, assignments));
-        Assert.Equal(once, QuestionOwners.Apply(once, [new QuestionAssignment("Q-1", "Finanzas", "antes de la arquitectura")]));
+    }
+
+    [Fact]
+    public void A_hand_edited_line_that_already_has_the_values_is_left_untouched()
+    {
+        const string Markdown = "-   **Q-1**:  uno   ( responsable :  Legal ;revisar:  ya )";
+
+        Assert.Equal(Markdown, QuestionOwners.Apply(Markdown, [new QuestionAssignment("Q-1", "Legal", "ya")]));
+    }
+
+    [Theory]
+    [InlineData(61, 1)]
+    [InlineData(1, 81)]
+    public void A_value_over_the_limits_throws_even_without_the_validator(int ownerLength, int revisitLength) =>
+        Assert.Throws<ArgumentException>(() => QuestionOwners.Apply(
+            "- **Q-1**: uno" + Default, [new QuestionAssignment("Q-1", new string('a', ownerLength), new string('b', revisitLength))]));
+
+    [Fact]
+    public void ToString_never_prints_the_typed_values()
+    {
+        var text = new QuestionAssignment("Q-1", "Secreto", "Privado").ToString();
+
+        Assert.Contains("Q-1", text);
+        Assert.DoesNotContain("Secreto", text);
+        Assert.DoesNotContain("Privado", text);
+    }
+
+    [Theory]
+    [InlineData(5_000)]
+    [InlineData(20_000)]
+    public void Long_runs_of_repeated_characters_are_read_in_linear_time_and_never_throw(int length)
+    {
+        var started = System.Diagnostics.Stopwatch.StartNew();
+
+        foreach (var filler in new[] { " ", "(", ";", "*", "Responsable:" })
+        {
+            var run = string.Concat(Enumerable.Repeat(filler, length));
+            var markdown = "- **Q-1**: x (Responsable:" + run + "x\n- **Q-2**: y (Responsable: a;" + run + "Revisar:" + run + "\n  " + run + "- **Q-3**: z";
+
+            OpenQuestions.Parse(markdown);
+            OpenQuestions.Unassigned(markdown);
+            QuestionOwners.Apply(markdown, [new QuestionAssignment("Q-1", "TI", "x")]);
+            ArtifactFormatChecker.Check(ArtifactType.Prd, markdown);
+        }
+
+        Assert.True(started.Elapsed < TimeSpan.FromSeconds(5), $"Took {started.Elapsed}");
     }
 
     [Fact]
@@ -84,6 +130,11 @@ public sealed class QuestionOwnersTests
     [InlineData("a\\b", false)]
     [InlineData("a\nb", false)]
     [InlineData("a\rb", false)]
+    [InlineData("a<b>", false)]
+    [InlineData("a`b", false)]
+    [InlineData("ab\x202E", false)]
+    [InlineData("ab\x200B", false)]
+    [InlineData("a\0b", false)]
     public void The_allowed_text_rule_rejects_the_characters_that_break_the_suffix(string? value, bool allowed) =>
         Assert.Equal(allowed, QuestionOwners.IsAllowed(value));
 }

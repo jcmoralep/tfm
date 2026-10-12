@@ -44,7 +44,7 @@
                                class="mt-1 block min-h-6 w-full rounded-control border border-line bg-surface-raised px-3 py-2 text-sm text-ink read-only:opacity-60" />
                     </div>
                     <div>
-                        <label for="@RevisitId(row)" class="block text-sm font-medium text-ink">Revisar cuando de @row.Id<RequiredMark /></label>
+                        <label for="@RevisitId(row)" class="block text-sm font-medium text-ink">Condición de revisión de @row.Id<RequiredMark /></label>
                         <input id="@RevisitId(row)" type="text" maxlength="@QuestionOwners.RevisitMaxLength"
                                placeholder="@ArtifactLabels.OwnerPlaceholderHint"
                                readonly="@Busy" @bind="row.Revisit" @bind:event="oninput" aria-required="true"

@@ -461,6 +461,14 @@ else
             return;
         }
 
+        // Nothing was edited: no write and no version bump.
+        if (submission.Assignments.Count == 0)
+        {
+            errors = [];
+            notice = ArtifactLabels.QuestionsUnchanged;
+            return;
+        }
+
         // The panel sends the version its rows came from; after a conflict a retry conflicts again until Cancelar.
         await RunAsync(
             ArtifactLabels.SavingQuestions,

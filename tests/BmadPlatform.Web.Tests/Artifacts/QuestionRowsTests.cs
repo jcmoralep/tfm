@@ -19,7 +19,7 @@ public sealed class QuestionRowsTests
     }
 
     [Fact]
-    public void One_row_per_distinct_id_and_the_submission_sends_all_of_them()
+    public void One_row_per_distinct_id_and_the_submission_sends_only_the_changed_ones()
     {
         var rows = QuestionRows.From(
         [
@@ -32,7 +32,15 @@ public sealed class QuestionRowsTests
         var submission = QuestionRows.ToSubmission(5, rows);
 
         Assert.Equal(5, submission.BaseVersion);
-        Assert.Equal(["Q-1", "Q-2"], submission.Assignments.Select(a => a.Id));
-        Assert.Equal(["Legal", "TI"], submission.Assignments.Select(a => a.Owner));
+        var changed = Assert.Single(submission.Assignments);
+        Assert.Equal(("Q-1", "Legal"), (changed.Id, changed.Owner));
+    }
+
+    [Fact]
+    public void Nothing_edited_sends_nothing_so_a_long_list_stays_under_the_cap()
+    {
+        var rows = QuestionRows.From(Enumerable.Range(1, 250).Select(n => new OpenQuestion($"Q-{n}", n, "x", null, null)));
+
+        Assert.Empty(QuestionRows.ToSubmission(1, rows).Assignments);
     }
 }

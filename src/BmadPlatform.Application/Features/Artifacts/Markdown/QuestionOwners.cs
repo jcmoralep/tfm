@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using BmadPlatform.Domain.Common;
 
@@ -14,18 +15,22 @@ public static partial class QuestionOwners
 
     public const int RevisitMaxLength = 80;
 
-    private static readonly char[] Forbidden = ['(', ')', ';', '[', ']', '*', '|', '\\', '\r', '\n'];
+    private static readonly char[] Forbidden = ['(', ')', ';', '[', ']', '*', '|', '\\', '<', '>', '`'];
 
-    /// <summary>One rule for both fields: none of <c>( ) ; [ ] * | \</c> and no line break (null and empty are fine).</summary>
-    public static bool IsAllowed(string? value) => value is null || value.IndexOfAny(Forbidden) < 0;
+    /// <summary>
+    /// One rule for both fields: none of <c>( ) ; [ ] * | \ &lt; &gt; `</c>, no control character (line breaks included)
+    /// and no invisible format character such as a bidi override (null and empty are fine).
+    /// </summary>
+    public static bool IsAllowed(string? value) =>
+        value is null || (value.IndexOfAny(Forbidden) < 0 && value.All(c => !char.IsControl(c) && char.GetUnicodeCategory(c) != UnicodeCategory.Format));
 
     /// <summary>The value as it is stored: edges trimmed and inner whitespace collapsed to single spaces.</summary>
     public static string Clean(string? value) => WhitespaceRegex().Replace((value ?? string.Empty).Trim(), " ");
 
     /// <summary>
     /// Every line whose question id is assigned (duplicated ids included) becomes <c>head + text + suffix</c>. An unknown
-    /// id throws a <see cref="DomainException"/> and a value that is not allowed throws an <see cref="ArgumentException"/>
-    /// (the validator rejects it first).
+    /// id throws a <see cref="DomainException"/> and a value that is not allowed or too long throws an
+    /// <see cref="ArgumentException"/> (the validator rejects it first).
     /// </summary>
     public static string Apply(string markdown, IReadOnlyList<QuestionAssignment> assignments)
     {
@@ -38,6 +43,11 @@ public static partial class QuestionOwners
             if (!IsAllowed(assignment.Owner) || !IsAllowed(assignment.Revisit))
             {
                 throw new ArgumentException("The owner or the revisit text contains a character that is not allowed.", nameof(assignments));
+            }
+
+            if (Clean(assignment.Owner).Length > OwnerMaxLength || Clean(assignment.Revisit).Length > RevisitMaxLength)
+            {
+                throw new ArgumentException("The owner or the revisit text is longer than allowed.", nameof(assignments));
             }
 
             if (!scanned.Any(s => s.Question.Id == assignment.Id))
@@ -57,6 +67,12 @@ public static partial class QuestionOwners
             var owner = Clean(assignment.Owner) is { Length: > 0 } o ? o : OpenQuestions.OwnerPlaceholder;
             var revisit = Clean(assignment.Revisit) is { Length: > 0 } r ? r : OpenQuestions.RevisitPlaceholder;
             var text = item.Question.Text;
+
+            // Already carrying these values: keep the hand-written line as it is, so the no-op also holds for it.
+            if (item.Question.Owner == owner && item.Question.Revisit == revisit)
+            {
+                continue;
+            }
 
             parts[(item.Question.Line - 1) * 2] = item.Head + (text.Length > 0 ? " " + text : string.Empty) + OpenQuestions.Suffix(owner, revisit);
         }

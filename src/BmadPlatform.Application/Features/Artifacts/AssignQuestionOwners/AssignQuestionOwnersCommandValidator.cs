@@ -1,10 +1,9 @@
-using System.Text.RegularExpressions;
 using BmadPlatform.Application.Features.Artifacts.Markdown;
 using FluentValidation;
 
 namespace BmadPlatform.Application.Features.Artifacts.AssignQuestionOwners;
 
-public sealed partial class AssignQuestionOwnersCommandValidator : AbstractValidator<AssignQuestionOwnersCommand>
+public sealed class AssignQuestionOwnersCommandValidator : AbstractValidator<AssignQuestionOwnersCommand>
 {
     private const int MaxAssignments = 200;
 
@@ -18,8 +17,8 @@ public sealed partial class AssignQuestionOwnersCommandValidator : AbstractValid
             .Cascade(CascadeMode.Stop)
             .Must(list => list is { Count: > 0 }).WithMessage(ArtifactValidationTexts.NoQuestions)
             .Must(list => list.Count <= MaxAssignments).WithMessage(ArtifactValidationTexts.TooManyQuestions)
-            .Must(list => list.All(a => a is not null && IdRegex().IsMatch(a.Id ?? string.Empty))).WithMessage(ArtifactValidationTexts.QuestionIdInvalid)
-            .Must(list => list.Select(a => a.Id).Distinct(StringComparer.Ordinal).Count() == list.Count).WithMessage(ArtifactValidationTexts.NoQuestions)
+            .Must(list => list.All(a => a is not null && OpenQuestions.IsValidId(a.Id))).WithMessage(ArtifactValidationTexts.QuestionIdInvalid)
+            .Must(list => list.Select(a => a.Id).Distinct(StringComparer.Ordinal).Count() == list.Count).WithMessage(ArtifactValidationTexts.DuplicateQuestions)
             .Custom(ValidateValues);
     }
 
@@ -44,7 +43,4 @@ public sealed partial class AssignQuestionOwnersCommandValidator : AbstractValid
             context.AddFailure(nameof(AssignQuestionOwnersCommand.Assignments), $"{id}: {tooLong}");
         }
     }
-
-    [GeneratedRegex(@"^Q-[1-9][0-9]{0,3}$")]
-    private static partial Regex IdRegex();
 }
