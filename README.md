@@ -64,7 +64,7 @@ Ningún secreto se guarda en el repositorio. La aplicación lee estas variables:
 
 Los usuarios iniciales se crean al arrancar la aplicación si todavía no existen. Si un usuario ya existe, no se modifica (su contraseña no se sobrescribe). La contraseña debe cumplir la política de ASP.NET Core Identity: al menos 6 caracteres, con una mayúscula, una minúscula, un dígito y un carácter no alfanumérico. Si no la cumple, el usuario no se crea y el motivo queda en el registro.
 
-Además, cualquier persona puede crear su propia cuenta en `/registro` (registro abierto, sin verificación de correo por ahora; ver RF-67). Antes de exponer la aplicación en un entorno público conviene agregar la verificación del correo o un código de invitación.
+Además, cualquier persona puede crear su propia cuenta en `/registro` (registro abierto, sin verificación de correo por ahora; ver RF-67). Antes de exponer la aplicación en un entorno público conviene agregar la verificación del correo o un código de invitación, y un captcha (pendiente).
 
 En desarrollo también puede usar user-secrets en lugar de variables de entorno:
 
