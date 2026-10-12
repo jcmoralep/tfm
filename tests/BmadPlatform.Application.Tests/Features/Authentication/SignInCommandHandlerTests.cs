@@ -45,6 +45,9 @@ public sealed class SignInCommandHandlerTests
             return Task.FromResult(AuthenticationResult.Succeeded);
         }
 
+        public Task<RegistrationResult> RegisterAsync(string email, string password, CancellationToken cancellationToken = default) =>
+            Task.FromResult(RegistrationResult.Succeeded);
+
         public Task SignOutAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 }

@@ -27,4 +27,13 @@ public sealed class LocalRedirectTests
     {
         Assert.Equal(LocalRedirect.Fallback, LocalRedirect.Sanitize(returnUrl));
     }
+
+    [Theory]
+    [InlineData(null, "/registro")]
+    [InlineData("https://attacker.example", "/registro")]
+    [InlineData("/initiatives/42?tab=artifacts", "/registro?returnUrl=%2Finitiatives%2F42%3Ftab%3Dartifacts")]
+    public void The_link_to_the_other_sign_in_page_keeps_only_a_safe_return_address(string? returnUrl, string expected)
+    {
+        Assert.Equal(expected, LocalRedirect.WithReturnUrl("/registro", returnUrl));
+    }
 }
