@@ -95,8 +95,9 @@ else if (items.Count > 0)
         @foreach (var item in items)
         {
             var isDraft = item.Status == InitiativeStatus.Draft;
-            <li class="rounded-card border border-line bg-surface-raised p-4 shadow-card">
-                <a href="@ItemHref(item)" class="break-words font-medium text-ink hover:underline">@item.Name</a>
+            @* Stretched link: the name link's ::after covers the whole card, so the card is the click target. *@
+            <li class="relative cursor-pointer rounded-card border border-line bg-surface-raised p-4 shadow-card hover:bg-surface focus-within:bg-surface">
+                <a href="@ItemHref(item)" class="break-words font-medium text-ink after:absolute after:inset-0 after:content-[''] hover:underline">@item.Name</a>
                 <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                     <StatusBadge Status="item.Status" />
                     <span class="text-ink">@InitiativeLabels.DepthSummary(item.DepthMode, item.Depth)</span>
@@ -127,9 +128,10 @@ else if (items.Count > 0)
                 @foreach (var item in items)
                 {
                     var isDraft = item.Status == InitiativeStatus.Draft;
-                    <tr>
+                    @* Stretched link: the name link's ::after covers the whole row, so the row is the click target. *@
+                    <tr class="relative cursor-pointer hover:bg-surface focus-within:bg-surface">
                         <th scope="row" class="px-4 py-3 font-medium text-ink">
-                            <a href="@ItemHref(item)" class="hover:underline">@item.Name</a>
+                            <a href="@ItemHref(item)" class="after:absolute after:inset-0 after:content-[''] hover:underline">@item.Name</a>
                         </th>
                         <td class="px-4 py-3 text-ink">@InitiativeLabels.DepthSummary(item.DepthMode, item.Depth)</td>
                         <td class="px-4 py-3"><StatusBadge Status="item.Status" /></td>
