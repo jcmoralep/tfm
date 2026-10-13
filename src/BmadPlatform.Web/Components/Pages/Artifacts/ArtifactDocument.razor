@@ -20,7 +20,7 @@
    and the commands enforce the same rules. Reads happen in OnParametersSetAsync (safe while prerendering); every
    write waits for a user action. The editor keeps the typed text when a save fails. *@
 
-<PageTitle>@(view is null ? "Documento" : $"{ArtifactLabels.TypeName(view.Type)} · {view.InitiativeName}") · Plataforma BMAD</PageTitle>
+<PageTitle>@(view is null ? "Documento" : $"{ArtifactLabels.TypeName(view.Type)} · {view.InitiativeName}") · Ruta de Producto</PageTitle>
 
 @if (loading)
 {

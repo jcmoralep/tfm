@@ -1,4 +1,4 @@
-# Propuesta de alcance del MVP — Plataforma BMAD para producto
+# Propuesta de alcance del MVP — Ruta de Producto
 
 Documento de trabajo, versión 2 (incorpora las decisiones del 5 de octubre de 2026). Los puntos marcados como **supuesto** requieren confirmación.
 
