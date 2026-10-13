@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Markdig;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
@@ -13,6 +14,11 @@ namespace BmadPlatform.Web.Components.Artifacts;
 public sealed class MarkdownRenderer
 {
     private static readonly string[] AllowedSchemes = ["http", "https", "mailto"];
+
+    private static readonly Regex AssumptionMarker = new(
+        @"\[ASSUMPTION: (A-[1-9][0-9]{0,5})\]",
+        RegexOptions.None,
+        TimeSpan.FromMilliseconds(250));
 
     private readonly MarkdownPipeline pipeline = new MarkdownPipelineBuilder()
         .DisableHtml()
@@ -58,7 +64,9 @@ public sealed class MarkdownRenderer
             autolink.ReplaceBy(new LiteralInline(autolink.Url));
         }
 
-        return new MarkupString(document.ToHtml(pipeline));
+        // "[ASSUMPTION: A-1]" is BMAD's marker for a guess; people read it as a small "Suposición A-1" tag. Only a fixed
+        // pattern is swapped for fixed markup, so nothing typed in the document reaches the HTML unescaped.
+        return new MarkupString(AssumptionMarker.Replace(document.ToHtml(pipeline), "<span class=\"chip-assumption\">Suposición $1</span>"));
     }
 
     /// <summary>True for an empty address, a relative one, or one whose scheme is on the allow list.</summary>

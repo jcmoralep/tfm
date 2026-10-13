@@ -2,7 +2,7 @@
 @inherits LayoutComponentBase
 
 <div class="min-h-screen">
-    <header class="border-b border-line bg-surface-raised">
+    <header class="border-b border-line bg-surface-raised print:hidden">
         <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
             <a href="" class="text-base font-semibold text-ink">Plataforma BMAD</a>
 
@@ -24,7 +24,7 @@
         </div>
     </header>
 
-    <main class="mx-auto max-w-5xl px-6 py-10">
+    <main class="mx-auto max-w-5xl px-6 py-10 print:max-w-none print:p-0">
         <AppErrorBoundary>@Body</AppErrorBoundary>
     </main>
 </div>

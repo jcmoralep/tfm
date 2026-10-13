@@ -2,6 +2,7 @@ using BmadPlatform.Application;
 using BmadPlatform.Application.Abstractions.Authentication;
 using BmadPlatform.Infrastructure;
 using BmadPlatform.Infrastructure.Identity.Seeding;
+using BmadPlatform.Web.Artifacts;
 using BmadPlatform.Web.Authentication;
 using BmadPlatform.Web.Components;
 using BmadPlatform.Web.Components.Artifacts;
@@ -89,6 +90,7 @@ try
     app.MapRazorComponents<App>()
         .AddInteractiveServerRenderMode();
     app.MapAuthenticationEndpoints();
+    app.MapArtifactEndpoints();
 
     await app.Services.SeedInitialUsersAsync();
 

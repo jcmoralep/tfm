@@ -1,0 +1,70 @@
+@using BmadPlatform.Domain.Artifacts
+@using BmadPlatform.Web.Artifacts
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+@* Download choices of a document: the .md file for developers and the PDF for the person (RF-21). The PDF is the browser's
+   "Save as PDF" over the print style sheet, opened by wwwroot/js/print.js; nothing is sent to a server for it. *@
+<div class="flex flex-wrap items-center gap-3 text-sm print:hidden">
+    <span class="font-medium text-ink-muted">Descargar</span>
+    @* Full page load: the response is a file, which enhanced navigation must not try to render. *@
+    <a href="@ArtifactEndpoints.DownloadPath(InitiativeId, Type)" download data-enhance-nav="false"
+       class="inline-flex items-center gap-2 rounded-full border border-line bg-surface-raised px-4 py-1.5 font-medium text-ink hover:bg-surface">
+        @* A page with text lines: the .md is plain text. *@
+        <svg class="size-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M9 13h6M9 17h6" />
+        </svg>
+        Markdown (.md)
+    </a>
+    <button type="button" @onclick="PrintAsync"
+            class="inline-flex items-center gap-2 rounded-full border border-line bg-surface-raised px-4 py-1.5 font-medium text-ink hover:bg-surface">
+        @* A page with a down arrow: the PDF is saved from the print window. *@
+        <svg class="size-4 text-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M12 11v6M9.5 14.5 12 17l2.5-2.5" />
+        </svg>
+        PDF
+    </button>
+    <span class="text-xs text-ink-muted">Para el PDF elija «Guardar como PDF» en la ventana de impresión.</span>
+</div>
+
+@code {
+    private IJSObjectReference? module;
+
+    [Parameter, EditorRequired]
+    public Guid InitiativeId { get; set; }
+
+    [Parameter, EditorRequired]
+    public ArtifactType Type { get; set; }
+
+    private async Task PrintAsync()
+    {
+        try
+        {
+            module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./" + Assets["js/print.js"]);
+            await module.InvokeVoidAsync("printPage");
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone; there is nothing left to print.
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (module is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone; the browser already released the module.
+        }
+    }
+}
