@@ -56,6 +56,9 @@ public static class QuestionRows
             })
             .ToList();
 
+    /// <summary>True when at least one row differs from the values it was loaded with: only then is there something to save.</summary>
+    public static bool HasChanges(IEnumerable<QuestionRow> rows) => rows.Any(row => row.Changed);
+
     /// <summary>Only the rows whose values differ from the loaded ones, so a long list stays under the command cap.</summary>
     public static QuestionOwnersSubmission ToSubmission(int baseVersion, IEnumerable<QuestionRow> rows) =>
         new(baseVersion, rows.Where(row => row.Changed).Select(row => new QuestionAssignment(row.Id, row.Owner, row.Revisit)).ToList());

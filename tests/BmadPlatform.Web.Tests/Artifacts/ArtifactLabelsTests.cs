@@ -82,8 +82,8 @@ public sealed class ArtifactLabelsTests
 
     [Theory]
     [InlineData(ArtifactStatus.Draft, InitiativeStatus.Planning, null)]
-    [InlineData(ArtifactStatus.Approved, InitiativeStatus.Planning, "Al guardar, el documento vuelve a Borrador.")]
-    [InlineData(ArtifactStatus.Approved, InitiativeStatus.ReadyToBuild, "Al guardar, el documento vuelve a Borrador y la iniciativa vuelve a Planificando.")]
+    [InlineData(ArtifactStatus.Approved, InitiativeStatus.Planning, "Si cambia algo y guarda, el documento vuelve a Borrador y hay que aprobarlo de nuevo.")]
+    [InlineData(ArtifactStatus.Approved, InitiativeStatus.ReadyToBuild, "Si cambia algo y guarda, el documento vuelve a Borrador, hay que aprobarlo de nuevo y la iniciativa vuelve a Planificando.")]
     public void Edit_hint_warns_only_when_saving_undoes_an_approval(ArtifactStatus status, InitiativeStatus initiative, string? expected)
     {
         Assert.Equal(expected, ArtifactLabels.EditHint(status, initiative));
