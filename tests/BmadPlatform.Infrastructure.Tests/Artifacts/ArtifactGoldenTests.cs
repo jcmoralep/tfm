@@ -62,5 +62,6 @@ public sealed class ArtifactGoldenTests
         Assert.DoesNotContain((byte)'\r', stored);
         Assert.Equal(Utf8.GetString(expected), Utf8.GetString(stored));
         Assert.Empty(ArtifactFormatChecker.Check(type, markdown));
+        Assert.Equal(["Q-1"], OpenQuestions.Unassigned(markdown));
     }
 }

@@ -1,5 +1,6 @@
 using BmadPlatform.Application.Common.Exceptions;
 using BmadPlatform.Application.Features.Artifacts;
+using BmadPlatform.Application.Features.Artifacts.Markdown;
 using BmadPlatform.Application.Features.Initiatives;
 using BmadPlatform.Application.Tests.Features.Assistant;
 using BmadPlatform.Domain.Artifacts;
@@ -15,6 +16,7 @@ public sealed class ArtifactAccessTests
     private const string Save = "save";
     private const string Regenerate = "regenerate";
     private const string Approve = "approve";
+    private const string Assign = "assign";
 
     private readonly ArtifactTestContext context = new();
 
@@ -24,6 +26,7 @@ public sealed class ArtifactAccessTests
         Save => context.Save(id, type, 1, "# Otro texto"),
         Regenerate => context.Regenerate(id, type, 1),
         Approve => context.Approve(id, type, 1),
+        Assign => context.Assign(id, type, 1, new QuestionAssignment("Q-1", "TI", "mañana")),
         _ => throw new ArgumentOutOfRangeException(nameof(operation)),
     };
 
@@ -40,6 +43,7 @@ public sealed class ArtifactAccessTests
     [InlineData(Save)]
     [InlineData(Regenerate)]
     [InlineData(Approve)]
+    [InlineData(Assign)]
     public async Task A_foreign_deleted_or_unknown_initiative_is_the_same_not_found_and_nothing_is_persisted(string operation)
     {
         var foreign = await WithSpec("De A");
@@ -97,6 +101,7 @@ public sealed class ArtifactAccessTests
     [InlineData(Save)]
     [InlineData(Regenerate)]
     [InlineData(Approve)]
+    [InlineData(Assign)]
     public async Task A_document_the_level_no_longer_requires_is_rejected_and_kept(string operation)
     {
         var id = await context.ClarifiedStandard();

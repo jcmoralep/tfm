@@ -78,6 +78,28 @@ public sealed class ArtifactViewBuilderTests
     }
 
     [Fact]
+    public void Unassigned_questions_are_listed_and_block_the_approval_until_they_are_assigned()
+    {
+        ArtifactView View(string content) => ArtifactViewBuilder.Build(
+            Details(InitiativeStatus.Planning, InitiativeDepth.Small),
+            new ConversationAnswers(true, true, []),
+            ArtifactType.Spec,
+            Artifact.Create(Guid.NewGuid(), "user-a", ArtifactType.Spec, content, Now),
+            [Summary(ArtifactType.Spec, ArtifactStatus.Draft)]);
+
+        var open = View("- **Q-1**: falta (Responsable: por asignar; Revisar: por definir)\n- **Q-2**: otra (Responsable: TI; Revisar: mañana)");
+        var assigned = View("- **Q-1**: falta (Responsable: TI; Revisar: mañana)");
+
+        Assert.Equal(["Q-1"], open.UnassignedQuestions);
+        Assert.Equal(["Q-1", "Q-2"], open.Questions.Select(q => q.Id));
+        Assert.False(open.CanApprove);
+        Assert.False(open.ApprovalCompletesSet);
+        Assert.Empty(assigned.UnassignedQuestions);
+        Assert.True(assigned.CanApprove);
+        Assert.True(assigned.ApprovalCompletesSet);
+    }
+
+    [Fact]
     public void A_document_outside_the_level_is_hidden_with_no_content()
     {
         var artifact = Stored(ArtifactType.Brief, Doc.Draft);

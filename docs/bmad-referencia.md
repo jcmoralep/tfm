@@ -44,7 +44,8 @@ BMAD no tiene una taxonomía explícita pequeño / épica / proyecto en los arch
 ## 4. Diferencias con lo que se había supuesto
 
 - **No existen** `bmad-ticket` ni `tickets.toml` en esta versión. Las "Épicas e historias" corresponden a `bmad-create-epics-and-stories` y a `epics.md`.
-- Los requisitos no funcionales **no tienen formato de identificador** en el PRD; el paso de épicas espera `FR1:` y `NFR1:` sin guion al extraerlos, y el PRD usa `FR-1`. Hay que reconciliar el formato al generar los artefactos.
+- Los requisitos no funcionales **no tienen formato de identificador** en el PRD; el paso de épicas espera `FR1:` y `NFR1:` sin guion al extraerlos, y el PRD usa `FR-1`. La propia plantilla del PRD (`bmad-prd/assets/prd-template.md`) usa `FR-1`, `UJ-1` y `SM-1` con guion; solo el paso 1 de `bmad-create-epics-and-stories` escribe `FR1:`/`NFR1:`, en el inventario que arma dentro de `epics.md`, y su extracción es flexible ("FR1:", "Functional Requirement 1:", "or similar").
+- **Decisión (cambio `bmad-alignment`, 2026-10-11):** la plataforma y el PRD conservan el guion; el generador de épicas (paso 6) escribe el inventario de `epics.md` como `FR1:`/`NFR1:` **con el mismo número** (`FR-3` pasa a `FR3:`); la exportación (paso 8) copia el PRD tal cual. `NFR-n` es una extensión de la plataforma. Base: lectura del código de BMAD, no una ejecución; se comprueba en la instalación real antes del paso 6.
 - No hay carpetas por "iniciativa" en BMAD: la palabra solo aparece como altura de la arquitectura y en un menú del PRD.
 - La salida usa nombres inconsistentes entre artefactos (carpetas con fecha, `spec-<slug>` sin fecha, `epics.md` plano).
 
@@ -55,3 +56,37 @@ Muestras de salida (la carpeta de salida está vacía), el detalle de `bmad-ux` 
 ## 6. Seguridad de la instalación
 
 Todo corre con `uv run` y scripts de Python locales; no se encontró código de red, `eval` ni descargas en esos scripts. No hay hooks ni archivos de permisos en `.claude`. Los accesos a la red vienen de **instrucciones** de las habilidades (investigación en la web) y no de código. `bmad-build` hace una confirmación de git con mensaje convencional cuando hay un repositorio. Se leyó con búsquedas, no línea por línea.
+
+## 7. Verificación pendiente en una instalación real (antes del paso 6)
+
+Estas tres comprobaciones necesitan ejecutar BMAD de verdad. **No se han ejecutado**: el cambio `bmad-alignment` solo dejó escrita la lista. Cómo prepararlas: instalar BMAD 6.12.1 (módulo `bmm`) en una carpeta desechable **fuera de este repositorio**, inicializar un repositorio git vacío allí y copiar los archivos de ejemplo desde `tests/BmadPlatform.Infrastructure.Tests/Artifacts/Goldens/`. Si una comprobación contradice este documento, corregir el §4 y el punto 3 de la sección 6 de `AGENTS.md` antes de construir el paso 6.
+
+1. **`bmad-build` acepta una especificación de nivel Pequeña.**
+   - Cómo: copiar `spec-small.md` como `specs/spec-demo/SPEC.md` y pedir a `bmad-build` que construya a partir de esa carpeta (`{spec_folder}`), o pasarle la ruta del archivo.
+   - Esperado: la lee como contexto de planificación sin quejarse de la estructura (Por qué, Capacidades con `FR-n`, Restricciones, No objetivos, Señal de éxito) y sin exigir `CAP-N` ni el frontmatter de su plantilla. Anotar qué pide si se queja.
+2. **El paso de épicas lee los `FR-n` de un PRD exportado.**
+   - Cómo: copiar `prd-large.md` como `planning-artifacts/prds/prd-demo/prd.md` y ejecutar el paso 1 de `bmad-create-epics-and-stories` (validar requisitos).
+   - Esperado: extrae los requisitos funcionales y no funcionales del PRD y escribe en el inventario `FR1:`, `FR2:`… y `NFR1:`… con **los mismos números** que `FR-1`, `NFR-1`… del PRD. Anotar si pierde alguno o los renumera.
+3. **BMAD tolera los encabezados en español y el sufijo de las preguntas.**
+   - Cómo: con el mismo `prd-large.md`, editar una línea de la sección 8 para que lea `- **Q-1**: … (Responsable: Legal; Revisar: antes de la arquitectura)` y pedir a `bmad-prd` (o al paso de épicas) que lea el documento.
+   - Esperado: los encabezados en español (`## 8 Preguntas abiertas`, etc.) y la línea `Q-n` con su sufijo se leen sin pérdida ni reescritura; el sufijo se conserva como texto de la pregunta.
+
+| Comprobación | Fecha | Versión | Resultado | Evidencia |
+|---|---|---|---|---|
+| 1. `bmad-build` con `SPEC.md` | — | 6.12.1 | no ejecutado | — |
+| 2. Épicas: `FR-n` a `FR1:` con el mismo número | — | 6.12.1 | no ejecutado | — |
+| 3. Encabezados en español y sufijo `Q-n` | — | 6.12.1 | no ejecutado | — |
+
+## 8. Cierre de conformidad del cambio `bmad-alignment`
+
+Resultado: **cumple con notas** (comparación por lectura de los cuatro documentos de ejemplo `Goldens/` contra las secciones 2 y 4 de este documento y contra la regla de cierre de `bmad-prd`, paso Finalize 4: lo que no bloquea se difiere con responsable y condición de revisión). No se ejecutó BMAD.
+
+| Aspecto | Resultado |
+|---|---|
+| Encabezados y orden (Brief, PRD, Especificación) | Coinciden con la sección 2; los títulos van en español. |
+| Esquema de identificadores | Con guion (`FR-n`, `NFR-n`, `UJ-n`, `A-n`, `Q-n`); decisión y excepción del paso de épicas en la sección 4. |
+| Recorridos clave (PRD 2.3) | Una sola suposición `[ASSUMPTION: A-n]` con su entrada en el índice; no se inventan `UJ-n`. |
+| Línea de pregunta abierta | `- **Q-n**: texto (Responsable: …; Revisar: …)`: lleva las dos piezas que pide Finalize 4. La aprobación se bloquea mientras falte alguna. |
+| Índice de suposiciones | Cada `A-n` del documento aparece una vez en el índice. |
+
+Desviaciones conocidas y aceptadas: `FR-n` en lugar de `CAP-n` en la Especificación, `NFR-n` como extensión de la plataforma, encabezados en español y el sufijo como portador de responsable y revisión. No se encontró ninguna brecha real, así que ni los documentos de ejemplo ni el generador cambiaron. Lo que va más allá de BMAD (marca de fase bloqueante, tabla de elementos, validación independiente) está en `docs/mejoras-posteriores.md`. Las tres comprobaciones con una instalación real siguen pendientes en la sección 7.

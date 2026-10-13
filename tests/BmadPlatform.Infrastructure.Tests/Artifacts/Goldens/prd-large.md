@@ -25,9 +25,7 @@ Contexto: Consultar el estado de los pedidos sin llamar a bodega.
 
 ### 2.3 Recorridos clave
 
-- **UJ-1**: Recorrido de la persona o grupo n.º 1 del usuario objetivo (sección 2) para cumplir los trabajos por hacer.
-- **UJ-2**: Recorrido de la persona o grupo n.º 2 del usuario objetivo (sección 2) para cumplir los trabajos por hacer.
-- [ASSUMPTION: A-2] Los recorridos de esta sección son un punto de partida; se confirman con las personas usuarias.
+- [ASSUMPTION: A-2] Aún no se describió un recorrido concreto de uso; se completa con un caso real (una persona con nombre) al revisar el documento.
 
 ## 3 Glosario
 
@@ -80,10 +78,10 @@ Sistemas y equipos con los que debe coordinarse la solución.
 
 ## 8 Preguntas abiertas
 
-- **Q-1**: Falta saber las condiciones de velocidad o seguridad: «¿Necesita algo especial de velocidad o seguridad?»
+- **Q-1**: Falta saber las condiciones de velocidad o seguridad: «¿Necesita algo especial de velocidad o seguridad?» (Responsable: por asignar; Revisar: por definir)
 
 ## 9 Índice de suposiciones
 
 - **A-1**: No se indicó qué personas no usarán la solución; se confirma con quien propone la iniciativa.
-- **A-2**: Los recorridos de esta sección son un punto de partida; se confirman con las personas usuarias.
+- **A-2**: Aún no se describió un recorrido concreto de uso; se completa con un caso real (una persona con nombre) al revisar el documento.
 - **A-3**: No se definieron términos propios de la iniciativa; se completa el glosario al revisar el documento con el equipo.
