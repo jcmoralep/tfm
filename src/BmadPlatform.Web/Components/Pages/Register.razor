@@ -40,13 +40,27 @@
                 </div>
 
                 <PasswordField Id="password" Label="Contraseña" Autocomplete="new-password"
-                               DescribedBy="@(errors.Count > 0 ? "register-errors" : null)"
-                               Hint="Mínimo 6 caracteres, con mayúscula, minúscula, número y símbolo."
-                               @bind-Value="Input.Password" />
+                               DescribedBy="@("password-rules" + (errors.Count > 0 ? " register-errors" : null))"
+                               @bind-Value="Input.Password">
+                    @* The same rules Identity enforces (PasswordPolicy). Plain text without JavaScript; wwwroot/js/password-rules.js
+                       marks each one met or not while the person types. *@
+                    <ul id="password-rules" data-password-rules data-source="password" class="mt-2 space-y-1 text-sm text-ink-muted">
+                        <li data-rule="length" data-min="@PasswordPolicy.MinLength" class="@RuleClass"><span data-mark aria-hidden="true">•</span> Al menos @PasswordPolicy.MinLength caracteres</li>
+                        <li data-rule="upper" class="@RuleClass"><span data-mark aria-hidden="true">•</span> Una letra mayúscula</li>
+                        <li data-rule="lower" class="@RuleClass"><span data-mark aria-hidden="true">•</span> Una letra minúscula</li>
+                        <li data-rule="digit" class="@RuleClass"><span data-mark aria-hidden="true">•</span> Un número</li>
+                        <li data-rule="symbol" class="@RuleClass"><span data-mark aria-hidden="true">•</span> Un símbolo, por ejemplo ! o #</li>
+                    </ul>
+                </PasswordField>
 
                 <PasswordField Id="confirm-password" Label="Repite la contraseña" Autocomplete="new-password"
-                               DescribedBy="@(errors.Count > 0 ? "register-errors" : null)"
-                               @bind-Value="Input.ConfirmPassword" />
+                               DescribedBy="@("password-match" + (errors.Count > 0 ? " register-errors" : null))"
+                               @bind-Value="Input.ConfirmPassword">
+                    @* Filled in by wwwroot/js/password-match.js while the person types; empty (and hidden) without it. *@
+                    <p id="password-match" role="status" data-password-match data-source="password" data-target="confirm-password"
+                       data-ok-text="✓ Las contraseñas coinciden." data-bad-text="✕ Las contraseñas no coinciden." data-state="empty"
+                       class="mt-2 text-sm font-medium data-[state=empty]:hidden data-[state=ok]:text-success-ink data-[state=bad]:text-danger"></p>
+                </PasswordField>
 
                 <button type="submit"
                         class="w-full rounded-control bg-primary px-4 py-3 text-sm font-semibold text-on-primary hover:bg-primary-hover">
@@ -63,8 +77,12 @@
 </div>
 
 <script type="module" src="@Assets["js/password-toggle.js"]"></script>
+<script type="module" src="@Assets["js/password-match.js"]"></script>
+<script type="module" src="@Assets["js/password-rules.js"]"></script>
 
 @code {
+    private const string RuleClass = "flex items-center gap-2 data-[met=true]:font-medium data-[met=true]:text-success-ink data-[met=false]:text-danger";
+
     private IReadOnlyList<string> errors = [];
 
     [SupplyParameterFromForm]

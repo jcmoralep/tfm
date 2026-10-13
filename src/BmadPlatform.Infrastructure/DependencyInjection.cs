@@ -46,6 +46,13 @@ public static class DependencyInjection
                 options.User.RequireUniqueEmail = true;
                 options.SignIn.RequireConfirmedAccount = false;
                 options.Lockout.AllowedForNewUsers = true;
+
+                // Explicit on purpose: the registration page lists these rules (PasswordPolicy) and checks them live.
+                options.Password.RequiredLength = PasswordPolicy.MinLength;
+                options.Password.RequireDigit = true;
+                options.Password.RequireLowercase = true;
+                options.Password.RequireUppercase = true;
+                options.Password.RequireNonAlphanumeric = true;
             })
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddSignInManager();
