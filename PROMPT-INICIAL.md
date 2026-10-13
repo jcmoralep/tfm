@@ -12,7 +12,7 @@
 ```
 Lee en este orden: AGENTS.md, REQUISITOS.md, PROPUESTA-MVP.md y DESIGN.md.
 
-Vamos a construir la Plataforma BMAD para producto. Trabaja SOLO el paso 1 del orden de construcción (PROPUESTA-MVP.md §7): la base del proyecto.
+Vamos a construir la Ruta de Producto. Trabaja SOLO el paso 1 del orden de construcción (PROPUESTA-MVP.md §7): la base del proyecto.
 
 Alcance del paso 1:
 - Solución .NET con las cuatro capas (Domain, Application, Infrastructure, Web) según AGENTS.md §3.
