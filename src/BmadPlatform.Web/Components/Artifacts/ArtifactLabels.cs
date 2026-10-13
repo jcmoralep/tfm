@@ -115,8 +115,8 @@ public static class ArtifactLabels
     public static string? EditHint(ArtifactStatus? status, InitiativeStatus initiativeStatus) => status switch
     {
         ArtifactStatus.Approved when initiativeStatus == InitiativeStatus.ReadyToBuild =>
-            "Al guardar, el documento vuelve a Borrador y la iniciativa vuelve a Planificando.",
-        ArtifactStatus.Approved => "Al guardar, el documento vuelve a Borrador.",
+            "Si cambia algo y guarda, el documento vuelve a Borrador, hay que aprobarlo de nuevo y la iniciativa vuelve a Planificando.",
+        ArtifactStatus.Approved => "Si cambia algo y guarda, el documento vuelve a Borrador y hay que aprobarlo de nuevo.",
         _ => null,
     };
 

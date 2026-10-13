@@ -43,4 +43,18 @@ public sealed class QuestionRowsTests
 
         Assert.Empty(QuestionRows.ToSubmission(1, rows).Assignments);
     }
+
+    [Fact]
+    public void There_is_something_to_save_only_when_a_field_differs_from_what_was_loaded()
+    {
+        var rows = QuestionRows.From([new OpenQuestion("Q-1", 3, "Primera", "TI", "mañana"), new OpenQuestion("Q-2", 4, "Segunda", null, null)]);
+
+        Assert.False(QuestionRows.HasChanges(rows));
+
+        rows[1].Revisit = "antes de la arquitectura";
+        Assert.True(QuestionRows.HasChanges(rows));
+
+        rows[1].Revisit = rows[1].LoadedRevisit;
+        Assert.False(QuestionRows.HasChanges(rows));
+    }
 }
