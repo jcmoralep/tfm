@@ -4,6 +4,7 @@ using BmadPlatform.Application.Features.Artifacts.AssignQuestionOwners;
 using BmadPlatform.Application.Features.Artifacts.GenerateArtifact;
 using BmadPlatform.Application.Features.Artifacts.GetArtifact;
 using BmadPlatform.Application.Features.Artifacts.GetArtifactsOverview;
+using BmadPlatform.Application.Features.Artifacts.ExportArtifact;
 using BmadPlatform.Application.Features.Artifacts.Markdown;
 using BmadPlatform.Application.Features.Artifacts.RegenerateArtifact;
 using BmadPlatform.Application.Features.Artifacts.SaveArtifactContent;
@@ -65,6 +66,9 @@ public sealed class ArtifactTestContext
     public Task<ArtifactView?> Get(Guid id, ArtifactType type) =>
         new GetArtifactQueryHandler(Sender, Artifacts, User).Handle(new GetArtifactQuery(id, type), default);
 
+    public Task<ArtifactExport?> Export(Guid id, ArtifactType type) =>
+        new ExportArtifactQueryHandler(Sender, Artifacts, User, new EchoExporter()).Handle(new ExportArtifactQuery(id, type), default);
+
     public Task<ArtifactsOverview?> Overview(Guid id) =>
         new GetArtifactsOverviewQueryHandler(Sender, Artifacts, User).Handle(new GetArtifactsOverviewQuery(id), default);
 
@@ -89,4 +93,11 @@ public sealed class ArtifactTestContext
     public async Task<InitiativeStatus> StatusOf(Guid id) => (await Assistant.Details(id)).Status;
 
     public Artifact StoredArtifact(Guid id, ArtifactType type) => Artifacts.Stored.Single(a => a.InitiativeId == id && a.Type == type);
+}
+
+/// <summary>Stands in for the Markdown exporter (it lives in Infrastructure): echoes what the handler passed it.</summary>
+internal sealed class EchoExporter : IArtifactExporter
+{
+    public ArtifactExport Export(ArtifactExportSource source) =>
+        new($"{source.Type}-v{source.Version}.md", "text/markdown", $"{source.InitiativeName}|{source.Status}|{source.Content}");
 }

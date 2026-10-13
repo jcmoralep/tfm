@@ -147,4 +147,14 @@ public sealed class MarkdownRendererTests
     {
         Assert.Contains("Brief: Mi idea", renderer.Render(markdown, skipTitle: true).Value);
     }
+
+    [Fact]
+    public void The_assumption_marker_is_shown_as_a_tag_and_a_lookalike_is_left_alone()
+    {
+        var html = Html("- [ASSUMPTION: A-2] Falta definir el alcance\n- [ASSUMPTION: x] otra cosa");
+
+        Assert.Contains("<span class=\"chip-assumption\">Suposición A-2</span> Falta definir el alcance", html);
+        Assert.Contains("[ASSUMPTION: x]", html);
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(html, "chip-assumption"));
+    }
 }

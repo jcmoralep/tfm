@@ -49,8 +49,14 @@
     @apply rounded-full bg-primary;
   }
 
+  /* A comfortable line length for reading (about 70 characters) instead of the full width of the card. */
   .doc-prose {
-    @apply break-words text-base leading-7 text-ink;
+    @apply max-w-3xl break-words text-base leading-7 text-ink;
+  }
+
+  /* "[ASSUMPTION: A-n]" shown as a small tag; the renderer produces the span. */
+  .doc-prose .chip-assumption {
+    @apply mr-1 inline-block rounded-full bg-warning-soft px-2 py-0.5 align-middle text-xs font-semibold text-warning-ink;
   }
 
   .doc-prose > :first-child {
@@ -131,6 +137,40 @@
 
   .doc-prose td {
     @apply border border-line px-3 py-2;
+  }
+}
+
+/* What goes to paper or to "Save as PDF" from a document page: the layout hides the app chrome and the controls
+   with print: classes; here the margins, the text size and the page breaks. */
+@page {
+  margin: 18mm;
+}
+
+@media print {
+  html {
+    background: white;
+  }
+
+  .doc-prose {
+    max-width: none;
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+
+  .doc-prose h2,
+  .doc-prose h3 {
+    break-after: avoid;
+  }
+
+  .doc-prose li,
+  .doc-prose blockquote,
+  .doc-prose tr {
+    break-inside: avoid;
+  }
+
+  .doc-prose .chip-assumption {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 }
 

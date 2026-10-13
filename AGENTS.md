@@ -127,8 +127,8 @@ Reglas de dependencia: Web → Application → Domain; Infrastructure → Applic
 - **Un solo origen de verdad:** cada artefacto se guarda **como Markdown** en MySQL, con número de versión. Nunca se guarda una copia aparte en PDF.
 - Exportación (DRY): `IArtifactExporter` en Application; una implementación por formato en `Infrastructure/Export/`:
   - `MarkdownArtifactExporter`: entrega el `.md` tal cual, para desarrolladores.
-  - `PdfArtifactExporter`: genera el PDF para el usuario a partir del mismo Markdown.
-- Librería de PDF: **no elegida**. Verificar licencia vigente y compatibilidad con el servidor antes de decidir; preguntar al usuario.
+  - `PdfArtifactExporter`: **no existe por ahora** (decisión 2026-10-12, RF-21): el PDF es la impresión del navegador sobre la misma vista del documento.
+- Librería de PDF: **ninguna por ahora**. Si se vuelve a necesitar un PDF generado en el servidor, verificar licencia vigente y compatibilidad con el servidor antes de decidir; preguntar al usuario.
 - Aprobación manual del usuario antes de marcar un artefacto como final.
 
 ### 4.10 Idioma
@@ -145,7 +145,7 @@ Reglas de dependencia: Web → Application → Domain; Infrastructure → Applic
 ## 6. Decisiones pendientes
 
 1. Versión de .NET (sugerida: última LTS, .NET 10).
-2. Librería para generar PDF.
+2. ~~Librería para generar PDF~~ **Resuelta por ahora:** sin librería; el PDF es «Guardar como PDF» desde la ventana de impresión del navegador (RF-21).
 3. Estructura exacta y nombres de archivo/carpeta que BMAD espera para sus artefactos: **validada en una instalación real de BMAD 6.12.1** (ver `docs/bmad-referencia.md`). Identificadores **decididos** (cambio `bmad-alignment`): la plataforma y el PRD conservan el guion (`FR-1`, `NFR-1`, `UJ-1`, `SM-1`; `NFR-n` es una extensión de la plataforma), como la plantilla del PRD de BMAD; solo el inventario de `epics.md` (paso 6) escribe `FR1:`/`NFR1:` con el mismo número, y la exportación copia el PRD tal cual (REQUISITOS RF-36, RF-44). Pendiente de comprobar en una ejecución real de BMAD (lista en `docs/bmad-referencia.md`). No existen `bmad-ticket` ni `tickets.toml` en esta versión. Revisar el documento cuando salga una versión nueva.
 4. Almacenamiento de adjuntos en producción: en Railway el disco del contenedor es efímero, por lo que apunta a S3 (Railway Buckets, compatible con S3). Confirmar al llegar al paso 7.
 5. Qué tipos de contenido del adjunto puede interpretar el modelo elegido.
