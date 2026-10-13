@@ -1,5 +1,6 @@
 using BmadPlatform.Application.Common.Exceptions;
 using BmadPlatform.Application.Features.Artifacts;
+using BmadPlatform.Application.Features.Artifacts.Markdown;
 using BmadPlatform.Application.Features.Initiatives.ReopenPlanning;
 using BmadPlatform.Application.Tests.TestDoubles;
 using BmadPlatform.Domain.Artifacts;
@@ -92,6 +93,24 @@ public sealed class RegenerateArtifactTests
 
         Assert.Equal("Todavía no se ha generado este documento.", error.Message);
         Assert.Empty(context.Artifacts.Stored);
+    }
+
+    [Fact]
+    public async Task Regenerating_returns_every_question_to_the_default_and_the_gate_rejects_approval_again()
+    {
+        const string Draft = "# Spec\n\n- **Q-1**: uno (Responsable: por asignar; Revisar: por definir)";
+        var id = await context.AtClosing(InitiativeDepth.Small);
+        context.Drafter.Output = Draft;
+        await context.Generate(id, ArtifactType.Spec);
+        await context.Assign(id, ArtifactType.Spec, 1, new QuestionAssignment("Q-1", "Legal", "mañana"));
+        Assert.Contains("Responsable: Legal", context.StoredArtifact(id, ArtifactType.Spec).Content, StringComparison.Ordinal);
+
+        var view = await context.Regenerate(id, ArtifactType.Spec, 2);
+
+        Assert.Equal(Draft, view.Content);
+        Assert.Equal(["Q-1"], view.UnassignedQuestions);
+        var error = await Assert.ThrowsAsync<DomainException>(() => context.Approve(id, ArtifactType.Spec, 3));
+        Assert.Equal(ArtifactTexts.UnassignedQuestions(["Q-1"]), error.Message);
     }
 
     [Fact]

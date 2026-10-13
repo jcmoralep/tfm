@@ -4,6 +4,7 @@ using BmadPlatform.Application.Features.Artifacts;
 using BmadPlatform.Application.Features.Artifacts.Markdown;
 using BmadPlatform.Application.Features.Assistant;
 using BmadPlatform.Application.Features.Assistant.Script;
+using OpenQuestionsReader = BmadPlatform.Application.Features.Artifacts.Markdown.OpenQuestions;
 
 namespace BmadPlatform.Infrastructure.Artifacts;
 
@@ -220,7 +221,7 @@ internal sealed partial class DraftComposer
 
         foreach (var (id, questionText) in questions)
         {
-            Line(ArtifactOutline.Item(id, questionText));
+            Line(ArtifactOutline.Item(id, questionText + OpenQuestionsReader.DefaultSuffix));
         }
     }
 

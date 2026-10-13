@@ -137,6 +137,22 @@ public sealed partial class FakeArtifactDrafterTests
         Assert.DoesNotContain("No sé", brief, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData(ArtifactType.Brief, InitiativeDepth.Standard)]
+    [InlineData(ArtifactType.Prd, InitiativeDepth.Standard)]
+    [InlineData(ArtifactType.Spec, InitiativeDepth.Small)]
+    public async Task Every_generated_question_ends_with_the_default_suffix_and_reads_as_unassigned(ArtifactType type, InitiativeDepth depth)
+    {
+        var unknown = new[] { AssistantScript.Keys.Users, AssistantScript.Keys.Success };
+
+        var document = await Draft(Request(type, depth, Answers(depth, unknown: unknown)));
+
+        var questions = Definitions(document, "Q").ToList();
+        Assert.Equal(2, questions.Count);
+        Assert.All(questions, q => Assert.EndsWith("(Responsable: por asignar; Revisar: por definir)", q, StringComparison.Ordinal));
+        Assert.Equal(["Q-1", "Q-2"], OpenQuestions.Unassigned(document));
+    }
+
     [Fact]
     public async Task The_spec_always_has_a_non_goal_with_an_assumption_and_a_question_when_unknown()
     {
@@ -224,22 +240,54 @@ public sealed partial class FakeArtifactDrafterTests
         Assert.Equal(["- **SM-1**: Menos llamadas", "- **SM-2**: Menos quejas"], Definitions(document, "SM"));
     }
 
-    [Fact]
-    public async Task The_users_answer_yields_one_tagged_journey_per_line_and_is_quoted_once()
+    [Theory]
+    [InlineData("Vendedoras\nPersonal de bodega\nGerencia", false)]
+    [InlineData(null, true)]
+    [InlineData(null, false)]
+    public async Task The_key_journeys_section_holds_one_assumption_and_no_journey(string? users, bool unknown)
     {
-        var texts = new Dictionary<string, string> { [AssistantScript.Keys.Users] = "Vendedoras\nPersonal de bodega" };
+        var depth = InitiativeDepth.Standard;
+        var answers = users is null && !unknown
+            ? Answers(depth).Where(a => a.TopicKey != AssistantScript.Keys.Users)
+            : Answers(depth, new Dictionary<string, string> { [AssistantScript.Keys.Users] = users ?? string.Empty }, unknown ? [AssistantScript.Keys.Users] : null);
 
-        var prd = await Draft(Request(ArtifactType.Prd, InitiativeDepth.Standard, Answers(InitiativeDepth.Standard, texts)));
+        var prd = await Draft(Request(ArtifactType.Prd, depth, answers));
 
-        var journeys = Definitions(prd, "UJ").ToList();
-        Assert.Equal(2, journeys.Count);
-        Assert.All(journeys, j => Assert.DoesNotMatch(MarkerRegex(), j));
-        var shared = Assert.Single(MarkerRegex().Matches(Section(prd, "2.3 Recorridos clave")));
-        Assert.Single(Definitions(prd, "A"), a => a.Contains("Los recorridos de esta sección", StringComparison.Ordinal));
-        Assert.NotNull(shared);
-        Assert.Contains("n.º 2", journeys[1], StringComparison.Ordinal);
-        Assert.Equal(1, Regex.Count(prd, "Personal de bodega"));
-        Assert.Contains("Los recorridos de esta sección", Section(prd, "Índice de suposiciones"), StringComparison.Ordinal);
+        var section = Section(prd, "2.3 Recorridos clave");
+        var line = Assert.Single(section.Split('\n'), l => l.Length > 0);
+        var marker = Assert.Single(MarkerRegex().Matches(line));
+        Assert.StartsWith("- [ASSUMPTION: A-", line, StringComparison.Ordinal);
+        Assert.EndsWith("(una persona con nombre) al revisar el documento.", line, StringComparison.Ordinal);
+        Assert.DoesNotContain("UJ", prd, StringComparison.Ordinal);
+        Assert.Contains($"- **A-{marker.Groups["n"].Value}**: Aún no se describió un recorrido", Section(prd, "Índice de suposiciones"), StringComparison.Ordinal);
+        Assert.Equal(unknown, Section(prd, "2 Usuario objetivo").Contains("Pendiente: ver Q-1.", StringComparison.Ordinal));
+        Assert.Empty(ArtifactFormatChecker.Check(ArtifactType.Prd, prd));
+    }
+
+    [Theory]
+    [InlineData("- **UJ-1**: Ana pide un reporte", 0)]
+    [InlineData("- **UJ1** Ana pide un reporte", 1)]
+    public async Task A_hand_written_journey_is_checked_like_any_identifier(string journey, int warnings)
+    {
+        var prd = await Draft(Request(ArtifactType.Prd, InitiativeDepth.Standard));
+
+        var edited = prd.Replace("### 2.3 Recorridos clave\n\n", "### 2.3 Recorridos clave\n\n" + journey + "\n", StringComparison.Ordinal);
+
+        Assert.NotEqual(prd, edited);
+        Assert.Equal(warnings, ArtifactFormatChecker.Check(ArtifactType.Prd, edited).Count);
+        Assert.Single(ArtifactFormatChecker.Check(ArtifactType.Prd, edited.Replace("### 2.3 Recorridos clave\n", string.Empty, StringComparison.Ordinal)), w => w.Message.Contains("Recorridos clave", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(ArtifactType.Brief, InitiativeDepth.Standard)]
+    [InlineData(ArtifactType.Prd, InitiativeDepth.Standard)]
+    [InlineData(ArtifactType.Prd, InitiativeDepth.Large)]
+    [InlineData(ArtifactType.Spec, InitiativeDepth.Small)]
+    public async Task Only_hyphenated_identifiers_are_generated(ArtifactType type, InitiativeDepth depth)
+    {
+        var document = await Draft(Request(type, depth, Answers(depth, unknown: [AssistantScript.Keys.Success])));
+
+        Assert.DoesNotMatch(@"\b(?:FR|NFR|UJ|SM)\d", document);
     }
 
     [Fact]
@@ -495,6 +543,7 @@ public sealed partial class FakeArtifactDrafterTests
                 var artifact = Artifact.Create(Guid.NewGuid(), "user-a", type, document, DateTimeOffset.UnixEpoch);
                 Assert.Equal(document, artifact.Content);
                 Assert.Empty(ArtifactFormatChecker.Check(type, document));
+                Assert.Equal(Definitions(document, "Q").Select(q => q[4..q.IndexOf("**:", StringComparison.Ordinal)]), OpenQuestions.Unassigned(document));
             }
         }
     }

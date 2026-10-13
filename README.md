@@ -2,7 +2,7 @@
 
 Plataforma interna para que personas de producto lleven una iniciativa desde la idea hasta artefactos listos para desarrollo, con un asistente que aplica el método BMAD. El alcance y las reglas están en `AGENTS.md`, `REQUISITOS.md` y `PROPUESTA-MVP.md`.
 
-Estado actual: **paso 3 (Asistente guiado con IA falsa)** de `PROPUESTA-MVP.md` §7. Incluye la solución por capas, MySQL, Serilog, el inicio de sesión, el estilo visual base, las iniciativas y la conversación guiada con un asistente de demostración.
+Estado actual: **paso 4 (Artefactos con generador falso)** de `PROPUESTA-MVP.md` §7. Incluye la solución por capas, MySQL, Serilog, el inicio de sesión, el estilo visual base, las iniciativas, la conversación guiada con un asistente de demostración y la generación, edición y aprobación del Brief, el PRD y la especificación. Siguen pendientes Gemini real (paso 5), Arquitectura y Épicas (paso 6), contexto adjunto (paso 7) y exportación (paso 8).
 
 ## Advertencia sobre Gemini (capa gratuita)
 
@@ -26,6 +26,12 @@ Desde el detalle de la iniciativa, la tarjeta **Artefactos** lista los documento
 - **Editar** abre el Markdown en un editor (máximo 20.000 caracteres). Cada cambio guardado sube la versión y devuelve el documento a Borrador; si la iniciativa estaba Lista para construir, vuelve a Planificando. Guardar el mismo texto no cambia nada.
 - **Regenerar** reemplaza todo el contenido, incluidos los cambios manuales, y pide confirmación antes de hacerlo.
 - Si el Markdown pierde una sección o un identificador (`FR-1`, `NFR-1`, `A-1`…), la página muestra avisos de formato. Los avisos nunca impiden guardar ni aprobar.
+- **Preguntas pendientes.** Cada "No sé" de la conversación queda como una línea `- **Q-n**: texto (Responsable: …; Revisar: …)`. Las que genera la plataforma terminan en `(Responsable: por asignar; Revisar: por definir)`. El sufijo se lee solo al final de la línea; el texto de la pregunta puede llevar paréntesis.
+- **No se puede aprobar un borrador con preguntas sin asignar** (falta responsable o condición de revisión). La página lo explica con un aviso ámbar y la lista de las preguntas. Los documentos ya aprobados antes de este cambio no se vuelven a revisar, pero si se editan vuelven a Borrador y la regla se aplica de nuevo.
+- El panel **Preguntas pendientes** (encima del documento, solo si hay preguntas) permite escribir responsable (con sugerencias: Legal, TI, Finanzas, Quien propone la iniciativa) y condición de revisión de todas las filas y guardar una sola vez. Guardar cuenta como una edición: versión nueva, Borrador y, si la iniciativa estaba Lista para construir, Planificando. Se puede guardar a medias; el editor de texto sigue disponible.
+- **Regenerar** devuelve todas las preguntas a «por asignar»: los responsables asignados se pierden junto con los cambios manuales.
+- En el PRD, la sección 2.3 "Recorridos clave" ya no inventa recorridos: lleva una sola suposición `[ASSUMPTION: A-n]` hasta que se escriba un caso real. Los identificadores generados llevan guion (`FR-1`, `NFR-1`, `UJ-1`, `A-1`, `Q-1`); la decisión y sus excepciones están en `docs/bmad-referencia.md` §4.
+- Conformidad con BMAD: ver «Cierre de conformidad» en `docs/bmad-referencia.md`; lo que va más allá de BMAD está en `docs/mejoras-posteriores.md`.
 - La iniciativa pasa a **Lista para construir** cuando todos los documentos de su nivel están aprobados. **Una iniciativa Grande todavía no puede terminar**: faltan Arquitectura y Épicas e historias, que llegan en un paso posterior.
 - Por ahora solo hay Markdown en pantalla: **no hay exportación** (PDF, copia o descarga) todavía.
 - El texto lo redacta un **generador falso y determinista** (`FakeArtifactDrafter`): produce siempre el mismo borrador con las mismas respuestas y no envía nada a Gemini. Gemini llegará en el paso 5.

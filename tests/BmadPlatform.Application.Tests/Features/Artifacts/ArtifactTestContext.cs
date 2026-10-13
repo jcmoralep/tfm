@@ -1,8 +1,10 @@
 using BmadPlatform.Application.Features.Artifacts;
 using BmadPlatform.Application.Features.Artifacts.ApproveArtifact;
+using BmadPlatform.Application.Features.Artifacts.AssignQuestionOwners;
 using BmadPlatform.Application.Features.Artifacts.GenerateArtifact;
 using BmadPlatform.Application.Features.Artifacts.GetArtifact;
 using BmadPlatform.Application.Features.Artifacts.GetArtifactsOverview;
+using BmadPlatform.Application.Features.Artifacts.Markdown;
 using BmadPlatform.Application.Features.Artifacts.RegenerateArtifact;
 using BmadPlatform.Application.Features.Artifacts.SaveArtifactContent;
 using BmadPlatform.Application.Features.Initiatives;
@@ -55,6 +57,10 @@ public sealed class ArtifactTestContext
     public Task<ArtifactView> Approve(Guid id, ArtifactType type, int expectedVersion) =>
         new ApproveArtifactCommandHandler(Sender, Artifacts, User, Clock)
             .Handle(new ApproveArtifactCommand(id, type, expectedVersion), default);
+
+    public Task<ArtifactView> Assign(Guid id, ArtifactType type, int expectedVersion, params QuestionAssignment[] assignments) =>
+        new AssignQuestionOwnersCommandHandler(Sender, Artifacts, User, Clock)
+            .Handle(new AssignQuestionOwnersCommand(id, type, expectedVersion, assignments), default);
 
     public Task<ArtifactView?> Get(Guid id, ArtifactType type) =>
         new GetArtifactQueryHandler(Sender, Artifacts, User).Handle(new GetArtifactQuery(id, type), default);

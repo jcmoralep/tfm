@@ -23,8 +23,8 @@ public static partial class ArtifactFormatChecker
 
     public static IReadOnlyList<FormatWarning> Check(ArtifactType type, string markdown)
     {
-        var lines = (markdown ?? string.Empty).Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n').Split('\n');
-        var headings = ReadHeadings(lines);
+        var lines = MarkdownLines.Split(markdown);
+        var headings = MarkdownLines.ReadHeadings(lines);
         var warnings = new List<FormatWarning>();
 
         foreach (var section in ArtifactOutline.Sections(type))
@@ -35,8 +35,8 @@ public static partial class ArtifactFormatChecker
             }
         }
 
-        var index = FindIndexRange(headings, lines.Length);
-        var fenced = FencedLines(lines);
+        var index = MarkdownLines.FindIndexRange(headings, lines.Length);
+        var fenced = MarkdownLines.FencedLines(lines);
         var definitions = new Dictionary<string, int>(StringComparer.Ordinal);
         var markers = new Dictionary<string, int>(StringComparer.Ordinal);
         var entries = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -45,7 +45,7 @@ public static partial class ArtifactFormatChecker
         {
             var number = i + 1;
 
-            if (fenced[i] || HeadingRegex().IsMatch(lines[i]))
+            if (fenced[i] || MarkdownLines.IsHeading(lines[i]))
             {
                 continue;
             }
@@ -200,67 +200,6 @@ public static partial class ArtifactFormatChecker
         }
     }
 
-    private static List<(int Line, int Level, string Title)> ReadHeadings(string[] lines)
-    {
-        var fenced = FencedLines(lines);
-        var headings = new List<(int, int, string)>();
-
-        for (var i = 0; i < lines.Length; i++)
-        {
-            var match = HeadingRegex().Match(lines[i]);
-
-            if (fenced[i] || !match.Success)
-            {
-                continue;
-            }
-
-            var title = NumberPrefixRegex().Replace(match.Groups["title"].Value.Trim().TrimEnd('#').Trim(), string.Empty);
-            headings.Add((i + 1, match.Groups["hashes"].Length, title));
-        }
-
-        return headings;
-    }
-
-    // The assumption index runs from its heading to the next heading of the same or a higher level.
-    private static (int First, int Last)? FindIndexRange(List<(int Line, int Level, string Title)> headings, int lineCount)
-    {
-        var position = headings.FindIndex(h => string.Equals(h.Title, ArtifactOutline.AssumptionIndexTitle, StringComparison.OrdinalIgnoreCase));
-
-        if (position < 0)
-        {
-            return null;
-        }
-
-        var start = headings[position];
-        var next = headings.Skip(position + 1).FirstOrDefault(h => h.Level <= start.Level);
-
-        return (start.Line, next == default ? lineCount : next.Line - 1);
-    }
-
-    private static bool[] FencedLines(string[] lines)
-    {
-        var fenced = new bool[lines.Length];
-        var open = false;
-
-        for (var i = 0; i < lines.Length; i++)
-        {
-            if (lines[i].TrimStart().StartsWith("```", StringComparison.Ordinal))
-            {
-                fenced[i] = true;
-                open = !open;
-            }
-            else
-            {
-                fenced[i] = open;
-            }
-        }
-
-        return fenced;
-    }
-
-    [GeneratedRegex(@"^\s{0,3}(?<hashes>#{1,6})\s+(?<title>.*)$")]
-    private static partial Regex HeadingRegex();
-
     [GeneratedRegex(@"^\s*[-+*]\s+")]
     private static partial Regex ListMarkerRegex();
 
@@ -269,9 +208,6 @@ public static partial class ArtifactFormatChecker
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex WhitespaceRegex();
-
-    [GeneratedRegex(@"^\d+(\.\d+)*\.?\s+")]
-    private static partial Regex NumberPrefixRegex();
 
     [GeneratedRegex(@"^\s*(?:[-*+]\s+)?(?:\*\*)?(?<tok>(?<p>[A-Za-z]{1,3})(?<rest>\s?-\s?[A-Za-z0-9]*|[0-9]+))(?=\*\*|\s|:|\.|\)|$)")]
     private static partial Regex DefinitionRegex();

@@ -3,6 +3,7 @@ using BmadPlatform.Application.Features.Assistant;
 using BmadPlatform.Application.Features.Assistant.GetConversationAnswers;
 using BmadPlatform.Application.Features.Initiatives;
 using BmadPlatform.Application.Features.Initiatives.GetInitiative;
+using BmadPlatform.Application.Features.Initiatives.ReopenPlanning;
 using BmadPlatform.Domain.Artifacts;
 using BmadPlatform.Domain.Common;
 using BmadPlatform.Domain.Initiatives;
@@ -53,6 +54,35 @@ internal static class ArtifactGuards
         {
             throw new ConflictException(ArtifactTexts.Conflict);
         }
+    }
+
+    /// <summary>
+    /// The shared edit path; <paramref name="content"/> is already normalized and validated. The same text touches
+    /// nothing. Otherwise Planning is reopened first (a failed save then leaves Planning with approved documents, which
+    /// the next approval completes, never Ready to build with a Draft), then the document is edited and saved.
+    /// </summary>
+    public static async Task SaveEditAsync(
+        ISender sender,
+        IArtifactRepository repository,
+        TimeProvider timeProvider,
+        InitiativeDetails initiative,
+        Artifact artifact,
+        string content,
+        int expectedVersion,
+        CancellationToken cancellationToken)
+    {
+        if (string.Equals(content, artifact.Content, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        if (initiative.Status == InitiativeStatus.ReadyToBuild)
+        {
+            await sender.Send(new ReopenPlanningCommand(initiative.Id), cancellationToken);
+        }
+
+        artifact.Edit(content, timeProvider.GetUtcNow());
+        await repository.SaveAsync(artifact, expectedVersion, cancellationToken);
     }
 
     /// <summary>Reads everything the view needs, fresh. Null when the initiative does not exist for the caller.</summary>
