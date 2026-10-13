@@ -136,11 +136,11 @@ public sealed class AssistantLabelsTests
     [Theory]
     [InlineData(InitiativeStatus.Clarifying)]
     [InlineData(InitiativeStatus.Planning)]
-    public void Open_status_without_a_conversation_offers_to_open_the_assistant(InitiativeStatus status)
+    public void Open_status_without_a_conversation_offers_to_start_it(InitiativeStatus status)
     {
         var card = AssistantLabels.Card(View(status, started: false));
 
-        Assert.Equal("Abrir asistente", card.ActionLabel);
+        Assert.Equal("Empezar conversación", card.ActionLabel);
         Assert.False(string.IsNullOrWhiteSpace(card.Text));
     }
 
@@ -153,6 +153,17 @@ public sealed class AssistantLabelsTests
 
         Assert.Equal("2 de 8 preguntas respondidas", card.Text);
         Assert.Equal("Continuar conversación", card.ActionLabel);
+    }
+
+    [Fact]
+    public void A_started_conversation_without_answers_still_offers_to_start_it()
+    {
+        var journey = Journey(JourneyStep.Clarify, new PhaseProgress(0, 5), new PhaseProgress(0, 3), overall: new PhaseProgress(0, 8));
+
+        var card = AssistantLabels.Card(View(InitiativeStatus.Clarifying, started: true, journey));
+
+        Assert.Equal("0 de 8 preguntas respondidas", card.Text);
+        Assert.Equal("Empezar conversación", card.ActionLabel);
     }
 
     [Fact]
