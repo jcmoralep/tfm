@@ -10,10 +10,10 @@ El asistente usará la **capa gratuita de Gemini**. En esa capa, Google puede us
 
 ## Asistente y datos de demostración
 
-La conversación con el asistente (`/iniciativas/{id}/asistente`) funciona hoy con una **implementación falsa** (`FakeAssistantService`): sigue un guion fijo de preguntas y no envía nada a Gemini ni a ningún servicio externo. Aun así, la pantalla muestra siempre un aviso de modo de demostración, porque cuando se conecte Gemini (capa gratuita) Google podrá usar lo que se escriba para mejorar sus productos.
+La conversación con el asistente (`/iniciativas/{id}/asistente`) funciona hoy con una **implementación falsa** (`FakeAssistantService`): sigue un guion fijo de preguntas y no envía nada a Gemini ni a ningún servicio externo. La pantalla **no muestra** un aviso de modo de demostración (decisión del usuario, 2026-10-12, RN-05): se asume el riesgo de la capa gratuita descrito arriba, y cuando el proyecto sea avalado se conectará a un modelo de la compañía.
 
-- Escriba **solo datos de ejemplo**: nada de información real de la empresa ni datos personales.
-- No use iniciativas reales hasta migrar a un plan de pago de Gemini.
+- Por ahora se prueba **solo con información muy básica**, nada importante de la organización ni datos personales.
+- No use iniciativas reales hasta conectar un modelo de la compañía o migrar a un plan de pago de Gemini.
 - La clave de API de Gemini irá en una variable de entorno o en user-secrets, nunca en el repositorio.
 - Los registros (`Logs/`) no guardan el texto de los mensajes de la conversación.
 
@@ -33,9 +33,8 @@ Desde el detalle de la iniciativa, la tarjeta **Artefactos** lista los documento
 - En el PRD, la sección 2.3 "Recorridos clave" ya no inventa recorridos: lleva una sola suposición `[ASSUMPTION: A-n]` hasta que se escriba un caso real. Los identificadores generados llevan guion (`FR-1`, `NFR-1`, `UJ-1`, `A-1`, `Q-1`); la decisión y sus excepciones están en `docs/bmad-referencia.md` §4.
 - Conformidad con BMAD: ver «Cierre de conformidad» en `docs/bmad-referencia.md`; lo que va más allá de BMAD está en `docs/mejoras-posteriores.md`.
 - La iniciativa pasa a **Lista para construir** cuando todos los documentos de su nivel están aprobados. **Una iniciativa Grande todavía no puede terminar**: faltan Arquitectura y Épicas e historias, que llegan en un paso posterior.
-- Por ahora solo hay Markdown en pantalla: **no hay exportación** (PDF, copia o descarga) todavía.
+- Cada documento se puede **descargar en `.md`** y guardar como **PDF** desde la ventana de impresión del navegador (RF-21).
 - El texto lo redacta un **generador falso y determinista** (`FakeArtifactDrafter`): produce siempre el mismo borrador con las mismas respuestas y no envía nada a Gemini. Gemini llegará en el paso 5.
-- Igual que en el asistente, la página muestra el aviso de modo de demostración: escriba **solo datos de ejemplo**, nunca información real de la empresa ni datos personales, y no use iniciativas reales hasta migrar a un plan de pago de Gemini.
 - Los registros no guardan el contenido de los documentos.
 
 ## Requisitos previos

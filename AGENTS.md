@@ -118,7 +118,7 @@ Reglas de dependencia: Web → Application → Domain; Infrastructure → Applic
 
 ### 4.8 Asistente (`IAssistantService`)
 - Interfaz en Application; implementación Gemini en Infrastructure. Primero una **implementación falsa** para desarrollar el flujo y la persistencia.
-- **Advertencia:** en la capa gratuita de Gemini, Google puede usar los datos para mejorar sus productos. Usar **solo datos de ejemplo** hasta migrar a un plan de pago antes de manejar iniciativas reales de la empresa. Dejarlo escrito en el README y en la configuración.
+- **Advertencia:** en la capa gratuita de Gemini, Google puede usar los datos para mejorar sus productos. Usar **solo datos de ejemplo** hasta migrar a un plan de pago antes de manejar iniciativas reales de la empresa. Dejarlo escrito en el README y en la configuración. **Decisión del usuario (2026-10-12):** sin aviso en la interfaz; solo información muy básica hasta conectar un modelo de la compañía (RN-05).
 - Solo se envían al modelo los tipos de contenido que este sepa interpretar; el resto se guarda como referencia.
 - La clave de API va en variable de entorno / user-secrets, nunca en el repositorio.
 
