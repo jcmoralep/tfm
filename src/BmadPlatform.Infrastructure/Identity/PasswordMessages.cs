@@ -1,3 +1,4 @@
+using BmadPlatform.Application.Abstractions.Authentication;
 using Microsoft.AspNetCore.Identity;
 
 namespace BmadPlatform.Infrastructure.Identity;
@@ -8,7 +9,7 @@ internal static class PasswordMessages
     public static IReadOnlyList<string> From(IEnumerable<IdentityError> errors) =>
         errors.Select(error => error.Code switch
         {
-            nameof(IdentityErrorDescriber.PasswordTooShort) => "La contraseña debe tener al menos 6 caracteres.",
+            nameof(IdentityErrorDescriber.PasswordTooShort) => $"La contraseña debe tener al menos {PasswordPolicy.MinLength} caracteres.",
             nameof(IdentityErrorDescriber.PasswordRequiresUpper) => "La contraseña debe incluir una letra mayúscula.",
             nameof(IdentityErrorDescriber.PasswordRequiresLower) => "La contraseña debe incluir una letra minúscula.",
             nameof(IdentityErrorDescriber.PasswordRequiresDigit) => "La contraseña debe incluir un número.",
