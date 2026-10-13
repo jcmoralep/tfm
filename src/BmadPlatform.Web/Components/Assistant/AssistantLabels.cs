@@ -55,7 +55,7 @@ public static class AssistantLabels
 
     public const string NoConversationCardText = "No hay una conversación con el asistente para esta iniciativa.";
 
-    public const string OpenAction = "Abrir asistente";
+    public const string OpenAction = "Empezar conversación";
 
     public const string ContinueAction = "Continuar conversación";
 
@@ -210,7 +210,11 @@ public static class AssistantLabels
             ? new(AssistantTexts.ReadyToBuildReadOnly, ViewAction)
             : new(NoConversationCardText, null),
         _ => view.Started
-            ? new(OverallProgress(view.Journey), ContinueAction)
+            ? new(OverallProgress(view.Journey), AnsweredAnything(view.Journey) ? ContinueAction : OpenAction)
             : new(NotStartedCardText, OpenAction),
     };
+
+    // The first question is posted as soon as the page opens, so a started conversation can still have no answers:
+    // "Continuar" only makes sense once the person has answered something.
+    private static bool AnsweredAnything(JourneySnapshot journey) => (journey.Overall ?? journey.Clarify).Covered > 0;
 }

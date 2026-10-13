@@ -41,12 +41,13 @@ else
                         Continuar
                     </a>
                 }
-                else
+                else if (conversation is not null && AssistantLabels.Card(conversation).ActionLabel is { } conversationAction)
                 {
-                    @* The next step is the conversation, so it is offered first instead of waiting below the details. *@
+                    @* The next step is the conversation, so it is offered first instead of waiting below the details.
+                       It uses the same label as the Conversación card below: both go to the same page. *@
                     <a href="/iniciativas/@details.Id/asistente"
                        class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover">
-                        @(details.Status == InitiativeStatus.ReadyToBuild ? "Ver conversación" : "Abrir asistente")
+                        @conversationAction
                     </a>
                 }
                 <a href="/iniciativas/@details.Id/editar"
