@@ -45,8 +45,13 @@
                                @bind-Value="Input.Password" />
 
                 <PasswordField Id="confirm-password" Label="Repite la contraseña" Autocomplete="new-password"
-                               DescribedBy="@(errors.Count > 0 ? "register-errors" : null)"
-                               @bind-Value="Input.ConfirmPassword" />
+                               DescribedBy="@("password-match" + (errors.Count > 0 ? " register-errors" : null))"
+                               @bind-Value="Input.ConfirmPassword">
+                    @* Filled in by wwwroot/js/password-match.js while the person types; empty (and hidden) without it. *@
+                    <p id="password-match" role="status" data-password-match data-source="password" data-target="confirm-password"
+                       data-ok-text="✓ Las contraseñas coinciden." data-bad-text="✕ Las contraseñas no coinciden." data-state="empty"
+                       class="mt-2 text-sm font-medium data-[state=empty]:hidden data-[state=ok]:text-success-ink data-[state=bad]:text-danger"></p>
+                </PasswordField>
 
                 <button type="submit"
                         class="w-full rounded-control bg-primary px-4 py-3 text-sm font-semibold text-on-primary hover:bg-primary-hover">
@@ -63,6 +68,7 @@
 </div>
 
 <script type="module" src="@Assets["js/password-toggle.js"]"></script>
+<script type="module" src="@Assets["js/password-match.js"]"></script>
 
 @code {
     private IReadOnlyList<string> errors = [];
