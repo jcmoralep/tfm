@@ -1,4 +1,4 @@
-# AGENTS.md — Plataforma BMAD para producto
+# AGENTS.md — Ruta de Producto
 
 Guía para el agente de código (Claude Code / Gentle AI). Léela completa antes de escribir código.
 Documentos hermanos en la raíz: `REQUISITOS.md` (qué debe hacer), `PROPUESTA-MVP.md` (alcance, flujo, modelo de datos, orden de construcción) y `DESIGN.md` (guía visual).
@@ -133,6 +133,11 @@ Reglas de dependencia: Web → Application → Domain; Infrastructure → Applic
 
 ### 4.10 Idioma
 - Interfaz, mensajes del asistente y documentos generados en **español**. Código (nombres de tipos, métodos) en inglés o español de forma consistente; preferir inglés para identificadores técnicos.
+
+### 4.11 Nombre del producto y marcas
+- El producto se llama **Ruta de Producto** (decisión del usuario, 2026-10-12). **Ningún nombre propio lleva «BMAD»** (producto, empresa, dominio, cuentas, carpetas o paquetes): BMad y BMAD-METHOD son marcas de BMad Code, LLC, y su política (`TRADEMARK.md`) permite describir compatibilidad ("compatible con BMad Method v6", "usa BMad") pero no usar la marca como nombre propio ni insinuar aval.
+- Se puede mencionar el método para describirlo (documentos de conformidad, nombres de sus skills como `bmad-prd` o `bmad-build` en la nota de uso del `.md`), sin logos ni insinuar que BMAD avala el producto.
+- Pendiente (cambio aparte): los nombres internos `BmadPlatform.*` (espacios de nombres, proyectos, base de datos `bmadplatform`, servicio de Docker, cookie) todavía llevan el nombre anterior.
 
 ## 5. Cómo trabajar
 

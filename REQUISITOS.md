@@ -1,4 +1,4 @@
-# REQUISITOS — Plataforma BMAD para producto
+# REQUISITOS — Ruta de Producto
 
 Cada requisito es verificable. Etiquetas: **[CONFIRMADO]** decidido por el equipo; **[SUPUESTO]** propuesto, pendiente de validar; **[VALIDADO EN BMAD 6.12.1]** contrastado con una instalación real de BMAD (ver `docs/bmad-referencia.md`).
 

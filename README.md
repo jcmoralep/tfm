@@ -1,6 +1,8 @@
-# Plataforma BMAD para producto
+# Ruta de Producto
 
 Plataforma interna para que personas de producto lleven una iniciativa desde la idea hasta artefactos listos para desarrollo, con un asistente que aplica el método BMAD. El alcance y las reglas están en `AGENTS.md`, `REQUISITOS.md` y `PROPUESTA-MVP.md`.
+
+> **Nota de marcas.** BMad y BMAD-METHOD son marcas de BMad Code, LLC. Este proyecto no está afiliado ni avalado por ellos: usa el método BMAD (licencia MIT del código) y solo lo menciona para describir con qué es compatible. Por eso el producto no lleva «BMAD» en su nombre.
 
 Estado actual: **paso 4 (Artefactos con generador falso)** de `PROPUESTA-MVP.md` §7. Incluye la solución por capas, MySQL, Serilog, el inicio de sesión, el estilo visual base, las iniciativas, la conversación guiada con un asistente de demostración y la generación, edición y aprobación del Brief, el PRD y la especificación. Siguen pendientes Gemini real (paso 5), Arquitectura y Épicas (paso 6), contexto adjunto (paso 7) y exportación (paso 8).
 
