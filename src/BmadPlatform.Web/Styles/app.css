@@ -13,6 +13,16 @@
     @apply outline-2 outline-offset-2 outline-focus;
   }
 
+  /* Tailwind's reset leaves buttons with the default arrow; show the hand on every enabled control that acts on click. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  select:not(:disabled),
+  input:is([type="checkbox"], [type="radio"], [type="submit"], [type="button"]):not(:disabled),
+  label:has(input:is([type="checkbox"], [type="radio"]):not(:disabled)) {
+    cursor: pointer;
+  }
+
   /* Blazor's FocusOnNavigate focuses the page heading (tabindex="-1") so screen readers announce
      the new page; that heading is not interactive, so it should not draw a focus ring. */
   [tabindex="-1"]:focus-visible {
