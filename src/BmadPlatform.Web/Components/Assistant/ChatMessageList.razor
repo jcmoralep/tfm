@@ -5,7 +5,7 @@
 
 @* role="log" is a polite live region, so new messages are announced. It is focusable so the keyboard can scroll it. *@
 <div @ref="log" role="log" aria-label="@AssistantLabels.LogLabel" tabindex="0"
-     class="h-[50vh] min-h-64 overflow-y-auto rounded-control bg-surface p-3 sm:p-4">
+     class="max-h-[50vh] min-h-32 overflow-y-auto rounded-control bg-surface p-3 sm:p-4">
     <ol class="space-y-3">
         @foreach (var message in Messages)
         {

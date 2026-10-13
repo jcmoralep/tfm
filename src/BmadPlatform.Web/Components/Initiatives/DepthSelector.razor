@@ -3,7 +3,7 @@
 
 <div class="space-y-6">
     <fieldset>
-        <legend class="text-sm font-medium text-ink">¿Cómo se define la profundidad?</legend>
+        <legend class="text-sm font-medium text-ink">¿Quién decide qué tan completo será el plan?</legend>
         <div class="mt-2 grid gap-3 sm:grid-cols-2">
             @foreach (var option in Modes)
             {
@@ -24,7 +24,7 @@
     @if (Mode == DepthMode.Manual)
     {
         <fieldset>
-            <legend class="text-sm font-medium text-ink">Nivel de profundidad</legend>
+            <legend class="text-sm font-medium text-ink">Nivel de profundidad: cuántos documentos se entregan</legend>
             <div class="mt-2 grid gap-3 sm:grid-cols-3">
                 @foreach (var option in Levels)
                 {

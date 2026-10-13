@@ -152,7 +152,7 @@ public static class AssistantLabels
     public static string PhaseSummary(PhaseProgress progress) => $"{QuestionProgress(progress)} · {Remaining(progress)}";
 
     /// <summary>
-    /// The overall "2 de 8 temas cubiertos" once the level is known; before that only the Aclarar questions
+    /// The overall "2 de 8 preguntas respondidas" once the level is known; before that only the Aclarar questions
     /// are counted, because the total is not known yet.
     /// </summary>
     public static string OverallProgress(JourneySnapshot journey) =>

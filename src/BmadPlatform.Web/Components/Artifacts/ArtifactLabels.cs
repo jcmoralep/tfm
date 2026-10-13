@@ -128,6 +128,15 @@ public static class ArtifactLabels
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
     };
 
+    /// <summary>One plain-language line under the document name, for people who do not know the term.</summary>
+    public static string TypeHelp(ArtifactType type) => type switch
+    {
+        ArtifactType.Spec => "Descripción corta de lo que se va a construir.",
+        ArtifactType.Brief => "Resumen de la idea: el problema, para quién es y qué cambia.",
+        ArtifactType.Prd => "Qué debe hacer el producto y cómo se medirá el éxito.",
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
+    };
+
     public static string StatusName(ArtifactStatus status) => status switch
     {
         ArtifactStatus.Draft => "Borrador",

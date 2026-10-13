@@ -33,6 +33,6 @@ public sealed record JourneySnapshot(
     PhaseProgress? Overall,
     bool PendingTransition)
 {
-    /// <summary>For example "2 de 8 temas cubiertos"; null when the total is not shown.</summary>
-    public string? ProgressText => Overall is null ? null : $"{Overall.Covered} de {Overall.Total} temas cubiertos";
+    /// <summary>For example "2 de 8 preguntas respondidas"; null when the total is not shown.</summary>
+    public string? ProgressText => Overall is null ? null : $"{Overall.Covered} de {Overall.Total} preguntas respondidas";
 }

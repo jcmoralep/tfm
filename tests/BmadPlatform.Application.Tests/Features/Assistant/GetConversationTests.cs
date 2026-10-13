@@ -53,7 +53,7 @@ public sealed class GetConversationTests
         Assert.NotNull(view);
         Assert.Equal([MessageRole.Assistant, MessageRole.User, MessageRole.Assistant], view.Messages.Select(m => m.Role));
         Assert.Equal([1, 2, 3], view.Messages.Select(m => m.Sequence));
-        Assert.Equal("1 de 8 temas cubiertos", view.Journey.ProgressText);
+        Assert.Equal("1 de 8 preguntas respondidas", view.Journey.ProgressText);
     }
 
     [Fact]

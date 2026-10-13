@@ -30,6 +30,10 @@
                 <li class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3 py-2.5">
                     <div class="min-w-0">
                         <p class="text-sm font-medium text-ink">@row.Label</p>
+                        @if (row.Type is { } helpType)
+                        {
+                            <p class="mt-0.5 text-xs text-ink-muted">@ArtifactLabels.TypeHelp(helpType)</p>
+                        }
                         <p class="mt-1">
                             <span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold @ToneClass(row.Tone)">@row.State</span>
                         </p>
