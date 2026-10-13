@@ -10,6 +10,7 @@ Regla del proyecto (decisión del 2026-10-11): primero se sigue lo que BMAD ya h
 | Medida de densidad de preguntas abiertas frente a lo que está en juego como bloqueo | Lo hace la validación independiente (paso 5) | hallazgos BMAD |
 | Validación independiente antes de aprobar y revisión tipo "party mode" | Paso 5 en adelante | valoración BMAD |
 | Directorio de personas y roles | Fuera del MVP (RF-03) | `bmad-alignment` |
+| La IA propone un responsable y una condición de revisión para cada pregunta pendiente; la persona confirma antes de guardar | BMAD deja esas decisiones a la persona (triaje de `bmad-prd`: aplazar con responsable y condición de revisión). Con Gemini (paso 5) sería una sugerencia, nunca una asignación automática, como la regla RF-65 de sugerir una hipótesis | decisión del usuario, 2026-10-12 |
 | Regla de estructuras mixtas: cuándo una decisión de alto riesgo no puede quedar como pregunta pendiente | BMAD la deja al criterio de la persona y del revisor; automatizarla es un extra | `bmad-alignment` |
 | Preguntas de relleno que quedan en el guion fijo y preguntas nuevas del guion | Cambiar el guion del asistente es otro alcance; se revisa con el paso 5 (Gemini real) | `bmad-alignment` |
 | Acompañamiento (coaching) para quien no sabe responder | BMAD lo hace en la conversación; la plataforma solo guarda "No sé" como pregunta pendiente | `bmad-alignment` |
