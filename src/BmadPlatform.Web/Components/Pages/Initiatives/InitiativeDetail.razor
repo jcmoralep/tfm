@@ -69,21 +69,10 @@ else
 
         @if (confirmingDelete)
         {
-            <div id="delete-panel" role="group" aria-labelledby="delete-title" aria-describedby="delete-text"
-                 class="mt-4 rounded-control border border-danger-line bg-danger-surface p-4">
-                <h2 id="delete-title" tabindex="-1" @ref="deleteTitle" class="text-base font-semibold text-danger">¿Eliminar esta iniciativa?</h2>
-                <p id="delete-text" class="mt-1 text-sm text-ink">La iniciativa dejará de aparecer en su lista y no podrá recuperarla desde la plataforma.</p>
-                <div class="mt-4 flex flex-wrap gap-3">
-                    <button type="button" disabled="@busy" @onclick="DeleteAsync"
-                            class="rounded-full bg-danger px-5 py-2 text-sm font-semibold text-on-primary hover:opacity-90 disabled:opacity-60">
-                        Sí, eliminar
-                    </button>
-                    <button type="button" disabled="@busy" @onclick="CancelDelete"
-                            class="rounded-full border border-line bg-surface-raised px-5 py-2 text-sm font-medium text-ink hover:bg-surface disabled:opacity-60">
-                        Cancelar
-                    </button>
-                </div>
-            </div>
+            <ConfirmPanel Id="delete-panel" Title="¿Eliminar esta iniciativa?" ConfirmLabel="Sí, eliminar" Destructive="true"
+                          Busy="busy" OnConfirm="DeleteAsync" OnCancel="CancelDelete">
+                La iniciativa dejará de aparecer en su lista y no podrá recuperarla desde la plataforma.
+            </ConfirmPanel>
         }
 
         <dl class="mt-6 divide-y divide-line rounded-control border border-line text-sm">
@@ -138,8 +127,6 @@ else
         new("context", "Contexto", "Aquí podrá adjuntar videos, enlaces y notas."),
     ];
 
-    private ElementReference deleteTitle;
-    private bool focusDeleteTitle;
     private Guid? loadedId;
 
     private InitiativeDetails? details;
@@ -207,24 +194,17 @@ else
     // keeps offering an action that no longer applies.
     private async Task ReloadArtifactsAsync() => artifacts = await TryGetArtifactsAsync();
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (focusDeleteTitle)
-        {
-            focusDeleteTitle = false;
-            await deleteTitle.FocusAsync();
-        }
-    }
-
     private void AskDelete()
     {
         confirmingDelete = true;
-        focusDeleteTitle = true;
     }
 
     private void CancelDelete()
     {
-        confirmingDelete = false;
+        if (!busy)
+        {
+            confirmingDelete = false;
+        }
     }
 
     private async Task DeleteAsync()

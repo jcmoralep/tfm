@@ -92,16 +92,14 @@ else if (items.Count > 0)
 {
     <p class="mt-6 text-sm text-ink-muted" role="status">@(items.Count == 1 ? "1 iniciativa" : $"{items.Count} iniciativas")</p>
 
-    @* One confirmation for both layouts (the card list and the table never show at the same time). *@
+    @* One confirmation window for both layouts (the card list and the table never show at the same time). *@
     @if (pendingDelete is not null)
     {
-        <div class="mt-4">
-            <ConfirmPanel @key="pendingDelete.Id" Id="delete-panel" Destructive="true" Busy="deleting"
-                          Title="@($"¿Eliminar «{pendingDelete.Name}»?")" ConfirmLabel="Sí, eliminar"
-                          OnConfirm="DeleteAsync" OnCancel="CancelDelete">
-                La iniciativa dejará de aparecer en su lista y no podrá recuperarla desde la plataforma.
-            </ConfirmPanel>
-        </div>
+        <ConfirmPanel @key="pendingDelete.Id" Id="delete-panel" Destructive="true" Busy="deleting"
+                      Title="@($"¿Eliminar «{pendingDelete.Name}»?")" ConfirmLabel="Sí, eliminar"
+                      OnConfirm="DeleteAsync" OnCancel="CancelDelete">
+            La iniciativa dejará de aparecer en su lista y no podrá recuperarla desde la plataforma.
+        </ConfirmPanel>
     }
 
     @* Below md each initiative is a stacked card; the table takes over from md. "hidden" removes the inactive layout from the accessibility tree. *@
