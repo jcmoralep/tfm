@@ -89,7 +89,7 @@ Cada requisito es verificable. Etiquetas: **[CONFIRMADO]** decidido por el equip
 - **RN-02** Arquitectura y Épicas/historias son borradores sujetos a revisión del equipo de desarrollo.
 - **RN-03** El Markdown es la única fuente de verdad del texto; el índice estructurado se reconstruye a partir de él y el PDF se genera bajo demanda. Nunca se guarda una copia del texto en otro formato.
 - **RN-04** El adjunto de contexto nunca es obligatorio.
-- **RN-05** Mientras se use la capa gratuita de Gemini, solo se usan datos de ejemplo o no sensibles.
+- **RN-05** Mientras se use la capa gratuita de Gemini, solo se usan datos de ejemplo o no sensibles. **Decisión del usuario (2026-10-12):** asume el riesgo de la capa gratuita y la interfaz no muestra aviso de modo de demostración; por ahora solo se prueba con información muy básica, nada importante de la organización. Cuando el proyecto sea avalado se conectará a un modelo de la compañía detrás de `IAssistantService` (RF-15).
 - **RF-58** La especificación (*Pequeña*) y el PRD (*Estándar* y *Grande*) se pueden generar solo al cierre de la conversación, cuando están cubiertos todos los temas del nivel y el asistente la da por lista para redactar. [CONFIRMADO]
 - **RF-59** Un artefacto con avisos de formato (RF-56) se puede aprobar: los avisos se muestran en la confirmación de la aprobación y no bloquean. Precisión: los avisos de formato nunca bloquean; lo que sí impide aprobar es una pregunta pendiente sin responsable o sin condición de revisión (RF-62), que no es un aviso de formato. [CONFIRMADO]
 - **RF-60** Al regenerar (RF-57) los elementos se numeran de nuevo desde cero, porque el documento se reemplaza por completo; la regla de RF-44 de no reutilizar ni reordenar números rige para las ediciones, no para la regeneración. [CONFIRMADO]
@@ -103,7 +103,7 @@ Cada requisito es verificable. Etiquetas: **[CONFIRMADO]** decidido por el equip
 - **RNF-01 Mantenibilidad:** Clean Architecture, CQRS con MediatR, SOLID y DRY; módulos independientes. [CONFIRMADO]
 - **RNF-02 Observabilidad:** Serilog en archivos `.log`, rotación diaria, retención máxima de 7 días, sin contenido completo de comandos. [CONFIRMADO]
 - **RNF-03 Seguridad:** contraseñas gestionadas por Identity; secretos (clave de Gemini, cadena de conexión, usuarios semilla) fuera del repositorio. [CONFIRMADO]
-- **RNF-04 Privacidad:** advertencia visible de que la capa gratuita de Gemini puede usar los datos; migrar a plan de pago antes de usar iniciativas reales. [CONFIRMADO]
+- **RNF-04 Privacidad:** la capa gratuita de Gemini puede usar los datos; la advertencia queda en la documentación (README y `AGENTS.md` §4.8) y **no se muestra en la interfaz** por decisión del usuario (RN-05, 2026-10-12). Antes de usar iniciativas reales, conectar un modelo de la compañía o migrar a un plan de pago. [CONFIRMADO]
 - **RNF-05 Persistencia:** MySQL con EF Core (Pomelo) e `IDbContextFactory` en Blazor Server. [CONFIRMADO]
 - **RNF-06 Portabilidad:** almacenamiento intercambiable local/S3 sin cambiar código de negocio. [CONFIRMADO]
 - **RNF-07 Extensibilidad:** nuevos formatos de exportación como una clase nueva (`IArtifactExporter`). [CONFIRMADO]
