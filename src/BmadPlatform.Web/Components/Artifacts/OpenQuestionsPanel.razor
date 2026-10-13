@@ -56,14 +56,18 @@
         }
 
         <div class="flex flex-wrap gap-3">
-            <button type="submit" disabled="@(Busy || !CanAct)"
+            <button type="submit" disabled="@(Busy || !CanAct || !changed)" aria-describedby="@(changed ? null : "questions-save-hint")"
                     class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-60">
                 Guardar
             </button>
-            <button type="button" disabled="@(Busy || !CanAct)" @onclick="CancelAsync"
+            <button type="button" disabled="@(Busy || !CanAct || !changed)" @onclick="CancelAsync"
                     class="rounded-full border border-line bg-surface-raised px-5 py-2 text-sm font-medium text-ink hover:bg-surface disabled:opacity-60">
                 Cancelar
             </button>
+            @if (!changed && CanAct)
+            {
+                <p id="questions-save-hint" class="self-center text-sm text-ink-muted">Guardar se activa cuando cambia algún dato.</p>
+            }
         </div>
     </form>
 </section>
@@ -104,6 +108,9 @@
 
     // Buttons stay disabled until the circuit is interactive, so a click cannot be lost while prerendered.
     private bool CanAct => Enabled && interactive;
+
+    // Saving or cancelling only makes sense once a field differs from what was loaded.
+    private bool changed => QuestionRows.HasChanges(rows);
 
     private string DescribedBy => "questions-intro" + (Hint is not null ? " questions-hint" : null) + (HasErrors ? " doc-errors" : null);
 
