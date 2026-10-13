@@ -212,14 +212,6 @@ public sealed class AssistantLabelsTests
     }
 
     [Fact]
-    public void The_privacy_note_is_the_full_sentence_of_the_spec()
-    {
-        Assert.Equal(
-            "Modo de demostración: escriba solo datos de ejemplo, no información real de la empresa ni datos personales.",
-            AssistantLabels.DemoNotice);
-    }
-
-    [Fact]
     public void Restore_notes_name_the_choice_that_was_not_sent()
     {
         var notes = AssistantLabels.RestoreNotes(new DraftRestoration(["No sé"], false));

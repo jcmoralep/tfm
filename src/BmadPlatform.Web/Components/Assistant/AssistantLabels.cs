@@ -46,9 +46,6 @@ public static class AssistantLabels
 
     public const string SendingCaption = "Enviando…";
 
-    public const string DemoNotice =
-        "Modo de demostración: escriba solo datos de ejemplo, no información real de la empresa ni datos personales.";
-
     public const string DraftCardText = "Termine de crear la iniciativa para conversar con el asistente.";
 
     public const string NotStartedCardText = "Hable con el asistente para aclarar su iniciativa paso a paso.";

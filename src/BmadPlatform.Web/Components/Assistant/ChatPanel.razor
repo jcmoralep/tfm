@@ -44,10 +44,6 @@ else
             </div>
 
             <div class="mt-4">
-                <DemoDataNotice Id="demo-note" />
-            </div>
-
-            <div class="mt-4">
                 <ChatMessageList Messages="view.Messages" Outstanding="queue.Outstanding" />
             </div>
 
@@ -108,7 +104,7 @@ else
                 }
 
                 <div class="mt-4">
-                    <ChatComposer @ref="composer" Draft="draft" Disabled="!ComposerEnabled" DescribedBy="demo-note"
+                    <ChatComposer @ref="composer" Draft="draft" Disabled="!ComposerEnabled"
                                   OnSubmit="SubmitAsync" />
                 </div>
 
