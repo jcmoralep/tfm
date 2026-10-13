@@ -33,7 +33,7 @@ public sealed class SendMessageTests
         Assert.Equal(AssistantScript.Keys.Users, messages[2].TopicKey);
         Assert.Equal(context.StoredConversation(id).Version, view.Version);
         Assert.True(view.Version > opened.Version);
-        Assert.Equal("1 de 8 temas cubiertos", view.Journey.ProgressText);
+        Assert.Equal("1 de 8 preguntas respondidas", view.Journey.ProgressText);
         Assert.True(view.CanSend);
         Assert.True(view.CanUndo);
     }

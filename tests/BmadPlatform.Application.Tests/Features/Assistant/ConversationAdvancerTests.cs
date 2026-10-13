@@ -111,7 +111,7 @@ public sealed class ConversationAdvancerTests
         Assert.Equal(AssistantScript.Keys.Closing, context.StoredMessages(id)[^1].TopicKey);
         Assert.Equal(InitiativeStatus.Planning, view.Status);
         Assert.False(view.CanSend);
-        Assert.Equal("8 de 8 temas cubiertos", view.Journey.ProgressText);
+        Assert.Equal("8 de 8 preguntas respondidas", view.Journey.ProgressText);
     }
 
     [Fact]

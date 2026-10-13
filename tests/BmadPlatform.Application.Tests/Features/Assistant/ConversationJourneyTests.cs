@@ -281,7 +281,7 @@ public sealed class ConversationJourneyTests
     {
         var snapshot = Compute(Standard, Answered("idea", "users"));
 
-        Assert.Equal("2 de 8 temas cubiertos", snapshot.ProgressText);
+        Assert.Equal("2 de 8 preguntas respondidas", snapshot.ProgressText);
         Assert.Equal(new PhaseProgress(2, 5), snapshot.Clarify);
         Assert.Equal(new PhaseProgress(0, 3), snapshot.Plan);
         Assert.Equal(3, snapshot.Clarify.Remaining);
@@ -292,7 +292,7 @@ public sealed class ConversationJourneyTests
     {
         var snapshot = Compute(Small, Answered("idea", "users", "problem", "capabilities", "out-of-scope", "success"));
 
-        Assert.Equal("6 de 6 temas cubiertos", snapshot.ProgressText);
+        Assert.Equal("6 de 6 preguntas respondidas", snapshot.ProgressText);
         Assert.Equal("confirm-planning", snapshot.NextTopic!.Key);
     }
 

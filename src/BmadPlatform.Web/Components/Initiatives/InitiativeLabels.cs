@@ -25,8 +25,8 @@ public static class InitiativeLabels
 
     public static string ModeDescription(DepthMode mode) => mode switch
     {
-        DepthMode.Manual => "Usted elige el nivel de profundidad.",
-        DepthMode.Automatic => "El asistente sugerirá el nivel más adelante.",
+        DepthMode.Manual => "Usted elige entre tres niveles: Pequeña, Estándar o Grande.",
+        DepthMode.Automatic => "El asistente le propondrá uno de esos niveles según lo que usted cuente.",
         _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null),
     };
 

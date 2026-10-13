@@ -39,7 +39,8 @@ else
                     <h1 id="chat-title" class="break-words text-xl font-semibold text-ink">@view.InitiativeName</h1>
                     <p class="mt-1"><StatusBadge Status="view.Status" /></p>
                 </div>
-                <p class="text-sm text-ink-muted">@AssistantLabels.OverallProgress(view.Journey)</p>
+                @* The side panel already shows the progress; this copy is for narrow screens where that panel sits below the chat. *@
+                <p class="text-sm text-ink-muted lg:hidden">@AssistantLabels.OverallProgress(view.Journey)</p>
             </div>
 
             <div class="mt-4">
@@ -111,12 +112,16 @@ else
                                   OnSubmit="SubmitAsync" />
                 </div>
 
-                <div class="mt-3">
-                    <button type="button" disabled="@(!UndoEnabled)" @onclick="UndoAsync"
-                            class="rounded-full border border-line bg-surface-raised px-4 py-2 text-sm font-medium text-ink hover:bg-surface disabled:cursor-not-allowed disabled:opacity-60">
-                        @AssistantLabels.UndoButton
-                    </button>
-                </div>
+                @* Nothing to undo before the first answer, so the button is not offered yet. *@
+                @if (view.CanUndo)
+                {
+                    <div class="mt-3">
+                        <button type="button" disabled="@(!UndoEnabled)" @onclick="UndoAsync"
+                                class="rounded-full border border-line bg-surface-raised px-4 py-2 text-sm font-medium text-ink hover:bg-surface disabled:cursor-not-allowed disabled:opacity-60">
+                            @AssistantLabels.UndoButton
+                        </button>
+                    </div>
+                }
             }
         </section>
 

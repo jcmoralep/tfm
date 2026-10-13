@@ -65,7 +65,7 @@ public sealed class AssistantLabelsTests
     {
         var journey = Journey(JourneyStep.Clarify, new PhaseProgress(2, 5), new PhaseProgress(0, 3), overall: new PhaseProgress(2, 8));
 
-        Assert.Equal("2 de 8 temas cubiertos", AssistantLabels.OverallProgress(journey));
+        Assert.Equal("2 de 8 preguntas respondidas", AssistantLabels.OverallProgress(journey));
         Assert.Equal(25, AssistantLabels.OverallPercent(journey));
     }
 
@@ -151,7 +151,7 @@ public sealed class AssistantLabelsTests
     {
         var card = AssistantLabels.Card(View(status, started: true));
 
-        Assert.Equal("2 de 8 temas cubiertos", card.Text);
+        Assert.Equal("2 de 8 preguntas respondidas", card.Text);
         Assert.Equal("Continuar conversación", card.ActionLabel);
     }
 
