@@ -77,15 +77,19 @@ else
                     </div>
 
                     <div class="flex flex-wrap items-center justify-end gap-3 pt-2">
-                        <button type="button" disabled="@busy" @onclick="() => SaveDetailsAsync(advance: false)"
+                        <button type="button" disabled="@(busy || !DetailsValid)" @onclick="() => SaveDetailsAsync(advance: false)"
                                 class="rounded-full border border-line bg-surface-raised px-5 py-2 text-sm font-medium text-ink hover:bg-surface disabled:opacity-60">
                             Guardar borrador
                         </button>
-                        <button type="submit" disabled="@busy"
+                        <button type="submit" disabled="@(busy || !DetailsValid)" aria-describedby="@(DetailsValid ? null : "details-next-hint")"
                                 class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-60">
                             Siguiente
                         </button>
                     </div>
+                    @if (!DetailsValid)
+                    {
+                        <p id="details-next-hint" class="text-right text-sm text-ink-muted">Escriba el nombre de la iniciativa para continuar o guardar el borrador.</p>
+                    }
                 </form>
             }
             else if (step == CreationStep.Depth)
@@ -103,12 +107,16 @@ else
                                     class="rounded-full border border-line bg-surface-raised px-5 py-2 text-sm font-medium text-ink hover:bg-surface disabled:opacity-60">
                                 Guardar borrador
                             </button>
-                            <button type="submit" disabled="@busy"
+                            <button type="submit" disabled="@(busy || DepthHint is not null)" aria-describedby="@(DepthHint is null ? null : "depth-next-hint")"
                                     class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-60">
                                 Siguiente
                             </button>
                         </div>
                     </div>
+                    @if (DepthHint is { } depthHint)
+                    {
+                        <p id="depth-next-hint" class="text-right text-sm text-ink-muted">@depthHint</p>
+                    }
                 </form>
             }
             else
@@ -196,6 +204,17 @@ else
     public Guid? Id { get; set; }
 
     private string CurrentLabel => Steps.First(item => item.Step == step).Label;
+
+    // The next step is offered only when this one is complete; the server checks the same rules again on save.
+    private bool DetailsValid => name.Trim().Length is > 0 and <= Initiative.NameMaxLength;
+
+    // Null when the depth choice is complete: a mode, and a level too when the person picks it themselves.
+    private string? DepthHint => mode switch
+    {
+        null => "Elija quién decide qué tan completo será el plan para continuar.",
+        DepthMode.Manual when depth is null => "Elija un nivel para continuar.",
+        _ => null,
+    };
 
     // /iniciativas/nueva and /iniciativas/{id}/crear share this instance when the first save navigates
     // from one to the other, so the load runs on every change of Id and not only on initialization.
