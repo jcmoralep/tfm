@@ -1,5 +1,6 @@
 using BmadPlatform.Application.Features.Artifacts;
 using BmadPlatform.Application.Features.Initiatives.MarkReadyToBuild;
+using BmadPlatform.Application.Tests.Features.Assistant;
 using BmadPlatform.Domain.Artifacts;
 using BmadPlatform.Domain.Initiatives;
 
@@ -115,6 +116,38 @@ public sealed class ArtifactReadTests
         Assert.Equal(first!.Content, second!.Content);
         var after = context.StoredArtifact(id, ArtifactType.Spec);
         Assert.Equal((version, status, updatedAt, saves), (after.Version, after.Status, after.UpdatedAt, context.Artifacts.SaveCount));
+    }
+
+    [Fact]
+    public async Task Export_hands_the_stored_document_of_the_owner_to_the_exporter()
+    {
+        var id = await context.AtClosing(InitiativeDepth.Small, "Portal");
+        await context.Generate(id, ArtifactType.Spec);
+        var stored = context.StoredArtifact(id, ArtifactType.Spec);
+
+        var export = await context.Export(id, ArtifactType.Spec);
+
+        Assert.NotNull(export);
+        Assert.Equal("Spec-v1.md", export.FileName);
+        Assert.Equal($"Portal|Draft|{stored.Content}", export.Content);
+    }
+
+    [Fact]
+    public async Task Export_is_null_for_a_document_that_was_not_generated_and_for_foreign_or_deleted_initiatives()
+    {
+        var notGenerated = await context.AtClosing(InitiativeDepth.Small, "Sin documento");
+        var foreign = await context.AtClosing(InitiativeDepth.Small, "Ajena");
+        await context.Generate(foreign, ArtifactType.Spec);
+        var deleted = await context.AtClosing(InitiativeDepth.Small, "Borrada");
+        await context.Generate(deleted, ArtifactType.Spec);
+        await context.Initiatives.Delete(deleted);
+
+        Assert.Null(await context.Export(notGenerated, ArtifactType.Spec));
+        Assert.Null(await context.Export(deleted, ArtifactType.Spec));
+        Assert.Null(await context.Export(Guid.NewGuid(), ArtifactType.Spec));
+
+        context.User.UserId = AssistantTestContext.UserB;
+        Assert.Null(await context.Export(foreign, ArtifactType.Spec));
     }
 
     [Fact]
