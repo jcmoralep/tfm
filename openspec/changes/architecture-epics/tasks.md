@@ -65,13 +65,13 @@ Branch `feat/arch-epics-s1-upstream`. Three commits. The catalog keeps `new("Arq
 - [x] 1.7 Commit 2 gate, then commit: `feat(artifacts): derive the stale-upstream hint from document timestamps`.
 - [x] 1.8 `Web/.../ArtifactLabels.cs` (modify): slugs `arquitectura` and `epicas-e-historias`, names "Arquitectura" and "Épicas e historias", help texts (D17); `ApproveConfirmText(type)` keeps today's text for Spec, Brief and PRD and returns the development-review copy for the two new types (D16). Test: one Theory (Architecture and Epics mention development review, PRD and Brief do not). `ArtifactDocument.razor` (modify): amber note when `StaleUpstream` is not null, text "El PRD cambió después de generar este documento. Cuando esté aprobado, use Regenerar para actualizarlo." (type name varies), plus the review reminder near the document for the two new types; CSS classes only, no action offered. Covers SPEC-AR "Confirmation copy by type", "Hint in the page" (UI half) [UNIT, UI].
 - [x] 1.9 Commit 3 gate, then commit: `feat(web): add labels, approval copy and the stale-upstream note for Architecture and Epics`.
-- [ ] 1.10 **Chrome walkthrough S1** (regression only; no new type is generable yet):
+- [x] 1.10 **Chrome walkthrough S1** (regression only; no new type is generable yet):
   - [ ] Start MySQL with `docker compose` and temporary credentials, apply migrations, run the app with the seed user, `Assistant:Provider=Fake`.
   - [ ] A Small, a Standard and a Large initiative: Artefactos card, Generar/Regenerar/Aprobar of Spec, Brief and PRD behave as before.
   - [ ] Large card still shows Arquitectura and Épicas as "not yet supported" (switch-on arrives in S3 and S4).
   - [ ] `rg "style=|<script" src/BmadPlatform.Web` shows nothing new.
   - [ ] Review `Logs/` (no content), then tear down MySQL and the app.
-- [ ] 1.G **Slice gate S1**: restore + build (zero code warnings) + full tests; `ModuleBoundaryTests` pass; no new view logic outside the amber note. PR title `feat(artifacts): upstream-aware availability and the stale-upstream hint (S1)`. Merge to main before S2.
+- [x] 1.G **Slice gate S1**: restore + build (zero code warnings) + full tests; `ModuleBoundaryTests` pass; no new view logic outside the amber note. PR title `feat(artifacts): upstream-aware availability and the stale-upstream hint (S1)`. Merge to main before S2.
 
 ## Group S2: Outline, checker and question rules (~290)
 
