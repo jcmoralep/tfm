@@ -57,9 +57,22 @@ public sealed class ConversationAdvancer(
             }
 
             var offersLevels = OffersLevelChoice(conversation, next);
-            var reply = await ReplyAsync(BuildRequest(conversation, initiative, next, offersLevels), initiative.Id, cancellationToken);
+            var followUpFor = ConversationJourney.FollowUpCandidate(ConversationViewBuilder.JourneyOf(initiative), conversation.Messages);
+            var reply = await ReplyAsync(
+                BuildRequest(conversation, initiative, next, offersLevels, followUpFor),
+                initiative.Id,
+                cancellationToken);
 
-            conversation.AddAssistantMessage(next.Key, reply.Text, RepliesFor(next, reply, offersLevels), timeProvider.GetUtcNow());
+            // An eligible NeedsMore is a follow-up stored under the answered key (the topic becomes uncovered and stays
+            // next). An ineligible one is treated as Proceed: the reply is for the next topic, with no second call.
+            var isFollowUp = reply.Verdict == ReplyVerdict.NeedsMore && followUpFor is not null;
+            var asked = isFollowUp ? followUpFor! : next;
+
+            conversation.AddAssistantMessage(
+                asked.Key,
+                reply.Text,
+                isFollowUp ? asked.QuickReplies : RepliesFor(next, reply, offersLevels),
+                timeProvider.GetUtcNow());
 
             try
             {
@@ -100,12 +113,14 @@ public sealed class ConversationAdvancer(
         Conversation conversation,
         InitiativeDetails initiative,
         AssistantTopic next,
-        bool offersLevels) =>
+        bool offersLevels,
+        AssistantTopic? followUpFor) =>
         new(
             new InitiativeSnapshot(initiative.Name, initiative.Description, initiative.DepthMode, initiative.Depth),
             next,
             [.. conversation.VisibleMessages.Select(m => new ConversationTurn(m.Role, m.Content, m.TopicKey, m.QuickReplyKey, m.AnswerKind))],
-            offersLevels);
+            offersLevels,
+            followUpFor);
 
     // The proposal turns into the three levels after "Elegir otro nivel", and stays that way if the user types
     // instead of picking one.

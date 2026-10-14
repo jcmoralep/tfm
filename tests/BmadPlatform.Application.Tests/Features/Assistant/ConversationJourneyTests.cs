@@ -352,6 +352,109 @@ public sealed class ConversationJourneyTests
         Assert.Equal(JourneyStep.Plan, Compute(Standard with { Status = InitiativeStatus.Planning }, conversation).Step);
     }
 
+    private static Conversation WithFollowUp(string answered, params string[] before)
+    {
+        var conversation = Answered(before);
+        Answer(conversation, answered);
+        conversation.AddAssistantMessage(answered, "seguimiento", [], T0);
+
+        return conversation;
+    }
+
+    [Fact]
+    public void A_pending_follow_up_uncovers_the_topic_and_answering_it_covers_it_again()
+    {
+        var conversation = WithFollowUp("users", "idea");
+        var pending = Compute(Standard, conversation);
+
+        Assert.Equal("users", pending.NextTopic!.Key);
+        Assert.Equal("1 de 8 preguntas respondidas", pending.ProgressText);
+        Assert.Equal(new PhaseProgress(1, 5), pending.Clarify);
+
+        conversation.AddUserAnswer("users", "segunda respuesta", AnswerKind.FreeText, null, false, T0);
+        var answered = Compute(Standard, conversation);
+
+        Assert.Equal("problem", answered.NextTopic!.Key);
+        Assert.Equal("2 de 8 preguntas respondidas", answered.ProgressText);
+    }
+
+    [Fact]
+    public void Small_progress_stays_out_of_six_with_a_pending_follow_up()
+    {
+        var conversation = WithFollowUp("success", "idea", "users", "problem", "capabilities", "out-of-scope");
+
+        var snapshot = Compute(Small, conversation);
+
+        Assert.Equal("5 de 6 preguntas respondidas", snapshot.ProgressText);
+        Assert.Equal("success", snapshot.NextTopic!.Key);
+    }
+
+    [Fact]
+    public void The_last_message_with_the_key_decides_not_any_message()
+    {
+        var conversation = Answered("idea");
+        conversation.AddAssistantMessage("idea", "seguimiento", [], T0);
+        conversation.AddUserAnswer("idea", "otra", AnswerKind.FreeText, null, false, T0);
+        conversation.AddAssistantMessage("idea", "tercera", [], T0);
+
+        Assert.Equal("idea", Compute(Standard, conversation).NextTopic!.Key);
+    }
+
+    [Fact]
+    public void A_follow_up_on_a_choice_topic_does_not_change_its_rule()
+    {
+        var conversation = Answered("idea", "users", "problem", "success", "out-of-scope");
+        Answer(conversation, "size", AnswerKind.QuickReply, "feature");
+        conversation.AddAssistantMessage("size", "otra vez", [], T0);
+
+        Assert.Equal("depth-proposal", Compute(Automatic, conversation).NextTopic!.Key);
+    }
+
+    [Theory]
+    [InlineData(false, AnswerKind.FreeText, null, true)]
+    [InlineData(true, AnswerKind.FreeText, null, false)]
+    [InlineData(false, AnswerKind.Unknown, "unknown", false)]
+    [InlineData(false, AnswerKind.QuickReply, "none", false)]
+    public void Only_a_first_free_text_answer_is_eligible_for_a_follow_up(bool hasFollowUp, AnswerKind kind, string? replyKey, bool eligible)
+    {
+        var conversation = Answered("idea");
+        conversation.AddAssistantMessage("users", "pregunta", [], T0);
+
+        if (hasFollowUp)
+        {
+            conversation = WithFollowUp("users", "idea");
+        }
+
+        conversation.AddUserAnswer("users", "texto", kind, replyKey, false, T0);
+
+        Assert.Equal(eligible, ConversationJourney.FollowUpCandidate(Standard, conversation.Messages) is { Key: "users" });
+    }
+
+    [Theory]
+    [InlineData("No sé exactamente cómo medirlo, pero creo que sí", true)]
+    [InlineData("ni idea", false)]
+    public void A_typed_phrase_is_not_pushed_but_a_longer_text_containing_it_is_a_normal_answer(string text, bool eligible)
+    {
+        var conversation = Answered("idea");
+        conversation.AddAssistantMessage("users", "pregunta", [], T0);
+        var kind = AssistantScript.IsUnknownPhrase(text) ? AnswerKind.Unknown : AnswerKind.FreeText;
+        conversation.AddUserAnswer("users", text, kind, null, false, T0);
+
+        Assert.Equal(eligible, ConversationJourney.FollowUpCandidate(Standard, conversation.Messages) is not null);
+    }
+
+    [Fact]
+    public void The_follow_up_count_ignores_hidden_messages()
+    {
+        var conversation = WithFollowUp("users", "idea");
+        conversation.UndoLastAnswer(T0);
+
+        // The follow-up was hidden with its answer, so the next answer is eligible again.
+        conversation.AddUserAnswer("users", "nueva", AnswerKind.FreeText, null, false, T0);
+
+        Assert.NotNull(ConversationJourney.FollowUpCandidate(Standard, conversation.Messages));
+    }
+
     [Fact]
     public void The_opening_topic_of_an_empty_conversation_is_the_idea()
     {

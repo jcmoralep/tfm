@@ -8,12 +8,15 @@ namespace BmadPlatform.Application.Features.Assistant;
 /// What the service sees. It carries text and level data only: no ids, owner, e-mail or timestamps, and only the
 /// visible turns. <paramref name="OffersLevelChoice"/> is true when the next topic is the depth proposal and the
 /// user asked to pick another level, so the three levels are offered instead of a suggestion.
+/// <paramref name="FollowUpFor"/> is the topic of the last answer when code allows one follow-up on it (null when the
+/// answer is not eligible): only then may the service return <see cref="ReplyVerdict.NeedsMore"/>.
 /// </summary>
 public sealed record AssistantRequest(
     InitiativeSnapshot Initiative,
     AssistantTopic NextTopic,
     IReadOnlyList<ConversationTurn> History,
-    bool OffersLevelChoice = false);
+    bool OffersLevelChoice = false,
+    AssistantTopic? FollowUpFor = null);
 
 public sealed record InitiativeSnapshot(string Name, string? Description, DepthMode? Mode, InitiativeDepth? Depth);
 

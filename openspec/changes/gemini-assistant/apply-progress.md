@@ -74,3 +74,24 @@ Deviations from design.md / tasks.md:
   scripted double); script tests for hints and absent topics.
 
 Pending for 2.G: Chrome item C-1 (Fake regression), which needs MySQL via docker compose; not run by this executor.
+
+## S3: One pushback per topic (branch feat/gemini-s3-pushback)
+
+Tasks 3.1 to 3.G done. Tests: Application 709, Infrastructure 259, Web 196, Architecture 24 (all green, no key).
+
+- `ConversationJourney.Compute` passes all visible messages (ordered by `Sequence`) to coverage. Question topics are
+  covered iff the last visible message with their key is a user answer; Choice keeps "quick reply only"; the
+  other kinds keep "any visible user answer". `MaxFollowUpsPerTopic = 1` and `FollowUpCandidate` added (last
+  visible message is a FreeText answer on a Question of the current required list, visible assistant messages with
+  the key <= 1; "No sé", typed phrase and quick replies are `AnswerKind` Unknown/QuickReply, never eligible).
+- Progress dip documented in a comment where the count is computed; the text is unchanged.
+- `AssistantRequest.FollowUpFor`; the advancer stores an eligible `NeedsMore` under the answered key with that
+  topic's quick replies, anything else under `next.Key`; an ineligible `NeedsMore` is `Proceed` with no second call.
+- `GetConversationAnswersQueryHandler.AnswersOf` joins the visible FreeText answers of a topic with `\n`; the last
+  answer still decides `IsUnknown`, and a last "No sé" keeps its own text (existing behavior).
+- Gemini: `<answered_topic>` block (key, prompt, sufficiency, `follow_up_allowed`), VERDICT section in the system
+  prompt, service returns the guard's verdict, `ReplyGuard.Check` gets the real `followUpAllowed`.
+- Undo needed no change (it hides the answer and every later message). Existing tests needed no edits.
+- Tests: `PushbackTests` (pipeline with the scripted double and its new `Verdicts` queue), journey Theories,
+  joined-answers Theory, two Gemini service facts.
+- Pending: Chrome item C-6 (live) in the final walkthrough.

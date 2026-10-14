@@ -40,7 +40,7 @@ public sealed class GetConversationAnswersQueryHandler(
         return new ConversationAnswers(clarifyComplete, planComplete, AnswersOf(initiative, conversation));
     }
 
-    // Script order, one per content topic of the current required set, the newest visible answer winning.
+    // Script order, one per content topic of the current required set, the visible free-text answers of a topic joined in order.
     private static List<TopicAnswer> AnswersOf(InitiativeDetails initiative, Conversation conversation)
     {
         var keys = AssistantScript.ClarifyTopics(initiative.DepthMode, initiative.Depth)
@@ -56,15 +56,22 @@ public sealed class GetConversationAnswersQueryHandler(
                 continue;
             }
 
-            var latest = conversation.VisibleMessages
-                .LastOrDefault(m => m.Role == MessageRole.User && m.TopicKey == key);
+            var given = conversation.VisibleMessages
+                .Where(m => m.Role == MessageRole.User && m.TopicKey == key)
+                .ToList();
 
-            if (latest is not null)
+            if (given.LastOrDefault() is { } latest)
             {
                 var none = latest.AnswerKind == AnswerKind.QuickReply
                     && latest.QuickReplyKey is AssistantScript.ReplyKeys.None or AssistantScript.ReplyKeys.Nothing;
 
-                answers.Add(new TopicAnswer(key, topic.Prompt, latest.Content, latest.AnswerKind == AnswerKind.Unknown, none));
+                // A topic with a follow-up has two answers: the documents get both, so the first one is not lost.
+                // The last answer still decides the don't-know marker, and a "No sé" keeps its own text.
+                var text = latest.AnswerKind == AnswerKind.FreeText
+                    ? string.Join('\n', given.Where(m => m.AnswerKind == AnswerKind.FreeText).Select(m => m.Content))
+                    : latest.Content;
+
+                answers.Add(new TopicAnswer(key, topic.Prompt, text, latest.AnswerKind == AnswerKind.Unknown, none));
             }
         }
 
