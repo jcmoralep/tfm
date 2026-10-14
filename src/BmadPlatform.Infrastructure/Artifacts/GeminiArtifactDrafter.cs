@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace BmadPlatform.Infrastructure.Artifacts;
 
 /// <summary>
-/// Drafts a document with Gemini. The Architecture has its own prompt and reply shape (<see cref="ArchitecturePrompt"/>). Otherwise the model returns items per slot, each with a source (answer, assumption or
+/// Drafts a document with Gemini. The Architecture and the Epics have their own prompt and reply shape (<see cref="ArchitecturePrompt"/>, <see cref="EpicsPrompt"/>). Otherwise the model returns items per slot, each with a source (answer, assumption or
 /// unknown); the composer and the layouts write the Markdown, so the outline, numbering, markers and caps are the
 /// same as the fake's. Any failure is an <see cref="AssistantUnavailableException"/> with a document-specific message
 /// and nothing is stored; there is no fallback to the fake for a model-backed document. Only the document type and
@@ -18,14 +18,21 @@ public sealed class GeminiArtifactDrafter(GeminiClient client, ILogger<GeminiArt
 {
     public async Task<string> DraftAsync(DraftRequest request, CancellationToken cancellationToken)
     {
-        // Epics stay with the fake until the model-backed Epics drafter exists: the slots lookup refuses them before any request.
-        var architecture = request.Type == ArtifactType.Architecture;
-        IReadOnlyList<DraftSlot> slots = architecture ? [] : DraftSlots.For(request.Type, request.Depth);
+        // The Architecture and the Epics have their own prompt and reply shape; the other types are flat slots.
+        var type = request.Type;
+        IReadOnlyList<DraftSlot> slots = type is ArtifactType.Architecture or ArtifactType.EpicsAndStories ? [] : DraftSlots.For(type, request.Depth);
         GeminiResponse response;
 
         try
         {
-            response = await client.GenerateAsync(architecture ? ArchitecturePrompt.Build(request) : DraftPrompt.Build(request, slots), cancellationToken);
+            var call = type switch
+            {
+                ArtifactType.Architecture => ArchitecturePrompt.Build(request),
+                ArtifactType.EpicsAndStories => EpicsPrompt.Build(request),
+                _ => DraftPrompt.Build(request, slots),
+            };
+
+            response = await client.GenerateAsync(call, cancellationToken);
         }
         catch (AssistantUnavailableException failure)
         {
@@ -34,7 +41,14 @@ public sealed class GeminiArtifactDrafter(GeminiClient client, ILogger<GeminiArt
 
         DraftItems items;
 
-        if (!(architecture ? ArchitecturePrompt.TryParse(response.Json, out items!) : TryParse(response.Json, slots, out items!)))
+        var parsed = type switch
+        {
+            ArtifactType.Architecture => ArchitecturePrompt.TryParse(response.Json, out items!),
+            ArtifactType.EpicsAndStories => EpicsPrompt.TryParse(response.Json, request, out items!),
+            _ => TryParse(response.Json, slots, out items!),
+        };
+
+        if (!parsed)
         {
             logger.LogWarning("The draft of a {Type} was rejected ({Reason}).", request.Type, AssistantUnavailableReason.Malformed);
 
