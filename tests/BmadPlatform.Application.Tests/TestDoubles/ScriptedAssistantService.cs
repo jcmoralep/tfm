@@ -23,6 +23,9 @@ public sealed class ScriptedAssistantService : IAssistantService
     /// <summary>Returned for the depth proposal; null lets the application default to Standard.</summary>
     public InitiativeDepth? SuggestedDepth { get; set; }
 
+    /// <summary>The verdicts of the upcoming calls, one per call; Proceed once the queue is empty.</summary>
+    public Queue<ReplyVerdict> Verdicts { get; } = new();
+
     /// <summary>Runs at the start of the next call, once, so a test can interleave another actor.</summary>
     public Func<Task>? OnNextCall { get; set; }
 
@@ -43,7 +46,9 @@ public sealed class ScriptedAssistantService : IAssistantService
             throw new AssistantUnavailableException(AssistantTexts.Unavailable, FailureReason);
         }
 
-        return new AssistantReply(Marker(request.NextTopic.Key), SuggestedDepth);
+        var verdict = Verdicts.Count > 0 ? Verdicts.Dequeue() : ReplyVerdict.Proceed;
+
+        return new AssistantReply(Marker(request.NextTopic.Key), SuggestedDepth, verdict);
     }
 
     /// <summary>The text this double produces for a topic.</summary>

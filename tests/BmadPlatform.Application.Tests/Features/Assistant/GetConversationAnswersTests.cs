@@ -33,6 +33,24 @@ public sealed class GetConversationAnswersTests
         Assert.Equal(AssistantScript.Get(Idea).Prompt, result.Answers[0].Question);
     }
 
+    [Theory]
+    [InlineData("segunda", null, "primera\nsegunda", false)]
+    [InlineData(null, AssistantScript.ReplyKeys.Unknown, "No sé", true)]
+    public async Task A_topic_with_a_follow_up_gives_the_documents_both_answers(
+        string? second, string? quickReplyKey, string expectedText, bool expectedUnknown)
+    {
+        var id = await context.Initiatives.CreateClarifying("App");
+        await context.Start(id);
+        context.Assistant.Verdicts.Enqueue(ReplyVerdict.NeedsMore);
+        await context.Answer(id, "primera");
+        await context.Answer(id, second, quickReplyKey);
+
+        var answer = Assert.Single((await context.Answers(id))!.Answers, a => a.TopicKey == Idea);
+
+        Assert.Equal(expectedText, answer.Text);
+        Assert.Equal(expectedUnknown, answer.IsUnknown);
+    }
+
     [Fact]
     public async Task An_undone_answer_is_excluded_and_the_aclarar_flag_falls()
     {
