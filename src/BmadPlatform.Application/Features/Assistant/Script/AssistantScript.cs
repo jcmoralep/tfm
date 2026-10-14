@@ -197,7 +197,8 @@ public static class AssistantScript
             "Cuénteme la idea con sus palabras: ¿qué quiere lograr o cambiar?",
             "«Quiero que el equipo de ventas consulte el estado de un pedido sin llamar a bodega.»",
             "Con su idea entiendo de qué trata la iniciativa y puedo hacerle las siguientes preguntas con más sentido.",
-            [Unknown]);
+            [Unknown],
+            "What it is, what it does for the user and why it matters; for a small change also which part changes, who uses it and why now. A one-line wish with none of these is thin.");
 
         yield return new AssistantTopic(
             Keys.Users,
@@ -205,7 +206,8 @@ public static class AssistantScript
             "¿Quién va a usar esto?",
             "«Las vendedoras de las tiendas y el personal de bodega.»",
             "Saber quién lo usa ayuda a que el resultado sea fácil de entender para esas personas.",
-            [new QuickReply("customers", "Clientes"), new QuickReply("internal", "Personal interno"), new QuickReply("both", "Ambos"), Unknown]);
+            [new QuickReply("customers", "Clientes"), new QuickReply("internal", "Personal interno"), new QuickReply("both", "Ambos"), Unknown],
+            "At least one concrete job the person wants to get done, in their own words. A bare category of people with no job is thin.");
 
         yield return new AssistantTopic(
             Keys.Problem,
@@ -213,7 +215,8 @@ public static class AssistantScript
             "¿Qué problema resuelve y por qué hace falta ahora?",
             "«Hoy cada consulta toma diez minutos por teléfono y los clientes se quejan de la demora.»",
             "Un problema claro permite comprobar más adelante si la solución realmente sirve.",
-            [Unknown]);
+            [Unknown],
+            "What goes wrong today and for whom. A solution restated as a problem, or no affected person, is thin.");
 
         yield return new AssistantTopic(
             Keys.Success,
@@ -221,7 +224,8 @@ public static class AssistantScript
             "¿Cómo sabremos que funcionó?",
             "«Que ninguna vendedora tenga que llamar a bodega y que bajen las quejas por demoras.»",
             "Con una meta concreta, el equipo de desarrollo sabe cuándo el trabajo está terminado.",
-            [Unknown]);
+            [Unknown],
+            "A measure with a target and, when metrics are named, one counter-metric. A feeling such as happy users, with no measure or target, is thin.");
 
         yield return new AssistantTopic(
             Keys.OutOfScope,
@@ -229,7 +233,8 @@ public static class AssistantScript
             "¿Qué queda fuera, al menos por ahora?",
             "«No incluye pagos ni devoluciones, solo la consulta del estado del pedido.»",
             "Dejar claro lo que no se hará evita malentendidos y retrasos.",
-            [new QuickReply(ReplyKeys.Nothing, "Nada por ahora"), Unknown]);
+            [new QuickReply(ReplyKeys.Nothing, "Nada por ahora"), Unknown],
+            "At least one thing that is left out. An empty or purely generic exclusion is thin.");
 
         yield return new AssistantTopic(
             Keys.Capabilities,
@@ -237,7 +242,8 @@ public static class AssistantScript
             "¿Qué debe poder hacer una persona con esto?",
             "«Buscar un pedido por su número, ver en qué estado está y recibir un aviso cuando cambie.»",
             "Las acciones concretas se convierten después en las funciones que se van a construir.",
-            [Unknown]);
+            [Unknown],
+            "Each capability with at least one checkable consequence, something that can be seen to work or not. Vague verbs with no visible result are thin.");
 
         yield return new AssistantTopic(
             Keys.Constraints,
@@ -245,7 +251,8 @@ public static class AssistantScript
             "¿Hay límites o reglas que debamos respetar?",
             "«Debe funcionar desde el celular y no puede mostrar datos de otros clientes.»",
             "Los límites cambian la forma de construirlo, y es mejor conocerlos antes de empezar.",
-            [new QuickReply(ReplyKeys.None, "Ninguno que yo sepa"), Unknown]);
+            [new QuickReply(ReplyKeys.None, "Ninguno que yo sepa"), Unknown],
+            "Bounds, not adjectives: a limit, rule or number that can be checked. Words such as fast or secure alone are thin.");
 
         yield return new AssistantTopic(
             Keys.Priorities,
@@ -253,7 +260,8 @@ public static class AssistantScript
             "Si solo pudiéramos hacer dos cosas, ¿cuáles serían?",
             "«Primero consultar el estado del pedido y, después, recibir avisos.»",
             "Así sabemos qué entregar primero si hubiera que recortar.",
-            [Unknown]);
+            [Unknown],
+            "The few things to deliver first, chosen among the capabilities, with the reason for the order. Everything marked as first is thin.");
 
         yield return new AssistantTopic(
             Keys.Integrations,
@@ -261,7 +269,8 @@ public static class AssistantScript
             "¿Qué otros sistemas o equipos participan?",
             "«El sistema de inventario y el equipo de logística.»",
             "Cada sistema o equipo involucrado suma trabajo de coordinación que conviene prever.",
-            [new QuickReply(ReplyKeys.None, "Ninguno"), Unknown]);
+            [new QuickReply(ReplyKeys.None, "Ninguno"), Unknown],
+            "Each system or team involved and what is exchanged with it. A name with no exchange is thin.");
 
         yield return new AssistantTopic(
             Keys.Qualities,
@@ -269,7 +278,8 @@ public static class AssistantScript
             "¿Necesita algo especial de velocidad o seguridad?",
             "«Debe responder en pocos segundos y pedir inicio de sesión.»",
             "Estas condiciones influyen en cómo se diseña y en cuánto cuesta construirlo.",
-            [new QuickReply(ReplyKeys.Nothing, "Nada especial"), Unknown]);
+            [new QuickReply(ReplyKeys.Nothing, "Nada especial"), Unknown],
+            "Bounds, not adjectives: a target for speed, security or availability that can be checked. Words such as fast or secure alone are thin.");
 
         yield return new AssistantTopic(
             Keys.Size,

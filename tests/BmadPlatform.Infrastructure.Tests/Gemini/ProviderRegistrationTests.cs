@@ -117,13 +117,29 @@ public sealed class ProviderRegistrationTests
     }
 
     [Fact]
-    public void Gemini_with_valid_options_still_refuses_to_start_until_the_services_exist()
+    public void Gemini_with_valid_options_refuses_to_start_until_the_drafter_exists_and_never_falls_back_to_the_fake()
     {
         var error = Assert.Throws<InvalidOperationException>(
             () => Build(Config(("Assistant:Provider", "gemini"), ("Gemini:ApiKey", Key))));
 
-        Assert.Contains("next slices", error.Message);
+        Assert.Contains("drafter", error.Message);
+        Assert.Contains("later slice", error.Message);
         Assert.DoesNotContain(Key, error.Message);
+    }
+
+    [Fact]
+    public void The_gemini_assistant_resolves_with_the_client_and_is_a_singleton()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddGeminiClient(GeminiOptions.BindAndValidate(Config(("Gemini:ApiKey", Key))));
+        services.AddGeminiAssistant();
+        using var serviceProvider = services.BuildServiceProvider();
+
+        var assistant = serviceProvider.GetRequiredService<IAssistantService>();
+
+        Assert.IsType<GeminiAssistantService>(assistant);
+        Assert.Same(assistant, serviceProvider.GetRequiredService<IAssistantService>());
     }
 
     private static ServiceProvider Build(IConfiguration configuration)

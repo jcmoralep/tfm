@@ -71,7 +71,8 @@ public sealed class FakeAssistantService(TimeSpan replyDelay = default) : IAssis
             Enum.GetValues<InitiativeDepth>()
                 .Select(d => $"{InitiativeTexts.LevelName(d)} prepara {InitiativeTexts.DeliverablesInSentence(d)}")) + ".";
 
-    private static string Acknowledge(IReadOnlyList<ConversationTurn> history, AssistantTopic topic)
+    // Shared with the model-worded turns, which keep this text for a "No sé" answer.
+    internal static string Acknowledge(IReadOnlyList<ConversationTurn> history, AssistantTopic topic)
     {
         if (history.LastOrDefault() is not { Role: MessageRole.User } last)
         {
