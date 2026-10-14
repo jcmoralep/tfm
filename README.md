@@ -41,6 +41,7 @@ También puede usar la variable de entorno `Gemini__ApiKey`. Con `Gemini` activo
 Qué pasa cuando algo falla (RF-70):
 
 - **Cuota agotada o tiempo agotado en la conversación:** la respuesta queda guardada, aparece el motivo y el botón **Reintentar**; no se puede enviar otra hasta reintentar. Un reintento produce exactamente una respuesta.
+- **Límites de la capa gratuita (medido el 2026-10-13):** además de un tope por minuto que se recupera esperando medio minuto, Google aplica un **tope diario de peticiones por proyecto y por modelo** (cuota `GenerateRequestsPerDayPerProjectPerModel-FreeTier`). Con `gemini-3.6-flash` se agotó tras unas 30 llamadas en un día, y una iniciativa Estándar usa unas 12. Mientras dure el tope diario «Reintentar» no sirve; cada modelo tiene su propia cuota, así que cambiar `Gemini:Model` (por ejemplo a `gemini-3.1-flash-lite`) permite seguir. Los límites reales solo se ven en AI Studio.
 - **Clave o modelo inválidos:** mensaje de configuración; corrija la opción y reintente.
 - **Salida bloqueada o mal formada en un turno:** el asistente usa en silencio la redacción del guion y la conversación sigue.
 - **Fallo al generar un documento:** mensaje con orientación junto al botón, no se guarda nada y la versión anterior queda igual. No hay generador falso de respaldo.

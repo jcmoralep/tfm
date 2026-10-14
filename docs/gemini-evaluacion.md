@@ -86,3 +86,39 @@ Anote por turno y por borrador `promptTokenCount`, `candidatesTokenCount` y `tho
 |  |  | 3. «No sé» frecuente |  |  |  |
 |  |  | Fallos provocados |  |  |  |
 |  |  | Tokens y cuota |  |  |  |
+
+## Corrida del 2026-10-13: una iniciativa Estándar con Gemini real
+
+Una sola iniciativa, mezclando las tres personas (respuesta precisa, respuestas escuetas y «No sé»), con `gemini-3.6-flash`, nivel de pensamiento `low` y la capa gratuita. Datos de ejemplo; no se corrieron las tres personas completas para cuidar la cuota gratuita.
+
+| Comprobación | Hallazgo | Resultado |
+|---|---|---|
+| Apertura y primer turno (idea precisa) | 2,0 s; pregunta y ejemplo adaptados a la idea («asesores de ventas… coordinadores de atención»), en español y de usted, sin elogios | OK |
+| Insistencia ante una respuesta escueta («gente de ventas») | Una sola insistencia pidiendo precisar el rol; el avance bajó de 2 a 1 pregunta mientras estaba pendiente (7,6 s) | OK |
+| Tope de una insistencia («vendedores») | No volvió a insistir; avanzó al tema siguiente (2,0 s) | OK |
+| «No sé» | Nunca insiste; el código reconoce con «No pasa nada: lo dejo anotado como pregunta pendiente y seguimos» y el tema queda como `Q-n` | OK |
+| Confirmación y cierre | Sin llamada al modelo, respuesta inmediata (0,5 a 0,9 s); avance 8 de 8 | OK |
+| Brief con Gemini | 3,5 a 4 s; fiel a las respuestas; lo no respondido (diferenciador y criterios de éxito) quedó como `Q-1` y `Q-2`; una suposición marcada (visión); sin avisos de formato | OK |
+| PRD con Gemini partiendo del Brief aprobado | 8,6 s en el segundo intento (el primero devolvió 503 por alta demanda, reintento automático también 503: «El asistente tardó demasiado… no se generó el documento», sin guardar nada); hereda las preguntas del Brief con numeración nueva y sin responsables; marca como suposición los no usuarios, el glosario y el recorrido | OK |
+| Límite de uso (429) | Al sexto turno en unos 45 s el servicio devolvió 429 (se registró como Quota): el mensaje quedó guardado, apareció «El asistente alcanzó su límite de uso por ahora…» y **Reintentar** recuperó la conversación en 2 s al pasar un minuto | OK |
+| Registros sin contenido | Ninguna palabra de las respuestas ni rastro de la clave en el registro de la app ni en `Logs/`; solo tema, modelo, estado, duración, `finishReason` y fichas | OK |
+| Calidad del PRD | Los requisitos no funcionales recogieron frases de prioridad («la búsqueda por número debe ser la prioritaria») y la respuesta de restricciones (celular, mismas credenciales) quedó en «Alcance, dentro» como «Prioridad:»: el modelo mezcla los temas de restricciones y prioridades | **Falla leve: ajustar el prompt o la descripción de las secciones en un cambio posterior** |
+| Registro de llamadas | Las líneas dicen `for initiative null`: el asistente y los borradores no pasan el id de la iniciativa al cliente | **Falla leve: pasar el id para poder correlacionar** |
+
+### Segunda corrida: Pequeña, y el tope diario de la capa gratuita
+
+Una iniciativa Pequeña, con respuestas precisas, usando `gemini-3.6-flash` y después `gemini-3.1-flash-lite` (cambiando solo `Gemini__Model`).
+
+| Comprobación | Hallazgo | Resultado |
+|---|---|---|
+| Conversación Pequeña (6 preguntas) | Cada turno trae pregunta, ejemplo adaptado y motivo, en español y de usted; avance «N de 6 preguntas respondidas»; cierre y confirmación sin llamada al modelo | OK |
+| **Cuota diaria** | Después de unas 30 llamadas en el día, `gemini-3.6-flash` devolvió 429 de forma sostenida. La respuesta de Google nombra la cuota `GenerateRequestsPerDayPerProjectPerModel-FreeTier` y un `retryDelay` de unas 21 horas: es un **tope diario por proyecto y por modelo**, no por minuto. Antes de agotarse hubo 429 sueltos (a los 45 s y a los 3 y 5 turnos), que se recuperaban esperando; con el tope diario «Reintentar» no sirve hasta que se reinicie la cuota | Hallazgo clave |
+| Otro modelo | `gemini-3.1-flash-lite` sigue respondiendo (1,3 s) porque cada modelo tiene su propia cuota; con él terminó la conversación | OK |
+| Spec con `gemini-3.1-flash-lite` | 10,6 s; las cinco secciones, `FR-1` a `FR-4`, `SM-1` y `SM-2`, una suposición y una pregunta abierta, sin avisos de formato | OK |
+| Calidad del Spec | La restricción «solo las salas de esta sede» (dicha en «fuera de alcance») apareció además como suposición en Restricciones; y el modelo añadió una pregunta abierta propia (plazo para ver la reducción de conflictos) que nadie respondió como «No sé» | **Falla leve: el modelo duplica o añade elementos** |
+| Registros sin contenido (ambas corridas) | Ninguna palabra de las respuestas ni rastro de la clave en el registro de la app ni en `Logs/` | OK |
+| Arranque sin clave | Con `Assistant:Provider=Gemini` y la clave vacía la aplicación sale con código 1 y el mensaje nombra `Gemini__ApiKey`, sin ningún valor | OK |
+
+Consecuencia para el producto: con la capa gratuita el tope diario por modelo es muy bajo (un Estándar usa unas 12 llamadas). Opciones ya previstas: otro modelo con otra cuota (`Gemini:Model`), modelos distintos para turnos y borradores (anotado en `docs/mejoras-posteriores.md`) o un plan de pago.
+
+Fichas por llamada (de los registros): turnos de 976 a 1.482 de entrada y 77 a 120 de salida, con pensamiento 210 solo en uno de seis; Brief 1.127 de entrada y 603 de salida. Cuota: en la capa gratuita el modelo `gemini-3.6-flash` aceptó cinco peticiones en unos 45 s y devolvió 429 a la sexta; un usuario que escribe con calma (más de 12 s por respuesta) queda por debajo. No se vieron los límites diarios (solo se muestran en AI Studio). Pendiente: medir los niveles de pensamiento `medium` y `high`, que no se probaron.
