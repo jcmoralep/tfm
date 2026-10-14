@@ -70,6 +70,9 @@ internal sealed partial class DraftComposer
     public string? Description =>
         string.IsNullOrWhiteSpace(Request.Description) ? null : Clip(Escape(Collapse(Request.Description)), answerBudget);
 
+    // With the approved Brief in the request, what only the Brief states may be an answer: the person approved it.
+    private bool HasBrief => items is not null && !string.IsNullOrWhiteSpace(Request.BriefMarkdown);
+
     public int Count(string prefix) => numberer.Count(prefix);
 
     public string Next(string prefix) => numberer.Next(prefix);
@@ -145,7 +148,7 @@ internal sealed partial class DraftComposer
         var answer = Answer(key);
 
         // "No sé" and "nothing" answers keep their own rules whatever the model says; with no model items the answer is quoted.
-        if (CanTake(answer) && ModelItemsOf(key, mayClaimAnswer: answer is not null) is { Count: > 0 } modelItems)
+        if (CanTake(answer) && ModelItemsOf(key, mayClaimAnswer: answer is not null || HasBrief) is { Count: > 0 } modelItems)
         {
             WriteModelItems(modelItems, format, Wrap);
 
@@ -189,7 +192,7 @@ internal sealed partial class DraftComposer
     /// </summary>
     public void JoinedItem(string key, string label)
     {
-        if (CanTake(Answer(key)) && ModelItemsOf(key, mayClaimAnswer: Answer(key) is not null) is { Count: > 0 } modelItems)
+        if (CanTake(Answer(key)) && ModelItemsOf(key, mayClaimAnswer: Answer(key) is not null || HasBrief) is { Count: > 0 } modelItems)
         {
             var shown = Fit(modelItems, out var cut);
             var parts = shown.Select(Inline).ToList();
@@ -239,6 +242,26 @@ internal sealed partial class DraftComposer
         questions.Add((id, questionText));
 
         return id;
+    }
+
+    /// <summary>
+    /// The open questions of the approved Brief that the model did not restate: each becomes a new <c>Q-n</c> with the
+    /// default owner suffix (owners are never copied). A question already registered, such as the one a "No sé"
+    /// answer forces, is not repeated. Call it after every section, before the questions are written.
+    /// </summary>
+    public void CarryBriefQuestions()
+    {
+        var known = questions.Select(q => BriefFacts.Normalize(q.Text)).ToHashSet(StringComparer.Ordinal);
+
+        foreach (var raw in items?.CarriedQuestions ?? [])
+        {
+            var value = ModelText(raw);
+
+            if (value.Length > 0 && known.Add(BriefFacts.Normalize(value)))
+            {
+                OpenQuestion(value);
+            }
+        }
     }
 
     // A "No sé" or "nothing" answer is handled by code, so the model's items for its topic are not used.

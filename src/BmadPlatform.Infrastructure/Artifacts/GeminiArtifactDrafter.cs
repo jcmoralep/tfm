@@ -12,21 +12,13 @@ namespace BmadPlatform.Infrastructure.Artifacts;
 /// unknown); the composer and the layouts write the Markdown, so the outline, numbering, markers and caps are the
 /// same as the fake's. Any failure is an <see cref="AssistantUnavailableException"/> with a document-specific message
 /// and nothing is stored; there is no fallback to the fake for a model-backed document. Only the document type and
-/// the reason are logged, never the answers or the draft.
+/// the reason are logged, never the answers, the Brief or the draft.
 /// </summary>
 public sealed class GeminiArtifactDrafter(GeminiClient client, ILogger<GeminiArtifactDrafter> logger) : IArtifactDrafter
 {
-    // S4b replaces this: until the PRD drafter exists the PRD comes from the fake, so a Standard initiative can still finish.
-    private readonly FakeArtifactDrafter prdUntilNextSlice = new();
-
     public async Task<string> DraftAsync(DraftRequest request, CancellationToken cancellationToken)
     {
-        if (request.Type == ArtifactType.Prd)
-        {
-            return await prdUntilNextSlice.DraftAsync(request, cancellationToken);
-        }
-
-        var slots = DraftSlots.For(request.Type);
+        var slots = DraftSlots.For(request.Type, request.Depth);
         GeminiResponse response;
 
         try
@@ -43,6 +35,12 @@ public sealed class GeminiArtifactDrafter(GeminiClient client, ILogger<GeminiArt
             logger.LogWarning("The draft of a {Type} was rejected ({Reason}).", request.Type, AssistantUnavailableReason.Malformed);
 
             throw new AssistantUnavailableException(ArtifactTexts.DraftMalformed, AssistantUnavailableReason.Malformed);
+        }
+
+        // The PRD builds on the approved Brief: its assumptions stay assumptions and its open questions stay open.
+        if (request.Type == ArtifactType.Prd && !string.IsNullOrWhiteSpace(request.BriefMarkdown))
+        {
+            items = BriefFacts.Apply(items, request.BriefMarkdown);
         }
 
         return DraftRenderer.Render(request, items);
