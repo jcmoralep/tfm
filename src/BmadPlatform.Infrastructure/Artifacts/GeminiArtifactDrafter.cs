@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace BmadPlatform.Infrastructure.Artifacts;
 
 /// <summary>
-/// Drafts a document with Gemini. The model returns items per slot, each with a source (answer, assumption or
+/// Drafts a document with Gemini. The Architecture has its own prompt and reply shape (<see cref="ArchitecturePrompt"/>). Otherwise the model returns items per slot, each with a source (answer, assumption or
 /// unknown); the composer and the layouts write the Markdown, so the outline, numbering, markers and caps are the
 /// same as the fake's. Any failure is an <see cref="AssistantUnavailableException"/> with a document-specific message
 /// and nothing is stored; there is no fallback to the fake for a model-backed document. Only the document type and
@@ -18,19 +18,23 @@ public sealed class GeminiArtifactDrafter(GeminiClient client, ILogger<GeminiArt
 {
     public async Task<string> DraftAsync(DraftRequest request, CancellationToken cancellationToken)
     {
-        var slots = DraftSlots.For(request.Type, request.Depth);
+        // Epics stay with the fake until the model-backed Epics drafter exists: the slots lookup refuses them before any request.
+        var architecture = request.Type == ArtifactType.Architecture;
+        IReadOnlyList<DraftSlot> slots = architecture ? [] : DraftSlots.For(request.Type, request.Depth);
         GeminiResponse response;
 
         try
         {
-            response = await client.GenerateAsync(DraftPrompt.Build(request, slots), cancellationToken);
+            response = await client.GenerateAsync(architecture ? ArchitecturePrompt.Build(request) : DraftPrompt.Build(request, slots), cancellationToken);
         }
         catch (AssistantUnavailableException failure)
         {
             throw new AssistantUnavailableException(ArtifactTexts.DraftUnavailableFor(failure.Reason), failure.Reason, failure);
         }
 
-        if (!TryParse(response.Json, slots, out var items))
+        DraftItems items;
+
+        if (!(architecture ? ArchitecturePrompt.TryParse(response.Json, out items!) : TryParse(response.Json, slots, out items!)))
         {
             logger.LogWarning("The draft of a {Type} was rejected ({Reason}).", request.Type, AssistantUnavailableReason.Malformed);
 
@@ -90,14 +94,14 @@ public sealed class GeminiArtifactDrafter(GeminiClient client, ILogger<GeminiArt
         return true;
     }
 
-    private static bool TryText(JsonNode? node, out string text)
+    internal static bool TryText(JsonNode? node, out string text)
     {
         text = string.Empty;
 
         return node is JsonValue value && value.TryGetValue(out text!);
     }
 
-    private static bool TrySource(string name, out DraftItemSource source)
+    internal static bool TrySource(string name, out DraftItemSource source)
     {
         switch (name)
         {
