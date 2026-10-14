@@ -19,3 +19,24 @@ Deviations from design.md / tasks.md:
 
 Gate results (Debug): build 0 code warnings (only NU1507); tests: Application 681, Infrastructure 168, Web 196,
 Architecture 24, all passing. `rg "ApiKey" src --glob "*.json"` finds nothing. No view touched.
+
+## S1b: The Gemini client (done, 8/8 tasks) on `feat/gemini-s1b-client`
+
+Commits: probe record (docs), client + request/response contract, resilience tests, logging/concurrency tests.
+
+Probe (docs/gemini-sonda.md, 8 requests): the primary structured-output shape (`responseMimeType` +
+`responseJsonSchema`) and a single `user` content are accepted; `thinkingLevel` is camelCase, `low` confirmed.
+Turn call 38 s under high demand (tokens 125/117, no thoughts count); draft-sized call not measured (two 503, one
+90 s timeout). 404 and 400 error shapes recorded; an invalid key returns 400 `API_KEY_INVALID`. No rate-limit
+headers. Design Open Question 5 closed.
+
+Deviations:
+- All client source landed in the first code commit (the client is one file); the next two commits carry the
+  resilience and the concurrency/logging tests that prove behavior already present.
+- `GeminiCall` has an optional `InitiativeId` (log tag only, never sent) next to `Purpose`.
+- Default timeouts (30/90 s) kept despite the single 38 s sample taken under load; re-measure in task 5.6.
+- `GeminiClient` is registered as a singleton in `AddGeminiClient`; the startup stop under Provider=Gemini stays,
+  with the message updated ("client exists, services arrive in the next slices").
+
+Gate (Release, no key, no network): build 0 code warnings; tests Application 681, Infrastructure 211, Web 196,
+Architecture 24, all passing.

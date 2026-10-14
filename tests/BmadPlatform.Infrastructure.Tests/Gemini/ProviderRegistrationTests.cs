@@ -43,7 +43,7 @@ public sealed class ProviderRegistrationTests
         Assert.Equal("gemini-3.8-flash", options.Model);
         Assert.Equal("https://generativelanguage.googleapis.com/v1beta", options.BaseUrl);
         Assert.Equal("low", options.ThinkingLevel);
-        Assert.Equal((30, 90, 2), (options.TurnTimeoutSeconds, options.DraftTimeoutSeconds, options.MaxConcurrentCalls));
+        Assert.Equal((60, 120, 2), (options.TurnTimeoutSeconds, options.DraftTimeoutSeconds, options.MaxConcurrentCalls));
     }
 
     [Fact]
@@ -117,12 +117,12 @@ public sealed class ProviderRegistrationTests
     }
 
     [Fact]
-    public void Gemini_with_valid_options_still_refuses_to_start_until_the_client_exists()
+    public void Gemini_with_valid_options_still_refuses_to_start_until_the_services_exist()
     {
         var error = Assert.Throws<InvalidOperationException>(
             () => Build(Config(("Assistant:Provider", "gemini"), ("Gemini:ApiKey", Key))));
 
-        Assert.Contains("not implemented", error.Message);
+        Assert.Contains("next slices", error.Message);
         Assert.DoesNotContain(Key, error.Message);
     }
 

@@ -72,10 +72,11 @@ public static class DependencyInjection
             var gemini = GeminiOptions.BindAndValidate(configuration);
             services.AddGeminiClient(gemini);
 
-            // Temporary until the Gemini client and services are registered (next slices): never fall back silently.
+            // Temporary until the assistant and the drafter that use the client are registered (next slices):
+            // never fall back silently to the Fake.
             throw new InvalidOperationException(
-                "Assistant:Provider is Gemini and its options are valid, but the Gemini client is not implemented yet. " +
-                "Set Assistant:Provider to Fake.");
+                "Assistant:Provider is Gemini and its options are valid, and the Gemini client exists, but the assistant " +
+                "and the drafter that use it arrive in the next slices. Set Assistant:Provider to Fake.");
         }
 
         // Deterministic stand-ins. The short pause lets people see the "typing" and loading states.

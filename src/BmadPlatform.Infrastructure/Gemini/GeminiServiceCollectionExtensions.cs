@@ -10,7 +10,7 @@ public static class GeminiServiceCollectionExtensions
     /// <summary>
     /// Registers the validated options and the named HTTP client. The client owns its deadline (so the HTTP timeout is
     /// infinite) and the factory loggers are removed so request URIs and headers are never logged.
-    /// The <c>GeminiClient</c> singleton itself arrives with the client slice.
+    /// <see cref="GeminiClient"/> is a singleton so its concurrency guard is shared by every caller.
     /// </summary>
     public static IServiceCollection AddGeminiClient(this IServiceCollection services, GeminiOptions options)
     {
@@ -18,6 +18,7 @@ public static class GeminiServiceCollectionExtensions
         services
             .AddHttpClient(HttpClientName, client => client.Timeout = Timeout.InfiniteTimeSpan)
             .RemoveAllLoggers();
+        services.AddSingleton<GeminiClient>();
 
         return services;
     }
