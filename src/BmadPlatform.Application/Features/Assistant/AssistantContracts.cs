@@ -19,6 +19,14 @@ public sealed record InitiativeSnapshot(string Name, string? Description, DepthM
 
 public sealed record ConversationTurn(MessageRole Role, string Text, string TopicKey, string? QuickReplyKey, AnswerKind? Kind);
 
+/// <summary>Whether the last answer was enough (Proceed) or deserves one follow-up (NeedsMore).</summary>
+public enum ReplyVerdict
+{
+    Proceed,
+    NeedsMore,
+}
+
 /// <param name="Text">The assistant's message.</param>
 /// <param name="SuggestedDepth">The level proposed; set only when the next topic is the depth proposal.</param>
-public sealed record AssistantReply(string Text, InitiativeDepth? SuggestedDepth);
+/// <param name="Verdict">Defaults to Proceed: the fake and every turn without a judgement never push back.</param>
+public sealed record AssistantReply(string Text, InitiativeDepth? SuggestedDepth, ReplyVerdict Verdict = ReplyVerdict.Proceed);

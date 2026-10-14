@@ -117,6 +117,25 @@ public sealed class AssistantScriptTests
     }
 
     [Fact]
+    public void Every_question_topic_has_a_sufficiency_hint_and_choice_topics_have_none()
+    {
+        Assert.All(
+            AssistantScript.Topics.Where(t => t.Kind == TopicKind.Question),
+            topic => Assert.False(string.IsNullOrWhiteSpace(topic.SufficiencyHint), topic.Key));
+        Assert.All(
+            AssistantScript.Topics.Where(t => t.Kind != TopicKind.Question),
+            topic => Assert.Null(topic.SufficiencyHint));
+    }
+
+    [Fact]
+    public void No_topic_asks_for_a_named_journey_non_users_or_a_glossary()
+    {
+        Assert.DoesNotContain(
+            AssistantScript.Topics,
+            topic => new[] { "journey", "non-user", "glossary" }.Any(word => topic.Key.Contains(word, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    [Fact]
     public void Texts_use_no_technical_jargon()
     {
         var texts = AssistantScript.Topics

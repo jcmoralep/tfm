@@ -44,12 +44,12 @@ Scenario tags: **[UNIT]** xUnit (options binding, validation and DI resolution w
 
 ### Requirement: Gemini options and defaults (RF-68, RF-70)
 
-The options under `Gemini:` MUST be: `ApiKey`, `Model`, `BaseUrl`, `ThinkingLevel`, `TurnTimeoutSeconds`, `DraftTimeoutSeconds` and `MaxConcurrentCalls`. Defaults when absent: `Model` = `gemini-3.8-flash`; `BaseUrl` = `https://generativelanguage.googleapis.com/v1beta`; `ThinkingLevel` = `low`; `TurnTimeoutSeconds` = 60; `DraftTimeoutSeconds` = 120; `MaxConcurrentCalls` = 2; `ApiKey` has no default. When the provider is Gemini, startup validation MUST reject: a `ThinkingLevel` other than `low`, `medium` or `high` (including `minimal`); a timeout or `MaxConcurrentCalls` that is not a positive integer; a `BaseUrl` that is not an absolute http(s) URL; an empty `Model`. Each message MUST name the offending option and MUST NOT echo the key. The model name is configuration only: changing `Gemini:Model` MUST change the request path with no code change.
+The options under `Gemini:` MUST be: `ApiKey`, `Model`, `BaseUrl`, `ThinkingLevel`, `TurnTimeoutSeconds`, `DraftTimeoutSeconds` and `MaxConcurrentCalls`. Defaults when absent: `Model` = `gemini-3.6-flash` (chosen by the product owner on 2026-10-13 after measuring: 3.8 Flash took 58 s and 3.5 Flash-Lite 72 s for a short answer, while 3.6 Flash took 2.0 s and 3.1 Flash-Lite 1.3 s); `BaseUrl` = `https://generativelanguage.googleapis.com/v1beta`; `ThinkingLevel` = `low`; `TurnTimeoutSeconds` = 60; `DraftTimeoutSeconds` = 120; `MaxConcurrentCalls` = 2; `ApiKey` has no default. When the provider is Gemini, startup validation MUST reject: a `ThinkingLevel` other than `low`, `medium` or `high` (including `minimal`); a timeout or `MaxConcurrentCalls` that is not a positive integer; a `BaseUrl` that is not an absolute http(s) URL; an empty `Model`. Each message MUST name the offending option and MUST NOT echo the key. The model name is configuration only: changing `Gemini:Model` MUST change the request path with no code change.
 
 #### Scenario: Defaults [UNIT]
 - GIVEN `Assistant:Provider` = "Gemini", a key, and no other Gemini option
 - WHEN the options are bound
-- THEN the model is `gemini-3.8-flash`, the level `low`, the timeouts 60 and 120 seconds, the limit 2 and the base URL the Google endpoint
+- THEN the model is `gemini-3.6-flash`, the level `low`, the timeouts 60 and 120 seconds, the limit 2 and the base URL the Google endpoint
 
 #### Scenario: Overrides are honored [UNIT]
 - GIVEN `Gemini:Model` = "other-model", `Gemini:TurnTimeoutSeconds` = 10 and `Gemini:MaxConcurrentCalls` = 1

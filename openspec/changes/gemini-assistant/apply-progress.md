@@ -40,3 +40,37 @@ Deviations:
 
 Gate (Release, no key, no network): build 0 code warnings; tests Application 681, Infrastructure 211, Web 196,
 Architecture 24, all passing.
+
+## S2: Model wording behind the assistant seam (7/8 tasks; 2.G waits for the Chrome item) on `feat/gemini-s2-assistant`
+
+Commits: `TurnLayout` extraction (Fake goldens and tests unchanged and green), `ReplyGuard`, then the service, prompt,
+script hints and DI.
+
+Done: `TurnLayout`, `TurnReply`, `ReplyGuard`, `AssistantPrompt`, `GeminiAssistantService`,
+`AddGeminiAssistant` (registration helper), `ReplyVerdict` + `AssistantReply.Verdict` (default Proceed),
+`AssistantTopic.SufficiencyHint` with a hint on every Question topic (priorities included, RF-66 lists none for it).
+
+Deviations from design.md / tasks.md:
+- `ReplyVerdict` and `AssistantReply.Verdict` landed in the guard commit (the guard returns the parsed verdict); the
+  hints landed with the service commit, as planned.
+- `ReplyGuard.Check(reply, answerPrecedes, followUpAllowed, ownedAcknowledgement)` takes the eligibility as a flag
+  instead of reading `AssistantRequest.FollowUpFor`, which does not exist until S3. S2 always passes
+  `followUpAllowed: false`, so any NeedsMore is rejected and falls back (matches the "ineligible NeedsMore" scenario).
+  S3 only changes that argument.
+- The turn schema omits `suggestedDepth`: the model is not invited to suggest a level. A `suggestedDepth` that arrives
+  anyway is still parsed, checked by the guard (valid or absent) and never applied.
+- `GeminiAssistantService(GeminiClient, ILogger)`: no `IOptions<GeminiOptions>` (nothing in the service needs it).
+- The system prompt states `verdict` is always `proceed` in this version, and the user content has no
+  `<answered_topic>` block; S3 adds both (task 3.6).
+- Startup stop under `Assistant:Provider=Gemini` stays until S4a, because the one switch selects both seams and the
+  drafter is not there yet (no silent Fake drafter). The Gemini assistant is registered through `AddGeminiAssistant`
+  before the stop; the stop message and its test are updated. Consequence: the app cannot run under Gemini until S4a,
+  so the optional live smoke turn of 2.G is not possible yet.
+- Owned acknowledgement: code keeps the Fake's "No pasa nada..." text on a "No sé" answer and an empty one on the
+  opening turn, via `FakeAssistantService.Acknowledge` (now internal).
+- Extra user-content hardening: every user string is neutralized AND collapsed to one line, so a user cannot fake a
+  `[assistant|...]` transcript line.
+- Added one Application test (hostile answer plus a model-suggested Large cannot change topic, level or mode, with the
+  scripted double); script tests for hints and absent topics.
+
+Pending for 2.G: Chrome item C-1 (Fake regression), which needs MySQL via docker compose; not run by this executor.
