@@ -1,5 +1,6 @@
 using BmadPlatform.Application.Common.Exceptions;
 using BmadPlatform.Application.Features.Artifacts;
+using BmadPlatform.Application.Features.Assistant;
 using BmadPlatform.Application.Features.Initiatives;
 using BmadPlatform.Domain.Common;
 using BmadPlatform.Web.Components.Initiatives;
@@ -64,10 +65,8 @@ public sealed class UserMessagesTests
     [Fact]
     public void Assistant_unavailable_maps_to_its_message()
     {
-        Assert.True(UserMessages.TryGet(new AssistantUnavailableException(), out var messages));
-        Assert.Equal(
-            ["El asistente no está disponible en este momento. Su mensaje quedó guardado; inténtelo de nuevo en unos minutos."],
-            messages);
+        Assert.True(UserMessages.TryGet(new AssistantUnavailableException(AssistantTexts.Unavailable), out var messages));
+        Assert.Equal([AssistantTexts.Unavailable], messages);
     }
 
     [Theory]

@@ -14,7 +14,29 @@ public static class AssistantTexts
 
     public const string Conflict = ConflictException.DefaultMessage;
 
-    public const string Unavailable = AssistantUnavailableException.DefaultMessage;
+    /// <summary>Timeout and the generic case. Chat texts say the message was saved because the answer is stored first.</summary>
+    public const string Unavailable =
+        "El asistente no está disponible en este momento. Su mensaje quedó guardado; inténtelo de nuevo en unos minutos.";
+
+    public const string Quota =
+        "El asistente alcanzó su límite de uso por ahora. Su mensaje quedó guardado; pulse Reintentar más tarde.";
+
+    public const string Misconfigured =
+        "El asistente no está configurado correctamente. Su mensaje quedó guardado; avise a quien mantiene la plataforma.";
+
+    /// <summary>Appended to the script wording when the provider blocked the reply.</summary>
+    public const string RephraseHint = "Si lo prefiere, puede deshacer su última respuesta y escribirla de otra forma.";
+
+    /// <summary>
+    /// The chat message for a failure reason. Blocked and Malformed are normally handled by a fallback to the script;
+    /// if one reaches this point it gets the generic text.
+    /// </summary>
+    public static string UnavailableFor(AssistantUnavailableReason reason) => reason switch
+    {
+        AssistantUnavailableReason.Quota => Quota,
+        AssistantUnavailableReason.Auth or AssistantUnavailableReason.Model => Misconfigured,
+        _ => Unavailable,
+    };
 
     public const string IncompleteConfirmation = "Aún faltan preguntas por responder antes de pasar a Planificar.";
 
