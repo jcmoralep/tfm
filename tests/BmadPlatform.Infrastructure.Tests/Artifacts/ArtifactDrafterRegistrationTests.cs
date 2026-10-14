@@ -1,5 +1,7 @@
 using BmadPlatform.Application.Features.Artifacts;
+using BmadPlatform.Application.Features.Assistant;
 using BmadPlatform.Infrastructure.Artifacts;
+using BmadPlatform.Infrastructure.Assistant;
 using BmadPlatform.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,5 +31,6 @@ public sealed class ArtifactDrafterRegistrationTests
 
         Assert.IsType<FakeArtifactDrafter>(first);
         Assert.Same(first, second);
+        Assert.IsType<FakeAssistantService>(provider.GetRequiredService<IAssistantService>());
     }
 }

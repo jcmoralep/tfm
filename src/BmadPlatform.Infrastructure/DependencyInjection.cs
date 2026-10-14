@@ -6,6 +6,7 @@ using BmadPlatform.Application.Features.Initiatives;
 using BmadPlatform.Infrastructure.Artifacts;
 using BmadPlatform.Infrastructure.Assistant;
 using BmadPlatform.Infrastructure.Export;
+using BmadPlatform.Infrastructure.Gemini;
 using BmadPlatform.Infrastructure.Identity;
 using BmadPlatform.Infrastructure.Identity.Seeding;
 using BmadPlatform.Infrastructure.Initiatives;
@@ -64,11 +65,21 @@ public static class DependencyInjection
         services.AddScoped<IConversationRepository, ConversationRepository>();
         services.AddScoped<IArtifactRepository, ArtifactRepository>();
 
-        // Deterministic stand-in until the Gemini implementation arrives (PROPUESTA-MVP step 5).
-        // The short pause lets people see the "typing" indicator; the real model will take longer.
-        services.AddSingleton<IAssistantService>(_ => new FakeAssistantService(TimeSpan.FromMilliseconds(900)));
+        // One switch (Assistant:Provider) selects both the assistant and the drafter. Checked eagerly, like the
+        // connection string, so a bad configuration stops the app at startup instead of on the first request.
+        if (AssistantProviderSetting.Read(configuration) == AssistantProvider.Gemini)
+        {
+            var gemini = GeminiOptions.BindAndValidate(configuration);
+            services.AddGeminiClient(gemini);
 
-        // Same idea for the documents (PROPUESTA-MVP step 5 replaces it); the pause shows the loading state.
+            // Temporary until the Gemini client and services are registered (next slices): never fall back silently.
+            throw new InvalidOperationException(
+                "Assistant:Provider is Gemini and its options are valid, but the Gemini client is not implemented yet. " +
+                "Set Assistant:Provider to Fake.");
+        }
+
+        // Deterministic stand-ins. The short pause lets people see the "typing" and loading states.
+        services.AddSingleton<IAssistantService>(_ => new FakeAssistantService(TimeSpan.FromMilliseconds(900)));
         services.AddSingleton<IArtifactDrafter>(_ => new FakeArtifactDrafter(TimeSpan.FromMilliseconds(900)));
 
         // The .md download; a new format would be one more implementation (the PDF is the browser printing the page).
