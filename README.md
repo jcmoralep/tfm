@@ -4,20 +4,49 @@ Plataforma interna para que personas de producto lleven una iniciativa desde la 
 
 > **Nota de marcas.** BMad y BMAD-METHOD son marcas de BMad Code, LLC. Este proyecto no está afiliado ni avalado por ellos: usa el método BMAD (licencia MIT del código) y solo lo menciona para describir con qué es compatible. Por eso el producto no lleva «BMAD» en su nombre.
 
-Estado actual: **paso 4 (Artefactos con generador falso)** de `PROPUESTA-MVP.md` §7. Incluye la solución por capas, MySQL, Serilog, el inicio de sesión, el estilo visual base, las iniciativas, la conversación guiada con un asistente de demostración y la generación, edición y aprobación del Brief, el PRD y la especificación. Siguen pendientes Gemini real (paso 5), Arquitectura y Épicas (paso 6), contexto adjunto (paso 7) y exportación (paso 8).
+Estado actual: **paso 5 (Gemini real detrás de un interruptor)** de `PROPUESTA-MVP.md` §7, que se da por entregado cuando se fusiona su último cambio (S5). Incluye la solución por capas, MySQL, Serilog, el inicio de sesión, el estilo visual base, las iniciativas, la conversación guiada, la generación, edición y aprobación del Brief, el PRD y la especificación, y la opción de que Gemini redacte las preguntas y los documentos (`Assistant:Provider=Gemini`; por defecto sigue el asistente de demostración). Siguen pendientes Arquitectura y Épicas (paso 6), contexto adjunto (paso 7) y exportación (paso 8).
 
 ## Advertencia sobre Gemini (capa gratuita)
 
-El asistente usará la **capa gratuita de Gemini**. En esa capa, Google puede usar los datos enviados para mejorar sus productos. Mientras se use la capa gratuita, trabaje **solo con datos de ejemplo o no sensibles**. Antes de usar iniciativas reales de la empresa, es necesario migrar a un plan de pago. La clave de API se configurará en una variable de entorno o en user-secrets, nunca en el repositorio.
+Con `Assistant:Provider=Gemini`, el asistente usa la **capa gratuita de Gemini**. En esa capa, Google puede usar los datos enviados para mejorar sus productos. Mientras se use la capa gratuita, trabaje **solo con datos de ejemplo o no sensibles**. Antes de usar iniciativas reales de la empresa, es necesario conectar un modelo de la compañía o migrar a un plan de pago. La clave de API va en user-secrets o en la variable de entorno `Gemini__ApiKey`, nunca en el repositorio. La interfaz **no muestra** este aviso (decisión del usuario, RN-05); queda solo en la documentación.
 
-## Asistente y datos de demostración
+## Asistente: Fake o Gemini
 
-La conversación con el asistente (`/iniciativas/{id}/asistente`) funciona hoy con una **implementación falsa** (`FakeAssistantService`): sigue un guion fijo de preguntas y no envía nada a Gemini ni a ningún servicio externo. La pantalla **no muestra** un aviso de modo de demostración (decisión del usuario, 2026-10-12, RN-05): se asume el riesgo de la capa gratuita descrito arriba, y cuando el proyecto sea avalado se conectará a un modelo de la compañía.
+La conversación con el asistente (`/iniciativas/{id}/asistente`) y la redacción de los documentos tienen dos proveedores, elegidos con `Assistant:Provider`:
 
-- Por ahora se prueba **solo con información muy básica**, nada importante de la organización ni datos personales.
-- No use iniciativas reales hasta conectar un modelo de la compañía o migrar a un plan de pago de Gemini.
-- La clave de API de Gemini irá en una variable de entorno o en user-secrets, nunca en el repositorio.
-- Los registros (`Logs/`) no guardan el texto de los mensajes de la conversación.
+- `Fake` (por defecto; también si está vacío o ausente): guion fijo y generador determinista. No necesita clave ni red y no envía nada a servicios externos.
+- `Gemini`: el modelo redacta cada pregunta con un ejemplo a medida de la iniciativa, insiste una sola vez por tema cuando la respuesta es floja (nunca ante "No sé" ni respuestas rápidas) y redacta la especificación, el Brief y el PRD a partir de lo respondido, marcando como suposición o pregunta pendiente todo lo que no se dijo. El PRD de una iniciativa Estándar parte del Brief aprobado. El orden de las preguntas, el nivel y el modo los decide siempre el guion, no el modelo.
+
+Cómo ejecutar con Gemini (el valor de la clave es suyo; no lo escriba en archivos del repositorio):
+
+```bash
+dotnet user-secrets set "Gemini:ApiKey" "<su clave>" --project src/BmadPlatform.Web
+# y active el proveedor, por ejemplo con una variable de entorno:
+# Assistant__Provider=Gemini
+```
+
+También puede usar la variable de entorno `Gemini__ApiKey`. Con `Gemini` activo y sin clave, la aplicación no arranca y el mensaje nombra `Gemini__ApiKey` (nunca el valor). Para volver al asistente de demostración, quite la variable o use `Assistant__Provider=Fake`.
+
+| Opción | Por defecto | Descripción |
+|---|---|---|
+| `Assistant:Provider` | `Fake` | `Fake` o `Gemini` (sin distinguir mayúsculas); otro valor impide arrancar |
+| `Gemini:ApiKey` | (sin valor) | Obligatoria con `Gemini`; solo user-secrets o `Gemini__ApiKey` |
+| `Gemini:Model` | `gemini-3.6-flash` | Modelo; es configuración, se puede cambiar sin tocar código |
+| `Gemini:BaseUrl` | `https://generativelanguage.googleapis.com/v1beta` | URL base absoluta |
+| `Gemini:ThinkingLevel` | `low` | `low`, `medium` o `high` |
+| `Gemini:TurnTimeoutSeconds` | `60` | Plazo de una pregunta del asistente (positivo) |
+| `Gemini:DraftTimeoutSeconds` | `120` | Plazo de un documento (positivo) |
+| `Gemini:MaxConcurrentCalls` | `2` | Llamadas simultáneas al modelo (positivo) |
+
+Qué pasa cuando algo falla (RF-70):
+
+- **Cuota agotada o tiempo agotado en la conversación:** la respuesta queda guardada, aparece el motivo y el botón **Reintentar**; no se puede enviar otra hasta reintentar. Un reintento produce exactamente una respuesta.
+- **Límites de la capa gratuita (medido el 2026-10-13):** además de un tope por minuto que se recupera esperando medio minuto, Google aplica un **tope diario de peticiones por proyecto y por modelo** (cuota `GenerateRequestsPerDayPerProjectPerModel-FreeTier`). Con `gemini-3.6-flash` se agotó tras unas 30 llamadas en un día, y una iniciativa Estándar usa unas 12. Mientras dure el tope diario «Reintentar» no sirve; cada modelo tiene su propia cuota, así que cambiar `Gemini:Model` (por ejemplo a `gemini-3.1-flash-lite`) permite seguir. Los límites reales solo se ven en AI Studio.
+- **Clave o modelo inválidos:** mensaje de configuración; corrija la opción y reintente.
+- **Salida bloqueada o mal formada en un turno:** el asistente usa en silencio la redacción del guion y la conversación sigue.
+- **Fallo al generar un documento:** mensaje con orientación junto al botón, no se guarda nada y la versión anterior queda igual. No hay generador falso de respaldo.
+
+Privacidad: los registros (`Logs/`) no guardan el texto de mensajes ni de documentos, ni los prompts, ni las respuestas del modelo, ni la clave; solo identificadores, tema, modelo, estado, duración y conteo de tokens. Por ahora se prueba **solo con información muy básica** (RN-05).
 
 ## Artefactos (documentos de la iniciativa)
 
@@ -36,7 +65,7 @@ Desde el detalle de la iniciativa, la tarjeta **Artefactos** lista los documento
 - Conformidad con BMAD: ver «Cierre de conformidad» en `docs/bmad-referencia.md`; lo que va más allá de BMAD está en `docs/mejoras-posteriores.md`.
 - La iniciativa pasa a **Lista para construir** cuando todos los documentos de su nivel están aprobados. **Una iniciativa Grande todavía no puede terminar**: faltan Arquitectura y Épicas e historias, que llegan en un paso posterior.
 - Cada documento se puede **descargar en `.md`** y guardar como **PDF** desde la ventana de impresión del navegador (RF-21).
-- El texto lo redacta un **generador falso y determinista** (`FakeArtifactDrafter`): produce siempre el mismo borrador con las mismas respuestas y no envía nada a Gemini. Gemini llegará en el paso 5.
+- Con `Assistant:Provider=Fake` (por defecto) el texto lo redacta un **generador falso y determinista** (`FakeArtifactDrafter`): produce siempre el mismo borrador con las mismas respuestas y no envía nada a Gemini. Con `Gemini`, el modelo redacta desde elementos con fuente (respuesta, suposición o desconocido) y no inventa datos (ver «Asistente: Fake o Gemini»).
 - Los registros no guardan el contenido de los documentos.
 
 ## Requisitos previos
