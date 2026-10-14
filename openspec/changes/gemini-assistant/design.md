@@ -99,7 +99,7 @@ After the save, the journey sees the answered key's last message as assistant, s
 | Type | Shape |
 |---|---|
 | `AssistantProvider` | `enum { Fake, Gemini }` plus `static AssistantProvider Read(IConfiguration)`. Empty means Fake. An unknown value throws `InvalidOperationException` naming `Assistant:Provider` and "Fake, Gemini" |
-| `GeminiOptions` | `ApiKey`, `Model="gemini-3.6-flash"`, `BaseUrl="https://generativelanguage.googleapis.com/v1beta"`, `ThinkingLevel="low"`, `TurnTimeoutSeconds=30`, `DraftTimeoutSeconds=90`, `MaxConcurrentCalls=2`. `static GeminiOptions BindAndValidate(IConfiguration)` throws, naming the option and never the key. A missing or blank key gives "…set the environment variable Gemini__ApiKey (or user-secrets Gemini:ApiKey)…" |
+| `GeminiOptions` | `ApiKey`, `Model="gemini-3.6-flash"`, `BaseUrl="https://generativelanguage.googleapis.com/v1beta"`, `ThinkingLevel="low"`, `TurnTimeoutSeconds=60`, `DraftTimeoutSeconds=120`, `MaxConcurrentCalls=2`. `static GeminiOptions BindAndValidate(IConfiguration)` throws, naming the option and never the key. A missing or blank key gives "…set the environment variable Gemini__ApiKey (or user-secrets Gemini:ApiKey)…" |
 | `GeminiCall` | `record(string Purpose, GeminiCallKind Kind, string SystemInstruction, string UserContent, JsonObject ResponseSchema)`. `Purpose` is a log tag such as `turn:idea` or `draft:Prd` |
 | `GeminiCallKind` | `Turn`, `Draft` (selects the deadline) |
 | `GeminiResponse` | `record(JsonNode Json, string FinishReason, GeminiUsage Usage)` |
@@ -331,7 +331,7 @@ With only a connection string, `Read` returns Fake, so `ArtifactDrafterRegistrat
 
 - **Deadlines.** Turn calls: 60 s. Draft calls: 120 s (raised from 30 and 90 after the live probe: one turn took 38 s under high demand). `CancellationTokenSource.CreateLinkedTokenSource(ct)` plus `CancelAfter(deadline)` covers `semaphore.WaitAsync`, `SendAsync`, the body read, `Task.Delay(retry)` and the retry.
 - **Timeout versus cancellation.** If `ct.IsCancellationRequested`, rethrow `OperationCanceledException`. Otherwise the deadline fired, so the reason is Timeout.
-- **No token from the circuit.** The circuit sends `CancellationToken.None` (`ChatPanel.razor:279,322`), so the deadline is the only stop. This is accepted: the chat shows "Reintentar" after at most about 30 s.
+- **No token from the circuit.** The circuit sends `CancellationToken.None` (`ChatPanel.razor:279,322`), so the deadline is the only stop. This is accepted: the chat shows "Reintentar" after at most about 60 s.
 - **Concurrency.** One `SemaphoreSlim(MaxConcurrentCalls)` in the singleton `GeminiClient`, shared by turns and drafts. A call holds its slot across its retry and releases it in `finally`. A wait past the deadline gives Timeout with no request sent.
 - **Two tabs.** The advancer's version re-check (`ConversationAdvancer.cs:51-57`) already prevents duplicate turn calls. A duplicate draft is stopped by the unique (initiative, type) row after the call; this cost is accepted.
 
@@ -434,7 +434,7 @@ Commits: (1) `DraftRenderer` extraction, `Open` and composer items, with goldens
 
 Commits: (1) `BriefMarkdown` and the handlers; (2) PRD slots and `BriefFacts`.
 
-**S5: Docs and evaluation (~150).** `README.md`, `AGENTS.md` §4.8, `REQUISITOS.md` (RF-68..72, RF-42, RF-46, RF-48, RN-05, RNF-02, RNF-04), `docs/mejoras-posteriores.md` (fast mode and stakes; a model-suggested level when the size is "No sé"; a judge-only call if declined in Open Questions), and `docs/evaluacion-gemini.md` (persona script and results). The Chrome walkthrough is evidence only.
+**S5: Docs and evaluation (~150).** `README.md`, `AGENTS.md` §4.8, `REQUISITOS.md` (RF-68..72, RF-42, RF-46, RF-48, RN-05, RNF-02, RNF-04), `docs/mejoras-posteriores.md` (fast mode and stakes; a model-suggested level when the size is "No sé"; a judge-only call if declined in Open Questions), and `docs/gemini-evaluacion.md` (persona script and results). The Chrome walkthrough is evidence only.
 
 Total is about 2,550 authored lines, more than the proposal's ~2,100. S1 is split into S1a and S1b. `sdd-tasks` must re-forecast; S1b, S2, S3 and S4a sit at or above 400 under the accepted `exception-ok`.
 
