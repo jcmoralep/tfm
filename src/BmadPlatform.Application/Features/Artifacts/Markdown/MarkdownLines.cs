@@ -55,10 +55,13 @@ internal static partial class MarkdownLines
         return headings;
     }
 
-    // The assumption index runs from its heading to the next heading of the same or a higher level.
-    public static (int First, int Last)? FindIndexRange(List<(int Line, int Level, string Title)> headings, int lineCount)
+    public static (int First, int Last)? FindIndexRange(List<(int Line, int Level, string Title)> headings, int lineCount) =>
+        FindSectionRange(headings, ArtifactOutline.AssumptionIndexTitle, lineCount);
+
+    // A section runs from its heading to the next heading of the same or a higher level.
+    public static (int First, int Last)? FindSectionRange(List<(int Line, int Level, string Title)> headings, string title, int lineCount)
     {
-        var position = headings.FindIndex(h => string.Equals(h.Title, ArtifactOutline.AssumptionIndexTitle, StringComparison.OrdinalIgnoreCase));
+        var position = headings.FindIndex(h => string.Equals(h.Title, title, StringComparison.OrdinalIgnoreCase));
 
         if (position < 0)
         {

@@ -18,6 +18,8 @@ public sealed record OutlineSection(int Level, string Number, string Title)
 public static class ArtifactOutline
 {
     public const string AssumptionIndexTitle = "Índice de suposiciones";
+    public const string DevelopmentQuestionsTitle = "Preguntas para desarrollo";
+    public const string CoverageMapTitle = "Mapa de cobertura de requisitos";
 
     private static readonly OutlineSection[] Brief =
     [

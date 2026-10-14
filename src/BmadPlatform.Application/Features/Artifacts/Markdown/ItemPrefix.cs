@@ -7,6 +7,7 @@ public static class ItemPrefix
     public const string NonFunctionalRequirement = "NFR";
     public const string UserJourney = "UJ";
     public const string SuccessMetric = "SM";
+    public const string ArchitectureDecision = "AD";
     public const string Assumption = "A";
     public const string Question = "Q";
 
@@ -17,6 +18,7 @@ public static class ItemPrefix
         FunctionalRequirement,
         UserJourney,
         SuccessMetric,
+        ArchitectureDecision,
         Assumption,
         Question,
     ];
