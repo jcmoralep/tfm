@@ -45,7 +45,7 @@ public sealed class ArtifactReadTests
     }
 
     [Fact]
-    public async Task Large_lists_its_full_set_with_the_later_documents_not_available()
+    public async Task Large_lists_its_full_set_with_the_architecture_waiting_for_the_prd_and_the_epics_not_yet_supported()
     {
         var id = await context.AtClosing(InitiativeDepth.Large);
 
@@ -54,12 +54,11 @@ public sealed class ArtifactReadTests
         Assert.NotNull(overview);
         Assert.Equal(["PRD", "Arquitectura", "Épicas e historias"], overview.Slots.Select(s => s.Label));
         Assert.Equal(ArtifactAvailability.Available, overview.Slots[0].Availability);
-        Assert.All(overview.Slots.Skip(1), slot =>
-        {
-            Assert.Null(slot.Type);
-            Assert.Equal(ArtifactAvailability.NotYetSupported, slot.Availability);
-            Assert.Equal(ArtifactTexts.ComingLater, slot.Reason);
-        });
+        Assert.Equal((ArtifactType.Architecture, ArtifactAvailability.WaitingForPrd), (overview.Slots[1].Type, overview.Slots[1].Availability));
+        Assert.Equal(ArtifactTexts.ReasonFor(ArtifactAvailability.WaitingForPrd), overview.Slots[1].Reason);
+        Assert.Null(overview.Slots[2].Type);
+        Assert.Equal(ArtifactAvailability.NotYetSupported, overview.Slots[2].Availability);
+        Assert.Equal(ArtifactTexts.ComingLater, overview.Slots[2].Reason);
     }
 
     [Fact]

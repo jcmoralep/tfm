@@ -34,12 +34,29 @@ public sealed class MarkdownArtifactExporterTests
     [InlineData(ArtifactType.Brief, "brief-portal-de-clientes-2026-10-13.md", "bmad-prd")]
     [InlineData(ArtifactType.Prd, "prd-portal-de-clientes-2026-10-13.md", "bmad-architecture")]
     [InlineData(ArtifactType.Spec, "spec-portal-de-clientes-2026-10-13.md", "bmad-build")]
+    [InlineData(ArtifactType.Architecture, "architecture-portal-de-clientes-2026-10-13.md", "bmad-create-epics-and-stories")]
     public void Each_type_gets_its_file_name_and_names_the_bmad_skill_that_takes_it(ArtifactType type, string fileName, string skill)
     {
         var export = Export(type);
 
         Assert.Equal(fileName, export.FileName);
         Assert.Contains($"`{skill}`", export.Content);
+    }
+
+    [Fact]
+    public void The_architecture_declares_its_kind_names_the_spine_file_and_asks_for_the_development_review()
+    {
+        var architecture = Export(ArtifactType.Architecture, ArtifactStatus.Approved);
+
+        Assert.StartsWith(
+            "---\ntitle: \"Portal de clientes\"\ntype: architecture-spine\nstatus: approved\ncreated: 2026-10-12\nupdated: 2026-10-13\n---\n\n> **Nota de uso**",
+            architecture.Content);
+        Assert.Contains("`planning-artifacts/architecture/architecture-<proyecto>-<fecha>/ARCHITECTURE-SPINE.md`", architecture.Content);
+        Assert.Contains("para revisión del equipo de desarrollo", architecture.Content);
+        Assert.Contains("«Preguntas para desarrollo»", architecture.Content);
+        Assert.All(
+            new[] { ArtifactType.Spec, ArtifactType.Brief, ArtifactType.Prd },
+            type => Assert.DoesNotContain("\ntype:", Export(type).Content));
     }
 
     [Fact]

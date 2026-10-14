@@ -49,7 +49,7 @@ public sealed class ArtifactCatalogTests
         var large = ArtifactCatalog.RequiredFor(InitiativeDepth.Large);
 
         Assert.Equal(new[] { "PRD", "Arquitectura", "Épicas e historias" }, large.Select(s => s.Label));
-        Assert.Equal(new ArtifactType?[] { ArtifactType.Prd, null, null }, large.Select(s => s.Type));
+        Assert.Equal(new ArtifactType?[] { ArtifactType.Prd, ArtifactType.Architecture, null }, large.Select(s => s.Type));
     }
 
     [Theory]

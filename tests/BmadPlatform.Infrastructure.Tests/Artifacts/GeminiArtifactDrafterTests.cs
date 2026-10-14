@@ -460,4 +460,19 @@ public sealed class GeminiArtifactDrafterTests
         });
         Assert.Contains(logs.Entries, entry => entry.Level == LogLevel.Warning && entry.AllText.Contains("Malformed", StringComparison.Ordinal));
     }
+
+    // Between the Fake-only slices and the Gemini ones, the model refuses these types before any request leaves the process
+    // (the page shows the generic action-failed message); the default provider is Fake.
+    [Theory]
+    [InlineData(ArtifactType.Architecture)]
+    [InlineData(ArtifactType.EpicsAndStories)]
+    public async Task The_model_does_not_draft_the_chained_documents_yet_and_sends_nothing(ArtifactType type)
+    {
+        var handler = Replying("{}");
+
+        await Assert.ThrowsAsync<NotSupportedException>(
+            () => Drafter(handler).DraftAsync(Request(type, InitiativeDepth.Large) with { PrdMarkdown = "# PRD" }, default));
+
+        Assert.Empty(handler.Requests);
+    }
 }

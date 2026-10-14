@@ -45,6 +45,9 @@ internal static class DraftRenderer
             case ArtifactType.Spec:
                 SpecLayout.Write(composer);
                 break;
+            case ArtifactType.Architecture:
+                ArchitectureLayout.Write(composer);
+                break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(request), request.Type, "Unknown document type.");
         }

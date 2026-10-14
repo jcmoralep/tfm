@@ -22,6 +22,8 @@ internal static class DraftSlots
     public const string Vision = "vision";
     public const string NonUsers = "non-users";
     public const string Glossary = "glossary";
+    public const string Paradigm = "paradigm";
+    public const string Deferred = "deferred";
 
     private const string MetricRule = "Every metric needs a target, a way to measure it and a counter-metric; add the missing ones as assumption or unknown items.";
 

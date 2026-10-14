@@ -215,6 +215,26 @@ public sealed class GenerateArtifactTests
         Assert.Null(context.Drafter.Requests[^1].BriefMarkdown);
     }
 
+    [Fact]
+    public async Task The_architecture_waits_for_an_approved_prd_then_is_drafted_from_its_text_alone()
+    {
+        var id = await context.AtClosing(InitiativeDepth.Large);
+        await context.Generate(id, ArtifactType.Prd);
+
+        var waiting = await Assert.ThrowsAsync<DomainException>(() => context.Generate(id, ArtifactType.Architecture));
+
+        Assert.Equal(ArtifactTexts.ReasonFor(ArtifactAvailability.WaitingForPrd), waiting.Message);
+
+        await context.Approve(id, ArtifactType.Prd, 1);
+        await context.Generate(id, ArtifactType.Architecture);
+
+        var request = context.Drafter.Requests[^1];
+        Assert.Equal(ArtifactType.Architecture, request.Type);
+        Assert.Equal(context.StoredArtifact(id, ArtifactType.Prd).Content, request.PrdMarkdown);
+        Assert.Null(request.ArchitectureMarkdown);
+        Assert.Empty(request.Answers);
+    }
+
     [Theory]
     [InlineData(ArtifactType.Architecture, true, false, true, false, false)]
     [InlineData(ArtifactType.Architecture, false, false, false, false, false)]

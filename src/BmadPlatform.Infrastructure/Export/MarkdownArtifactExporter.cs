@@ -26,6 +26,7 @@ internal sealed partial class MarkdownArtifactExporter : IArtifactExporter
         var text = new StringBuilder()
             .Append("---\n")
             .Append("title: ").Append(Quote(source.InitiativeName)).Append('\n')
+            .Append(TypeLine(source.Type))
             .Append("status: ").Append(source.Status == ArtifactStatus.Approved ? "approved" : "draft").Append('\n')
             .Append("created: ").Append(source.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)).Append('\n')
             .Append("updated: ").Append(date).Append('\n')
@@ -42,8 +43,12 @@ internal sealed partial class MarkdownArtifactExporter : IArtifactExporter
         ArtifactType.Spec => "spec",
         ArtifactType.Brief => "brief",
         ArtifactType.Prd => "prd",
+        ArtifactType.Architecture => "architecture",
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
     };
+
+    // The BMAD architecture spine declares its kind in the frontmatter; the other documents have no such key.
+    private static string TypeLine(ArtifactType type) => type == ArtifactType.Architecture ? "type: architecture-spine\n" : string.Empty;
 
     // The folder and skill names come from docs/bmad-referencia.md (BMAD 6.12.1). The note is a blockquote so it is
     // easy to see and easy to delete; the document below it is untouched.
@@ -55,6 +60,8 @@ internal sealed partial class MarkdownArtifactExporter : IArtifactExporter
                 "Este es el Brief de la iniciativa, el punto de partida del PRD en BMAD. Para usarlo, guárdelo en su repositorio de desarrollo como `planning-artifacts/briefs/brief-<proyecto>-<fecha>/brief.md` y pida a `bmad-prd` que lo tome como entrada.",
             ArtifactType.Prd =>
                 "Este es el PRD de la iniciativa. Para usarlo, guárdelo en su repositorio de desarrollo como `planning-artifacts/prds/prd-<proyecto>-<fecha>/prd.md`; los pasos siguientes de BMAD son la arquitectura (`bmad-architecture`) y las épicas e historias (`bmad-create-epics-and-stories`).",
+            ArtifactType.Architecture =>
+                "Este es un borrador de la arquitectura de la iniciativa, para revisión del equipo de desarrollo: no son decisiones técnicas finales. Para usarlo, guárdelo en su repositorio de desarrollo como `planning-artifacts/architecture/architecture-<proyecto>-<fecha>/ARCHITECTURE-SPINE.md` y úselo, junto con el PRD, como entrada de `bmad-create-epics-and-stories`. Antes de construir, el equipo debe responder la sección «Preguntas para desarrollo».",
             ArtifactType.Spec =>
                 "Esta es la especificación de la iniciativa. Para construirla, guárdela en su repositorio de desarrollo como `specs/spec-<proyecto>/SPEC.md` y pase esa carpeta a `bmad-build`.",
             _ => throw new ArgumentOutOfRangeException(nameof(source), source.Type, null),

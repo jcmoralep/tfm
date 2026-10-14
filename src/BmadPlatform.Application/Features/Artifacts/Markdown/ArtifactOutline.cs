@@ -65,8 +65,22 @@ public static class ArtifactOutline
         Top("Preguntas abiertas"),
     ];
 
+    // The sections of the BMAD architecture spine that the platform can fill honestly. The stack, the structural seed and
+    // the consistency conventions are not sections: they are Diferido entries, each with its reason.
+    private static readonly OutlineSection[] Architecture =
+    [
+        Top("Paradigma de diseño"),
+        Top("Invariantes heredadas"),
+        Top("Invariantes y reglas"),
+        Top("Mapa de capacidades"),
+        Top("Diferido"),
+        Top(DevelopmentQuestionsTitle),
+        Top(AssumptionIndexTitle),
+    ];
+
     public static IReadOnlyList<OutlineSection> Sections(ArtifactType type) => type switch
     {
+        ArtifactType.Architecture => Architecture,
         ArtifactType.Brief => Brief,
         ArtifactType.Prd => Prd,
         ArtifactType.Spec => Spec,
