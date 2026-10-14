@@ -145,3 +145,15 @@ no network). Release build: 0 code warnings (NU1507 only).
   request, no Brief text in logs.
 - Rollback boundary: revert the two code commits; the Fake drafter stays the default.
 - Pending: Chrome item C-4 (live) in the final walkthrough.
+
+## S5-A: documentation and requirement amendments (2026-10-13)
+
+Branch `feat/gemini-s5-docs-walkthrough`. Documents only; no source or test file touched, no build, no network, no key.
+
+- 5.1 `README.md`: status line (step 5 delivered once S5 merges), the Fake/Gemini section, the key via user-secrets or `Gemini__ApiKey` (no real key), the options table with defaults (model `gemini-3.6-flash`, 60 and 120 s), behavior on errors, the privacy statement; the artifacts bullet no longer says Gemini "will come".
+- 5.2 `AGENTS.md` 4.8: the switch, the model and why (latency table, owner decision 2026-10-13), the key rules, the free-tier warning kept as documentation, model is configuration, content-free logs.
+- 5.3 `REQUISITOS.md`: RF-68..RF-72 added as `[CONFIRMADO 2026-10-13]`; RF-42, RF-46, RF-48 amended; RN-05, RNF-02, RNF-04 cross-referenced.
+- 5.4 `docs/mejoras-posteriores.md`: fast mode plus stakes calibration (mixed-stakes rule), new script topics (RF-64), model-suggested level, separate models for turns and drafts, Interactions API. The judge-only last-question row already existed and was not duplicated.
+- 5.5 committed (955046f). Also `docs/gemini-sonda.md` got the 2026-10-13 model comparison (3.8 Flash 58 s, 3.5 Flash-Lite 72 s, 3.6 Flash 2.0 s, 3.1 Flash-Lite 1.3 s).
+- 5.6 (partial): `docs/gemini-evaluacion.md` created with three personas, per-persona checks and an empty results table (a841713). Filename follows the caller, not the older `evaluacion-gemini.md` in the task text; the task path was corrected. The LIVE run stays open.
+- Left open for the orchestrator: 5.6 run, 5.7, 5.8, 5.G, C-1..C-8, F.*.
