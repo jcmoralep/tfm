@@ -95,6 +95,6 @@ internal static partial class BriefFacts
         return shorter.Count(c => c == ' ') + 1 >= MinWordsForContainment && $" {longer} ".Contains($" {shorter} ", StringComparison.Ordinal);
     }
 
-    [GeneratedRegex(@"^\s*-\s+\*\*A-\d+\*\*\s*:?\s*(?<text>\S.*)$", RegexOptions.Multiline)]
+    [GeneratedRegex(@"^\s*-\s+\*\*A-\d+\*\*\s*:?\s*(?<text>\S.*)$", RegexOptions.Multiline, 1000)]
     private static partial Regex IndexLineRegex();
 }

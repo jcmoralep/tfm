@@ -481,25 +481,25 @@ internal sealed partial class DraftComposer
 
     private static string Escape(string line) => line.StartsWith('#') ? "\\" + line : line;
 
-    [GeneratedRegex(@"^(?:[-*+•–]|\d+[.):])\s+")]
+    [GeneratedRegex(@"^(?:[-*+•–]|\d+[.):])\s+", RegexOptions.None, 1000)]
     private static partial Regex ListMarkerRegex();
 
-    [GeneratedRegex(@"\s+")]
+    [GeneratedRegex(@"\s+", RegexOptions.None, 1000)]
     private static partial Regex WhitespaceRegex();
 
-    [GeneratedRegex(@"\[([^\]]*)\]\([^)]*\)")]
+    [GeneratedRegex(@"\[([^\]]*)\]\([^)]*\)", RegexOptions.None, 1000)]
     private static partial Regex LinkRegex();
 
-    [GeneratedRegex(@"\[ASSUMPTION[^\]]*\]?", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\[ASSUMPTION[^\]]*\]?", RegexOptions.IgnoreCase, 1000)]
     private static partial Regex AssumptionMarkerRegex();
 
-    [GeneratedRegex(@"\*+|_{2,}|`+|~~")]
+    [GeneratedRegex(@"\*+|_{2,}|`+|~~", RegexOptions.None, 1000)]
     private static partial Regex EmphasisRegex();
 
     // "FR-9", "Q - 2:" or "NFR3" at the start: the shapes the format checker reads as a definition.
-    [GeneratedRegex(@"^(?:(?:FR|NFR|SM|UJ|A|Q|AD)\s?-\s?\d+|(?:FR|NFR|UJ)\s?\d+)\s*:?", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^(?:(?:FR|NFR|SM|UJ|A|Q|AD)\s?-\s?\d+|(?:FR|NFR|UJ)\s?\d+)\s*:?", RegexOptions.IgnoreCase, 1000)]
     private static partial Regex ForgedIdRegex();
 
-    [GeneratedRegex(@"\b(Responsable|Revisar)\s*:", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\b(Responsable|Revisar)\s*:", RegexOptions.IgnoreCase, 1000)]
     private static partial Regex OwnerLabelRegex();
 }

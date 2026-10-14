@@ -241,7 +241,7 @@ One process-wide guard, shared by the assistant and the drafter, MUST allow at m
 
 ### Requirement: Logging redaction (RF-15, RNF-02, RNF-04, RN-05)
 
-The client MUST log, per call, only: the initiative id, the topic key (or the document type), the model name, the HTTP status, the duration, the `finishReason`, and the prompt, candidate and thinking token counts. It MUST NOT log message text, document text, the transcript, the system instruction, the response body, the parsed JSON, exception messages built from them, or the key, at any level. Failures MUST be logged at Warning with the reason code and the same allowed fields. The logging rule of the project (no content in logs) applies unchanged.
+The client MUST log, per call, only: the initiative id when the caller provides one (the assistant and drafter requests carry none by design, so the line may omit it), the topic key (or the document type), the model name, the HTTP status, the duration, the `finishReason`, and the prompt, candidate and thinking token counts. It MUST NOT log message text, document text, the transcript, the system instruction, the response body, the parsed JSON, exception messages built from them, or the key, at any level. Failures MUST be logged at Warning with the reason code and the same allowed fields. The logging rule of the project (no content in logs) applies unchanged.
 
 #### Scenario: Success log has only allowed fields [UNIT]
 - GIVEN a successful call with a capturing logger, a distinctive user text and a distinctive response text

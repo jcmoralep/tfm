@@ -4,7 +4,7 @@ Plataforma interna para que personas de producto lleven una iniciativa desde la 
 
 > **Nota de marcas.** BMad y BMAD-METHOD son marcas de BMad Code, LLC. Este proyecto no está afiliado ni avalado por ellos: usa el método BMAD (licencia MIT del código) y solo lo menciona para describir con qué es compatible. Por eso el producto no lleva «BMAD» en su nombre.
 
-Estado actual: **paso 5 (Gemini real detrás de un interruptor)** de `PROPUESTA-MVP.md` §7, que se da por entregado cuando se fusiona su último cambio (S5). Incluye la solución por capas, MySQL, Serilog, el inicio de sesión, el estilo visual base, las iniciativas, la conversación guiada, la generación, edición y aprobación del Brief, el PRD y la especificación, y la opción de que Gemini redacte las preguntas y los documentos (`Assistant:Provider=Gemini`; por defecto sigue el asistente de demostración). Siguen pendientes Arquitectura y Épicas (paso 6), contexto adjunto (paso 7) y exportación (paso 8).
+Estado actual: **paso 5 (Gemini real detrás de un interruptor)** de `PROPUESTA-MVP.md` §7, **entregado** (cambio `gemini-assistant`, siete PR fusionados el 2026-10-13). Incluye la solución por capas, MySQL, Serilog, el inicio de sesión, el estilo visual base, las iniciativas, la conversación guiada, la generación, edición y aprobación del Brief, el PRD y la especificación, y la opción de que Gemini redacte las preguntas y los documentos (`Assistant:Provider=Gemini`; por defecto sigue el asistente de demostración). Siguen pendientes Arquitectura y Épicas (paso 6), contexto adjunto (paso 7) y exportación (paso 8).
 
 ## Advertencia sobre Gemini (capa gratuita)
 
