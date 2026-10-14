@@ -1,5 +1,4 @@
 using BmadPlatform.Application.Features.Artifacts;
-using BmadPlatform.Domain.Artifacts;
 
 namespace BmadPlatform.Infrastructure.Artifacts;
 
@@ -14,10 +13,6 @@ namespace BmadPlatform.Infrastructure.Artifacts;
 /// </param>
 public sealed class FakeArtifactDrafter(TimeSpan delay = default) : IArtifactDrafter
 {
-    // Each inserted answer is clipped to 1,500 characters. The smaller budgets are a fallback that keeps the
-    // document under the content cap if the rest of the text is unusually long.
-    private static readonly int[] AnswerBudgets = [1500, 1000, 600, 300, 100];
-
     public async Task<string> DraftAsync(DraftRequest request, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -27,40 +22,6 @@ public sealed class FakeArtifactDrafter(TimeSpan delay = default) : IArtifactDra
             await Task.Delay(delay, cancellationToken);
         }
 
-        var draft = string.Empty;
-
-        foreach (var budget in AnswerBudgets)
-        {
-            draft = Compose(request, budget);
-
-            if (draft.Length <= Artifact.ContentMaxLength)
-            {
-                break;
-            }
-        }
-
-        return draft;
-    }
-
-    private static string Compose(DraftRequest request, int answerBudget)
-    {
-        var composer = new DraftComposer(request, answerBudget);
-
-        switch (request.Type)
-        {
-            case ArtifactType.Brief:
-                BriefLayout.Write(composer);
-                break;
-            case ArtifactType.Prd:
-                PrdLayout.Write(composer);
-                break;
-            case ArtifactType.Spec:
-                SpecLayout.Write(composer);
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(request), request.Type, "Unknown document type.");
-        }
-
-        return composer.Finish();
+        return DraftRenderer.Render(request, null);
     }
 }

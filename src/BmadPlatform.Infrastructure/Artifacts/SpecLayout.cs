@@ -19,7 +19,7 @@ internal static class SpecLayout
         c.Items(AssistantScript.Keys.Capabilities, c.Numbered(ItemPrefix.FunctionalRequirement));
 
         c.Heading("Restricciones");
-        c.Line("- " + c.Assumption("En el nivel Pequeña no se preguntó por restricciones; se confirman con el equipo de desarrollo antes de construir."));
+        c.Open(AssistantScript.Keys.Constraints, "En el nivel Pequeña no se preguntó por restricciones; se confirman con el equipo de desarrollo antes de construir.");
 
         c.Heading("No objetivos");
         c.Items(AssistantScript.Keys.OutOfScope);

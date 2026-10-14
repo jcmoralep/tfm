@@ -48,11 +48,16 @@ internal sealed partial class DraftComposer
     private readonly List<(string Id, string Text)> assumptions = [];
     private readonly List<(string Id, string Text)> questions = [];
     private readonly int answerBudget;
+    private readonly DraftItems? items;
 
-    public DraftComposer(DraftRequest request, int answerBudget)
+    // The longest a single model item may be, so one rambling item cannot take the whole budget of a section.
+    private const int MaxModelTextLength = 400;
+
+    public DraftComposer(DraftRequest request, int answerBudget, DraftItems? items = null)
     {
         Request = request;
         this.answerBudget = answerBudget;
+        this.items = items;
         answers = request.Answers.GroupBy(a => a.TopicKey).ToDictionary(g => g.Key, g => g.Last(), StringComparer.Ordinal);
     }
 
@@ -139,6 +144,14 @@ internal sealed partial class DraftComposer
 
         var answer = Answer(key);
 
+        // "No sé" and "nothing" answers keep their own rules whatever the model says; with no model items the answer is quoted.
+        if (CanTake(answer) && ModelItemsOf(key, mayClaimAnswer: answer is not null) is { Count: > 0 } modelItems)
+        {
+            WriteModelItems(modelItems, format, Wrap);
+
+            return;
+        }
+
         if (answer is null)
         {
             Line(Wrap(Assumption($"No se recibió una respuesta sobre {TopicNames.GetValueOrDefault(key, key)}; se confirma con quien propone la iniciativa.")));
@@ -176,6 +189,21 @@ internal sealed partial class DraftComposer
     /// </summary>
     public void JoinedItem(string key, string label)
     {
+        if (CanTake(Answer(key)) && ModelItemsOf(key, mayClaimAnswer: Answer(key) is not null) is { Count: > 0 } modelItems)
+        {
+            var shown = Fit(modelItems, out var cut);
+            var parts = shown.Select(Inline).ToList();
+
+            if (cut > 0)
+            {
+                parts.Add(MoreText(cut));
+            }
+
+            Line($"- **{label}**: {string.Join("; ", parts)}");
+
+            return;
+        }
+
         if (Answer(key) is { IsUnknown: false } answer)
         {
             var lines = Lines(answer.Text, out var omitted);
@@ -186,6 +214,141 @@ internal sealed partial class DraftComposer
         }
 
         Items(key, label: label);
+    }
+
+    /// <summary>
+    /// A section no topic feeds. It writes the model's items for the slot, or the fixed assumption when the model gave
+    /// none (and always, with no items), so the fake's text does not change.
+    /// </summary>
+    public void Open(string slotId, string fallbackAssumption)
+    {
+        if (ModelItemsOf(slotId, mayClaimAnswer: true) is { Count: > 0 } modelItems)
+        {
+            WriteModelItems(modelItems, null, value => "- " + value);
+
+            return;
+        }
+
+        Line("- " + Assumption(fallbackAssumption));
+    }
+
+    /// <summary>Registers an open question written by the model; its text is already clean. Returns its identifier.</summary>
+    public string OpenQuestion(string questionText)
+    {
+        var id = numberer.Next(ItemPrefix.Question);
+        questions.Add((id, questionText));
+
+        return id;
+    }
+
+    // A "No sé" or "nothing" answer is handled by code, so the model's items for its topic are not used.
+    private static bool CanTake(TopicAnswer? answer) => answer is null or { IsUnknown: false, IsNone: false };
+
+    // The cleaned items of a slot. Without an answer from the person, nothing can be "answer": it is a guess.
+    private List<DraftItem> ModelItemsOf(string slotId, bool mayClaimAnswer)
+    {
+        var cleaned = new List<DraftItem>();
+
+        foreach (var item in items?.Of(slotId) ?? [])
+        {
+            var value = ModelText(item.Text);
+
+            if (value.Length == 0)
+            {
+                continue;
+            }
+
+            var source = item.Source == DraftItemSource.Answer && !mayClaimAnswer ? DraftItemSource.Assumption : item.Source;
+            cleaned.Add(new DraftItem(value, source));
+        }
+
+        return cleaned;
+    }
+
+    // At most 20 items, then what fits the budget (the last one clipped); cut is how many more the model gave.
+    private List<DraftItem> Fit(List<DraftItem> modelItems, out int cut)
+    {
+        cut = Math.Max(0, modelItems.Count - MaxItemsPerAnswer);
+
+        var kept = new List<DraftItem>();
+        var used = 0;
+
+        foreach (var item in modelItems.Take(MaxItemsPerAnswer))
+        {
+            if (used + item.Text.Length <= answerBudget)
+            {
+                kept.Add(item);
+                used += item.Text.Length;
+
+                continue;
+            }
+
+            if (answerBudget - used > 1)
+            {
+                kept.Add(item with { Text = Clip(item.Text, answerBudget - used) });
+            }
+
+            break;
+        }
+
+        return kept;
+    }
+
+    private void WriteModelItems(List<DraftItem> modelItems, Func<string, string>? format, Func<string, string> wrap)
+    {
+        var shown = Fit(modelItems, out var cut);
+
+        foreach (var item in shown)
+        {
+            Line(item.Source switch
+            {
+                DraftItemSource.Answer => format is null ? wrap(item.Text) : format(item.Text),
+                DraftItemSource.Assumption => wrap(Assumption(item.Text)),
+                _ => wrap(Pending(item.Text)),
+            });
+        }
+
+        if (cut > 0)
+        {
+            Line(wrap(MoreText(cut)));
+        }
+    }
+
+    // The item as part of a sentence (the joined list): the text, a marked assumption or a reference to a question.
+    private string Inline(DraftItem item) => item.Source switch
+    {
+        DraftItemSource.Answer => item.Text,
+        DraftItemSource.Assumption => Assumption(item.Text),
+        _ => Pending(item.Text),
+    };
+
+    private string Pending(string questionText) => $"Pendiente: ver {OpenQuestion(questionText)}.";
+
+    /// <summary>
+    /// Plain one-line text from what the model wrote: whitespace collapsed, Markdown and list markers removed, any
+    /// identifier definition or assumption marker at the start removed (so the model cannot forge ids or index
+    /// entries), a "Responsable:" or "Revisar:" label neutralized so a question cannot look assigned, a leading
+    /// <c>#</c> escaped, and the whole clipped to 400 characters.
+    /// </summary>
+    public static string ModelText(string? raw)
+    {
+        var value = LinkRegex().Replace(raw ?? string.Empty, "$1");
+        value = AssumptionMarkerRegex().Replace(value, " ");
+        value = EmphasisRegex().Replace(value, string.Empty);
+        value = Collapse(value);
+
+        string before;
+
+        do
+        {
+            before = value;
+            value = ForgedIdRegex().Replace(ListMarkerRegex().Replace(value, string.Empty).Trim(), string.Empty).Trim();
+        }
+        while (value != before);
+
+        value = OwnerLabelRegex().Replace(value, "$1 -");
+
+        return Clip(Escape(value), MaxModelTextLength);
     }
 
     /// <summary>A list item with a functional requirement, a metric or another identifier of the prefix.</summary>
@@ -300,4 +463,20 @@ internal sealed partial class DraftComposer
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex WhitespaceRegex();
+
+    [GeneratedRegex(@"\[([^\]]*)\]\([^)]*\)")]
+    private static partial Regex LinkRegex();
+
+    [GeneratedRegex(@"\[ASSUMPTION[^\]]*\]?", RegexOptions.IgnoreCase)]
+    private static partial Regex AssumptionMarkerRegex();
+
+    [GeneratedRegex(@"\*+|_{2,}|`+|~~")]
+    private static partial Regex EmphasisRegex();
+
+    // "FR-9", "Q - 2:" or "NFR3" at the start: the shapes the format checker reads as a definition.
+    [GeneratedRegex(@"^(?:(?:FR|NFR|SM|UJ|A|Q|AD)\s?-\s?\d+|(?:FR|NFR|UJ)\s?\d+)\s*:?", RegexOptions.IgnoreCase)]
+    private static partial Regex ForgedIdRegex();
+
+    [GeneratedRegex(@"\b(Responsable|Revisar)\s*:", RegexOptions.IgnoreCase)]
+    private static partial Regex OwnerLabelRegex();
 }
