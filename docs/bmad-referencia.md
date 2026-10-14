@@ -81,6 +81,14 @@ Estas tres comprobaciones necesitan ejecutar BMAD de verdad. **No se han ejecuta
 
 Notas de la ejecución del 2026-10-14: `bmad-build` necesita `uv` en el PATH (sin él se detiene al activarse) y, en modo sin interfaz, permitir `uv run`. El inventario de `epics.md` aceptó `FR-n` con guion, así que escribir `FR3:` (decisión del cambio `bmad-alignment`) es una elección de la plataforma y no un requisito de BMAD. La falta de frontmatter que señaló `bmad-prd` no aplica: la exportación lo añade (RF-36) y el golden es el Markdown guardado. La línea `- Pendiente: ver Q-1.` del golden `prd-large.md` es la marca intencional de un dato que falta (la plataforma la escribe a propósito y las pruebas la exigen); BMAD la conservó como una nota dentro de la lista, sin dañar nada. No requiere ajuste.
 
+## 7 bis. Comprobaciones del cambio `architecture-epics` (2026-10-14, BMAD 6.12.1)
+
+| Comprobación | Resultado | Evidencia |
+|---|---|---|
+| `lint_spine.py` sobre la Arquitectura exportada | cumple | `{"ok": true, "total_findings": 0}`. La detección de TBD/TODO/FIXME/XXX distingue mayúsculas: «todo» en minúscula no se marca; «TODO» en mayúsculas dentro del texto sí (falso positivo posible). Las etiquetas `Vincula (binds)`, `Previene (prevents)` y `Regla (rule)` pasan porque el script busca esas palabras en inglés sin distinguir mayúsculas. |
+| Paso 1 de épicas sobre el PRD y la Arquitectura exportados | contenido bien, **descubrimiento falla** | Los patrones del paso (`*prd*.md`, `*prd*/index.md`, `*architecture*.md`, `*architecture*/index.md`) no son recursivos: no encuentran `prds/prd-x/prd.md` ni `architecture/architecture-x/ARCHITECTURE-SPINE.md`. Con las rutas a mano mantuvo `FR-n`, `NFR-n` y `AD-n` con guion y los mismos números, y aceptó el español. La nota de uso de la Arquitectura ahora indica copiar los archivos sueltos a `planning-artifacts/` o dar las rutas. |
+| `epics.md` exportado frente a `bmad-build` y a la lista de validación del paso 4 | cumple, con notas | `bmad-build` lo toma como intención inicial; `status: approved` no está en su lista (`draft`, `ready-for-dev`, `in-progress`, `in-review`, `done`) y se ignora; `stepsCompleted` e `inputDocuments` no se leen. BMAD escribe `inputDocuments` con rutas relativas completas y `status: draft`; nuestra exportación usa nombres de archivo y `approved`. La lista de validación marcó cosas de contenido de la muestra (una épica técnica, criterios débiles), no de formato. |
+
 ## 8. Cierre de conformidad del cambio `bmad-alignment`
 
 Resultado: **cumple con notas** (comparación por lectura de los cuatro documentos de ejemplo `Goldens/` contra las secciones 2 y 4 de este documento y contra la regla de cierre de `bmad-prd`, paso Finalize 4: lo que no bloquea se difiere con responsable y condición de revisión). No se ejecutó BMAD.
