@@ -45,7 +45,9 @@ BMAD no tiene una taxonomía explícita pequeño / épica / proyecto en los arch
 
 - **No existen** `bmad-ticket` ni `tickets.toml` en esta versión. Las "Épicas e historias" corresponden a `bmad-create-epics-and-stories` y a `epics.md`.
 - Los requisitos no funcionales **no tienen formato de identificador** en el PRD; el paso de épicas espera `FR1:` y `NFR1:` sin guion al extraerlos, y el PRD usa `FR-1`. La propia plantilla del PRD (`bmad-prd/assets/prd-template.md`) usa `FR-1`, `UJ-1` y `SM-1` con guion; solo el paso 1 de `bmad-create-epics-and-stories` escribe `FR1:`/`NFR1:`, en el inventario que arma dentro de `epics.md`, y su extracción es flexible ("FR1:", "Functional Requirement 1:", "or similar").
-- **Decisión (cambio `bmad-alignment`, 2026-10-11):** la plataforma y el PRD conservan el guion; el generador de épicas (paso 6) escribe el inventario de `epics.md` como `FR1:`/`NFR1:` **con el mismo número** (`FR-3` pasa a `FR3:`); la exportación (paso 8) copia el PRD tal cual. `NFR-n` es una extensión de la plataforma. Base: lectura del código de BMAD, no una ejecución; se comprueba en la instalación real antes del paso 6.
+- **Decisión (cambio `bmad-alignment`, 2026-10-11; revisada en el cambio `architecture-epics`, 2026-10-14):** la plataforma y el PRD conservan el guion, y el inventario de `epics.md` (paso 6) **también conserva el guion y el mismo número** (`FR-3` sigue siendo `FR-3`; no hay conversor). La decisión original de escribir `FR1:`/`NFR1:` se revirtió porque la ejecución real de la comprobación 2 (sección 7) mostró que `bmad-create-epics-and-stories` acepta `FR-n` con guion sin renumerar; `FR3:` era una elección de la plataforma. La exportación (paso 8) copia el PRD tal cual. `NFR-n` es una extensión de la plataforma.
+- **Arquitectura (paso 6):** sigue la forma de `ARCHITECTURE-SPINE.md` con siete secciones y bloques `AD-n` con *Vincula (binds)*, *Previene (prevents)* y *Regla (rule)* (contienen las palabras en minúscula que pide `lint_spine.py`). No propone tecnologías: el stack y el esqueleto del proyecto van en **Diferido** y en una pregunta para desarrollo. La recomendación de stack verificada en la web (un paso propio de BMAD) no se implementa; está en `docs/mejoras-posteriores.md`. Comprobación 1 de `lint_spine.py` (2026-10-14): `ok: true`, sin hallazgos; el control de marcadores es sensible a mayúsculas.
+- **Épicas e historias (paso 6):** mantienen en inglés las palabras estructurales de BMAD (`Epic`, `Story`, `As a / I want / So that`, `Acceptance Criteria`, `Given / When / Then`) y el contenido en español; la línea de cita es `**Cubre:** FR-n, NFR-n`. El inventario, el mapa de cobertura y las preguntas por requisito sin historia los calcula el código. Falta confirmar con BMAD real que `bmad-create-epics-and-stories` y `bmad-build` aceptan el documento exportado (comprobaciones 2 y 3 del cambio, grupo F).
 - No hay carpetas por "iniciativa" en BMAD: la palabra solo aparece como altura de la arquitectura y en un menú del PRD.
 - La salida usa nombres inconsistentes entre artefactos (carpetas con fecha, `spec-<slug>` sin fecha, `epics.md` plano).
 
@@ -66,7 +68,7 @@ Estas tres comprobaciones necesitan ejecutar BMAD de verdad. **No se han ejecuta
    - Esperado: la lee como contexto de planificación sin quejarse de la estructura (Por qué, Capacidades con `FR-n`, Restricciones, No objetivos, Señal de éxito) y sin exigir `CAP-N` ni el frontmatter de su plantilla. Anotar qué pide si se queja.
 2. **El paso de épicas lee los `FR-n` de un PRD exportado.**
    - Cómo: copiar `prd-large.md` como `planning-artifacts/prds/prd-demo/prd.md` y ejecutar el paso 1 de `bmad-create-epics-and-stories` (validar requisitos).
-   - Esperado: extrae los requisitos funcionales y no funcionales del PRD y escribe en el inventario `FR1:`, `FR2:`… y `NFR1:`… con **los mismos números** que `FR-1`, `NFR-1`… del PRD. Anotar si pierde alguno o los renumera.
+   - Esperado: extrae los requisitos funcionales y no funcionales del PRD y escribe en el inventario los mismos números que `FR-1`, `NFR-1`… del PRD (el plan original era `FR1:`, `NFR1:`; el cambio `architecture-epics` lo sustituyó por el guion tras esta comprobación). Anotar si pierde alguno o los renumera.
 3. **BMAD tolera los encabezados en español y el sufijo de las preguntas.**
    - Cómo: con el mismo `prd-large.md`, editar una línea de la sección 8 para que lea `- **Q-1**: … (Responsable: Legal; Revisar: antes de la arquitectura)` y pedir a `bmad-prd` (o al paso de épicas) que lea el documento.
    - Esperado: los encabezados en español (`## 8 Preguntas abiertas`, etc.) y la línea `Q-n` con su sufijo se leen sin pérdida ni reescritura; el sufijo se conserva como texto de la pregunta.
@@ -86,7 +88,7 @@ Resultado: **cumple con notas** (comparación por lectura de los cuatro document
 | Aspecto | Resultado |
 |---|---|
 | Encabezados y orden (Brief, PRD, Especificación) | Coinciden con la sección 2; los títulos van en español. |
-| Esquema de identificadores | Con guion (`FR-n`, `NFR-n`, `UJ-n`, `A-n`, `Q-n`); decisión y excepción del paso de épicas en la sección 4. |
+| Esquema de identificadores | Con guion (`FR-n`, `NFR-n`, `UJ-n`, `A-n`, `Q-n`); decisión en la sección 4 (el inventario de épicas también conserva el guion). |
 | Recorridos clave (PRD 2.3) | Una sola suposición `[ASSUMPTION: A-n]` con su entrada en el índice; no se inventan `UJ-n`. |
 | Línea de pregunta abierta | `- **Q-n**: texto (Responsable: …; Revisar: …)`: lleva las dos piezas que pide Finalize 4. La aprobación se bloquea mientras falte alguna. |
 | Índice de suposiciones | Cada `A-n` del documento aparece una vez en el índice. |
