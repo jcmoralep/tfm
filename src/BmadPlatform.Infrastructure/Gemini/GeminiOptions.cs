@@ -16,7 +16,7 @@ public sealed class GeminiOptions
     /// <summary>No default: it comes from the environment variable <c>Gemini__ApiKey</c> or user-secrets.</summary>
     public string ApiKey { get; set; } = string.Empty;
 
-    public string Model { get; set; } = "gemini-3.8-flash";
+    public string Model { get; set; } = "gemini-3.6-flash";
 
     public string BaseUrl { get; set; } = "https://generativelanguage.googleapis.com/v1beta";
 

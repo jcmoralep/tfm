@@ -40,7 +40,7 @@ public sealed class ProviderRegistrationTests
         var options = GeminiOptions.BindAndValidate(Config(("Gemini:ApiKey", Key)));
 
         Assert.Equal(Key, options.ApiKey);
-        Assert.Equal("gemini-3.8-flash", options.Model);
+        Assert.Equal("gemini-3.6-flash", options.Model);
         Assert.Equal("https://generativelanguage.googleapis.com/v1beta", options.BaseUrl);
         Assert.Equal("low", options.ThinkingLevel);
         Assert.Equal((60, 120, 2), (options.TurnTimeoutSeconds, options.DraftTimeoutSeconds, options.MaxConcurrentCalls));

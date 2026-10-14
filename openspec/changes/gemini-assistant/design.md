@@ -99,7 +99,7 @@ After the save, the journey sees the answered key's last message as assistant, s
 | Type | Shape |
 |---|---|
 | `AssistantProvider` | `enum { Fake, Gemini }` plus `static AssistantProvider Read(IConfiguration)`. Empty means Fake. An unknown value throws `InvalidOperationException` naming `Assistant:Provider` and "Fake, Gemini" |
-| `GeminiOptions` | `ApiKey`, `Model="gemini-3.8-flash"`, `BaseUrl="https://generativelanguage.googleapis.com/v1beta"`, `ThinkingLevel="low"`, `TurnTimeoutSeconds=30`, `DraftTimeoutSeconds=90`, `MaxConcurrentCalls=2`. `static GeminiOptions BindAndValidate(IConfiguration)` throws, naming the option and never the key. A missing or blank key gives "…set the environment variable Gemini__ApiKey (or user-secrets Gemini:ApiKey)…" |
+| `GeminiOptions` | `ApiKey`, `Model="gemini-3.6-flash"`, `BaseUrl="https://generativelanguage.googleapis.com/v1beta"`, `ThinkingLevel="low"`, `TurnTimeoutSeconds=30`, `DraftTimeoutSeconds=90`, `MaxConcurrentCalls=2`. `static GeminiOptions BindAndValidate(IConfiguration)` throws, naming the option and never the key. A missing or blank key gives "…set the environment variable Gemini__ApiKey (or user-secrets Gemini:ApiKey)…" |
 | `GeminiCall` | `record(string Purpose, GeminiCallKind Kind, string SystemInstruction, string UserContent, JsonObject ResponseSchema)`. `Purpose` is a log tag such as `turn:idea` or `draft:Prd` |
 | `GeminiCallKind` | `Turn`, `Draft` (selects the deadline) |
 | `GeminiResponse` | `record(JsonNode Json, string FinishReason, GeminiUsage Usage)` |
@@ -279,7 +279,7 @@ There is no Fake fallback. `FakeArtifactDrafter` becomes delay plus `DraftRender
 ## Request and Response JSON
 
 ```json
-POST {BaseUrl}/models/gemini-3.8-flash:generateContent
+POST {BaseUrl}/models/gemini-3.6-flash:generateContent
 x-goog-api-key: <key>          Content-Type: application/json
 { "systemInstruction": { "parts": [ { "text": "…" } ] },
   "contents": [ { "role": "user", "parts": [ { "text": "<initiative>…</next_topic>…" } ] } ],
