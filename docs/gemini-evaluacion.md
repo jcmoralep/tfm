@@ -122,3 +122,9 @@ Una iniciativa Pequeña, con respuestas precisas, usando `gemini-3.6-flash` y de
 Consecuencia para el producto: con la capa gratuita el tope diario por modelo es muy bajo (un Estándar usa unas 12 llamadas). Opciones ya previstas: otro modelo con otra cuota (`Gemini:Model`), modelos distintos para turnos y borradores (anotado en `docs/mejoras-posteriores.md`) o un plan de pago.
 
 Fichas por llamada (de los registros): turnos de 976 a 1.482 de entrada y 77 a 120 de salida, con pensamiento 210 solo en uno de seis; Brief 1.127 de entrada y 603 de salida. Cuota: en la capa gratuita el modelo `gemini-3.6-flash` aceptó cinco peticiones en unos 45 s y devolvió 429 a la sexta; un usuario que escribe con calma (más de 12 s por respuesta) queda por debajo. No se vieron los límites diarios (solo se muestran en AI Studio). Pendiente: medir los niveles de pensamiento `medium` y `high`, que no se probaron.
+
+## Arquitectura con Gemini (architecture-epics S5, 2026-10-14)
+
+- Iniciativa Grande con el PRD aprobado del recorrido de prueba. `gemini-3.6-flash` respondió 503 dos veces seguidas (saturación, 8,6 s y 4,5 s): la aplicación mostró «El asistente tardó demasiado en responder…», no guardó nada y el documento anterior quedó intacto.
+- Con `Gemini__Model=gemini-3.1-flash-lite`: estado 200, 5,1 s, `finishReason` STOP, tokens: prompt 1276, respuesta 420, razonamiento 1315.
+- Resultado: dos decisiones (AD-1, AD-2) con referencias válidas a FR/NFR del PRD, mapa de capacidades cubierto, ninguna tecnología ni versión nombrada, la pila en Diferido, cinco preguntas para desarrollo ya asignadas, cero avisos de formato. `Logs/` sin contenido.
