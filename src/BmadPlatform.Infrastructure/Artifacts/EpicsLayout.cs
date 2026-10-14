@@ -341,14 +341,7 @@ internal static class EpicsLayout
 
     private static Story? NormalizeStory(StoryItem item, PrdFacts prd, LayoutBudget budget, Dictionary<string, string> texts)
     {
-        var covers = item.Covers
-            .Select(PrdFacts.CanonicalId)
-            .OfType<string>()
-            .Where(prd.Knows)
-            .Distinct(StringComparer.Ordinal)
-            .OrderBy(prd.PositionOf)
-            .Take(MaxCoversPerStory)
-            .ToList();
+        var covers = EpicsReply.ValidCovers(item.Covers, prd).Take(MaxCoversPerStory).ToList();
 
         var title = Field(item.Title, budget);
         var wants = Field(item.IWant, budget);
@@ -389,7 +382,5 @@ internal static class EpicsLayout
 
     // Clean one-line text, clipped to the rung; null when the model left it empty or wrote a placeholder.
     private static string? Field(string? raw, LayoutBudget budget) =>
-        !ArchitectureLayout.HasPlaceholder(raw) && DraftComposer.ModelText(raw) is { Length: > 0 } text
-            ? DraftComposer.Clip(text, budget.FieldClip)
-            : null;
+        EpicsReply.Clean(raw) is { } text ? DraftComposer.Clip(text, budget.FieldClip) : null;
 }

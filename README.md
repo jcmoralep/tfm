@@ -63,9 +63,9 @@ Desde el detalle de la iniciativa, la tarjeta **Artefactos** lista los documento
 - **Regenerar** devuelve todas las preguntas a «por asignar»: los responsables asignados se pierden junto con los cambios manuales.
 - En el PRD, la sección 2.3 "Recorridos clave" ya no inventa recorridos: lleva una sola suposición `[ASSUMPTION: A-n]` hasta que se escriba un caso real. Los identificadores generados llevan guion (`FR-1`, `NFR-1`, `UJ-1`, `A-1`, `Q-1`); la decisión y sus excepciones están en `docs/bmad-referencia.md` §4.
 - Conformidad con BMAD: ver «Cierre de conformidad» en `docs/bmad-referencia.md`; lo que va más allá de BMAD está en `docs/mejoras-posteriores.md`.
-- La iniciativa pasa a **Lista para construir** cuando todos los documentos de su nivel están aprobados. **Una iniciativa Grande todavía no puede terminar**: faltan Arquitectura y Épicas e historias, que llegan en un paso posterior.
+- La iniciativa pasa a **Lista para construir** cuando todos los documentos de su nivel están aprobados. Una iniciativa Grande termina con el PRD, la Arquitectura y las Épicas e historias aprobados; son borradores para revisión del equipo de desarrollo, y si el documento anterior cambia después, la página del siguiente muestra un aviso (no bloquea).
 - Cada documento se puede **descargar en `.md`** y guardar como **PDF** desde la ventana de impresión del navegador (RF-21).
-- Con `Assistant:Provider=Fake` (por defecto) el texto lo redacta un **generador falso y determinista** (`FakeArtifactDrafter`): produce siempre el mismo borrador con las mismas respuestas y no envía nada a Gemini. Con `Gemini`, el modelo redacta desde elementos con fuente (respuesta, suposición o desconocido) y no inventa datos (ver «Asistente: Fake o Gemini»).
+- Con `Assistant:Provider=Fake` (por defecto) el texto lo redacta un **generador falso y determinista** (`FakeArtifactDrafter`): produce siempre el mismo borrador con las mismas respuestas y no envía nada a Gemini. Con `Gemini`, el modelo redacta desde elementos con fuente (respuesta, suposición o desconocido) y no inventa datos (ver «Asistente: Fake o Gemini»); la Arquitectura y las Épicas e historias las redacta desde el PRD y la Arquitectura aprobados, con un esquema JSON propio, y el código numera y valida las citas.
 - Los registros no guardan el contenido de los documentos.
 
 ## Requisitos previos

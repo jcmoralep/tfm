@@ -47,7 +47,7 @@ internal static class ArchitecturePrompt
         + $"<prd>\n{Block(request.PrdMarkdown)}\n</prd>";
 
     // Markdown keeps its lines; the text is clipped to the cap of a document and cannot close the block.
-    private static string Block(string? markdown)
+    internal static string Block(string? markdown)
     {
         var text = PromptText.Neutralize(markdown?.Trim());
 
