@@ -68,4 +68,16 @@ public sealed class OpenQuestionsTests
         Assert.Equal(["Q-3", "Q-2"], OpenQuestions.Unassigned(markdown));
         Assert.Empty(OpenQuestions.Parse("No hay preguntas abiertas."));
     }
+
+    [Fact]
+    public void The_development_suffix_reads_as_assigned()
+    {
+        var line = "- **Q-1**: ¿Qué tecnología usará la solución?" + OpenQuestions.DevelopmentSuffix;
+
+        var question = Assert.Single(OpenQuestions.Parse(line));
+
+        Assert.True(question.IsAssigned);
+        Assert.Equal(("Equipo de desarrollo", "antes de construir"), (question.Owner, question.Revisit));
+        Assert.Empty(OpenQuestions.Unassigned(line));
+    }
 }

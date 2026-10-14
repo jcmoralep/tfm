@@ -322,4 +322,45 @@ public sealed class ArtifactFormatCheckerTests
 
         Assert.Equal("Falta la sección «Índice de suposiciones».", warning.Message);
     }
+
+    [Theory]
+    [InlineData("### AD-1 — Uno\n### AD-1 — Otra vez", "AD-1 ya está definido antes")]
+    [InlineData("### AD-0 — Cero", "«AD-0» no es válido")]
+    [InlineData("### AD3 — Sin guion", "«AD3» no sigue el formato AD-n")]
+    public void An_AD_heading_is_checked_as_a_definition(string headings, string expected)
+    {
+        var markdown = CleanSpec(m => m + "\n" + headings + "\n");
+
+        var warning = Assert.Single(CheckSpec(markdown));
+
+        Assert.Contains(expected, warning.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AD_headings_with_gaps_and_ordinary_headings_are_silent()
+    {
+        var markdown = CleanSpec(m => m + "\n### AD-1 — Uno\n### AD-4 — Cuatro\n### Adaptación al cambio\n### Ad-hoc\n");
+
+        Assert.Empty(CheckSpec(markdown));
+    }
+
+    [Theory]
+    [InlineData("## Mapa de cobertura de requisitos", 0)]
+    [InlineData("## Otra sección", 2)]
+    public void A_requirement_repeated_is_silent_only_inside_the_coverage_map(string heading, int expectedWarnings)
+    {
+        var markdown = CleanSpec(m => m + $"\n{heading}\n\n- FR-1: Epic 1 (1.1)\n- FR-2: Epic 1 (1.2)\n");
+
+        Assert.Equal(expectedWarnings, CheckSpec(markdown).Count);
+    }
+
+    [Fact]
+    public void An_inventory_line_is_a_definition_and_the_map_does_not_hide_the_next_section()
+    {
+        var markdown = CleanSpec(m => m + "\n## Mapa de cobertura de requisitos\n\n- FR-1: Epic 1\n\n## Inventario\n\n- FR-1: Buscar\n");
+
+        var warning = Assert.Single(CheckSpec(markdown));
+
+        Assert.Contains("FR-1 ya está definido antes", warning.Message, StringComparison.Ordinal);
+    }
 }

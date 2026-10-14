@@ -19,7 +19,7 @@ public static partial class ArtifactFormatChecker
 
     // Identifiers written without a hyphen ("FR3") are read as an attempt at the scheme only for these prefixes. For
     // the short ones (Q4, A4, SM2) the same text is an ordinary word, a quarter or a model name followed by prose.
-    private static readonly string[] UnhyphenatedPrefixes = [ItemPrefix.NonFunctionalRequirement, ItemPrefix.FunctionalRequirement, ItemPrefix.UserJourney];
+    private static readonly string[] UnhyphenatedPrefixes = [ItemPrefix.NonFunctionalRequirement, ItemPrefix.FunctionalRequirement, ItemPrefix.UserJourney, ItemPrefix.ArchitectureDecision];
 
     public static IReadOnlyList<FormatWarning> Check(ArtifactType type, string markdown)
     {
@@ -36,6 +36,7 @@ public static partial class ArtifactFormatChecker
         }
 
         var index = MarkdownLines.FindIndexRange(headings, lines.Length);
+        var map = MarkdownLines.FindSectionRange(headings, ArtifactOutline.CoverageMapTitle, lines.Length);
         var fenced = MarkdownLines.FencedLines(lines);
         var definitions = new Dictionary<string, int>(StringComparer.Ordinal);
         var markers = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -45,8 +46,19 @@ public static partial class ArtifactFormatChecker
         {
             var number = i + 1;
 
-            if (fenced[i] || MarkdownLines.IsHeading(lines[i]))
+            if (fenced[i])
             {
+                continue;
+            }
+
+            // Only an AD heading is a definition; every other heading is skipped.
+            if (MarkdownLines.IsHeading(lines[i]))
+            {
+                if (AdHeadingRegex().Match(lines[i]) is { Success: true } heading)
+                {
+                    CheckDefinition(lines[i][heading.Length..], number, false, definitions, entries, warnings, lines[i]);
+                }
+
                 continue;
             }
 
@@ -55,6 +67,12 @@ public static partial class ArtifactFormatChecker
             if (!inIndex)
             {
                 CheckMarkers(lines[i], number, markers, warnings);
+            }
+
+            // The coverage map cites requirements ("- FR-1: Epic 1"); only the inventory defines them.
+            if (map is { } mapRange && number > mapRange.First && number <= mapRange.Last)
+            {
+                continue;
             }
 
             CheckDefinition(lines[i], number, inIndex, definitions, entries, warnings);
@@ -132,8 +150,10 @@ public static partial class ArtifactFormatChecker
         bool inIndex,
         Dictionary<string, int> definitions,
         Dictionary<string, int> entries,
-        List<FormatWarning> warnings)
+        List<FormatWarning> warnings,
+        string? fullLine = null)
     {
+        var quoted = fullLine ?? line;
         var match = DefinitionRegex().Match(line);
 
         if (!match.Success)
@@ -170,14 +190,14 @@ public static partial class ArtifactFormatChecker
 
         if (!valid.Success)
         {
-            warnings.Add(new FormatWarning(number, $"{At(line)}«{token}» no sigue el formato {prefix}-n."));
+            warnings.Add(new FormatWarning(number, $"{At(quoted)}«{token}» no sigue el formato {prefix}-n."));
 
             return;
         }
 
         if (valid.Groups["n"].Value == "0")
         {
-            warnings.Add(new FormatWarning(number, $"{At(line)}«{token}» no es válido: la numeración empieza en 1."));
+            warnings.Add(new FormatWarning(number, $"{At(quoted)}«{token}» no es válido: la numeración empieza en 1."));
 
             return;
         }
@@ -192,7 +212,7 @@ public static partial class ArtifactFormatChecker
 
         if (target.ContainsKey(token))
         {
-            warnings.Add(new FormatWarning(number, $"{At(line)}{token} ya está definido antes en el documento."));
+            warnings.Add(new FormatWarning(number, $"{At(quoted)}{token} ya está definido antes en el documento."));
         }
         else
         {
@@ -212,7 +232,11 @@ public static partial class ArtifactFormatChecker
     [GeneratedRegex(@"^\s*(?:[-*+]\s+)?(?:\*\*)?(?<tok>(?<p>[A-Za-z]{1,3})(?<rest>\s?-\s?[A-Za-z0-9]*|[0-9]+))(?=\*\*|\s|:|\.|\)|$)")]
     private static partial Regex DefinitionRegex();
 
-    [GeneratedRegex(@"^(?<p>NFR|FR|UJ|SM|A|Q)-(?<n>0|[1-9][0-9]*)$")]
+    // "### AD-1 — título" or "### AD3": the heading hashes, up to the identifier.
+    [GeneratedRegex(@"^\s{0,3}#{2,6}\s+(?=(?:AD)(?:\s?-|[0-9]))", RegexOptions.IgnoreCase)]
+    private static partial Regex AdHeadingRegex();
+
+    [GeneratedRegex(@"^(?<p>NFR|FR|UJ|SM|AD|A|Q)-(?<n>0|[1-9][0-9]*)$")]
     private static partial Regex ValidIdRegex();
 
     [GeneratedRegex(@"\[ASSUMPTION[^\]]*\]?")]

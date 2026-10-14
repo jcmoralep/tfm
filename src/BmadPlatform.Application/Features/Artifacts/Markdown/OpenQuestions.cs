@@ -25,6 +25,12 @@ public static partial class OpenQuestions
     /// <summary>The suffix every generated question carries until someone assigns it.</summary>
     public static string DefaultSuffix { get; } = Suffix(OwnerPlaceholder, RevisitPlaceholder);
 
+    /// <summary>
+    /// The suffix of the questions of the Architecture and Epics drafts: the development team owns them and answers
+    /// them before building, so they are already assigned and never block approval.
+    /// </summary>
+    public static string DevelopmentSuffix { get; } = Suffix("Equipo de desarrollo", "antes de construir");
+
     public static string Suffix(string owner, string revisit) => $" (Responsable: {owner}; Revisar: {revisit})";
 
     /// <summary>Every open question in document order; a duplicated id appears once per line.</summary>

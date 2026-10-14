@@ -39,6 +39,6 @@ public sealed class ItemNumbererTests
     [Fact]
     public void All_kinds_are_listed_longest_first()
     {
-        Assert.Equal(["NFR", "FR", "UJ", "SM", "A", "Q"], ItemPrefix.All);
+        Assert.Equal(["NFR", "FR", "UJ", "SM", "AD", "A", "Q"], ItemPrefix.All);
     }
 }
