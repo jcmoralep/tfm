@@ -32,6 +32,7 @@ public sealed class GenerateArtifactTests
         var request = Assert.Single(context.Drafter.Requests);
         Assert.Equal((ArtifactType.Spec, "Mi app", InitiativeDepth.Small), (request.Type, request.InitiativeName, request.Depth));
         Assert.Equal(6, request.Answers.Count);
+        Assert.Null(request.BriefMarkdown);
     }
 
     [Fact]
@@ -171,6 +172,47 @@ public sealed class GenerateArtifactTests
         await Assert.ThrowsAsync<DomainException>(() => context.Generate(id, ArtifactType.Spec));
 
         AssertNothingStored();
+    }
+
+    // Brief states: approved, left as a draft, never generated.
+    [Theory]
+    [InlineData(InitiativeDepth.Standard, "approved", true)]
+    [InlineData(InitiativeDepth.Standard, "draft", false)]
+    [InlineData(InitiativeDepth.Standard, "none", false)]
+    [InlineData(InitiativeDepth.Large, "none", false)]
+    public async Task The_prd_request_carries_the_brief_only_when_it_is_standard_and_the_brief_is_approved(InitiativeDepth depth, string brief, bool carried)
+    {
+        var id = await context.AtClosing(depth);
+
+        if (brief != "none")
+        {
+            await context.Generate(id, ArtifactType.Brief);
+        }
+
+        if (brief == "approved")
+        {
+            await context.Approve(id, ArtifactType.Brief, 1);
+        }
+
+        await context.Generate(id, ArtifactType.Prd);
+
+        var request = context.Drafter.Requests[^1];
+        Assert.Equal(ArtifactType.Prd, request.Type);
+        Assert.Equal(carried ? context.StoredArtifact(id, ArtifactType.Brief).Content : null, request.BriefMarkdown);
+        Assert.True(context.StoredArtifact(id, ArtifactType.Prd).Version == 1);
+    }
+
+    [Fact]
+    public async Task Another_users_approved_brief_is_never_read()
+    {
+        var id = await context.AtClosing(InitiativeDepth.Standard);
+        var foreign = Artifact.Create(id, "someone-else", ArtifactType.Brief, "# Brief ajeno", context.Clock.GetUtcNow());
+        foreign.Approve(context.Clock.GetUtcNow());
+        await context.Artifacts.AddAsync(foreign, default);
+
+        await context.Generate(id, ArtifactType.Prd);
+
+        Assert.Null(context.Drafter.Requests[^1].BriefMarkdown);
     }
 
     private void AssertNothingStored()

@@ -106,6 +106,27 @@ public sealed class RegenerateArtifactTests
     }
 
     [Fact]
+    public async Task Regenerating_the_prd_uses_the_brief_as_approved_at_that_moment()
+    {
+        var id = await context.AtClosing(InitiativeDepth.Standard);
+        await context.Generate(id, ArtifactType.Brief);
+        await context.Approve(id, ArtifactType.Brief, 1);
+        await context.Generate(id, ArtifactType.Prd);
+        var first = context.Drafter.Requests[^1].BriefMarkdown;
+
+        await context.Save(id, ArtifactType.Brief, 1, "# Brief editado");
+        await context.Regenerate(id, ArtifactType.Prd, 1);
+        var whileDraft = context.Drafter.Requests[^1].BriefMarkdown;
+
+        await context.Approve(id, ArtifactType.Brief, 2);
+        await context.Regenerate(id, ArtifactType.Prd, 2);
+
+        Assert.NotNull(first);
+        Assert.Null(whileDraft);
+        Assert.Equal("# Brief editado", context.Drafter.Requests[^1].BriefMarkdown);
+    }
+
+    [Fact]
     public async Task Regenerating_a_document_not_generated_is_rejected()
     {
         var id = await context.AtClosing(InitiativeDepth.Standard);
