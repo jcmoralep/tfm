@@ -113,6 +113,14 @@ internal static class GeminiTestKit
         return string.Join(" | ", parts) + " | " + error;
     }
 
+    /// <summary>A server that never answers; it ends only when the call is cancelled.</summary>
+    public static async Task<HttpResponseMessage> Never(CancellationToken token)
+    {
+        await Task.Delay(Timeout.Infinite, token);
+
+        return StubHttpHandler.Ok(ValidJson);
+    }
+
     public const string ValidJson ="""{"answer":"respuesta"}""";
 
     public static GeminiCall Call(
