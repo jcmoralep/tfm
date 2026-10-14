@@ -22,6 +22,19 @@ Registro de la sonda manual contra la API real. No se ejecuta en CI ni en ningun
 
 Durante la sonda el modelo respondió 503 `UNAVAILABLE` ("high demand") en 3 de 5 intentos válidos y tardó 38 s en el único 200. Es una muestra de un momento de alta demanda, no una medida estable. Con los valores por defecto actuales (turno 30 s, borrador 90 s) ese 200 habría terminado en Timeout. Se **conservan** 30 s y 90 s (son configurables con `Gemini:TurnTimeoutSeconds` y `Gemini:DraftTimeoutSeconds`) y queda pendiente medir de nuevo en la evaluación en vivo (tarea 5.6) antes de decidir si se suben.
 
+### Comparación de modelos y decisión (2026-10-13)
+
+Medición posterior, un turno pequeño por modelo, mismos parámetros:
+
+| Modelo | Latencia de un turno |
+|---|---|
+| `gemini-3.8-flash` | 58 s |
+| `gemini-3.5-flash-lite` | 72 s |
+| `gemini-3.6-flash` | 2,0 s |
+| `gemini-3.1-flash-lite` | 1,3 s |
+
+Decisión del usuario (2026-10-13): el modelo por defecto es `gemini-3.6-flash` y los plazos por defecto suben a 60 s por turno y 120 s por documento (`Gemini:TurnTimeoutSeconds`, `Gemini:DraftTimeoutSeconds`). Las cifras de arriba (38 s con `gemini-3.8-flash`) fueron una muestra en un momento de alta demanda; el modelo es configuración (`Gemini:Model`).
+
 ## Forma de la respuesta 2xx (campos que se mapean)
 
 ```json
