@@ -391,13 +391,13 @@ Generation MUST be an explicit user action ("Generar"); nothing MUST be generate
 - Epics-and-stories (Large): available only while the initiative is Planning and the Architecture exists and is **Approved** (the PRD is then Approved or was Approved when the Architecture was; only the Architecture is checked, and the PRD's state is shown by the stale-upstream hint).
 - In Draft nothing is available. In ReadyToBuild generated documents can be read, edited and regenerated where their availability holds (see their requirements), but no new document is generated because the set was already complete.
 
-Availability MUST be a pure function of the initiative's status, depth, the conversation coverage and the statuses of the upstream documents, supplied to it by the caller. Rejections (wording is a proposal): Draft, "Termine de crear la iniciativa para generar documentos."; topics uncovered, "Aún no se puede generar este documento: termine primero las preguntas del asistente."; Architecture without an approved PRD, "Primero apruebe el PRD para generar la arquitectura."; Epics without an approved Architecture, "Primero apruebe la arquitectura para generar las épicas e historias."; document already generated, "El documento ya existe. Use Regenerar para reemplazarlo.". The order of the assistant's script MUST NOT change because of generation. Approving, regenerating and saving a dependent document follow the same availability (see their requirements).
+Availability MUST be a pure function of the initiative's status, depth, the conversation coverage and the statuses of the upstream documents, supplied to it by the caller. Rejections (wording is a proposal): Draft, "Termine de crear la iniciativa para generar documentos."; topics uncovered, "Aún no se puede generar este documento: termine primero las preguntas del asistente."; Architecture without an approved PRD, "Primero apruebe el PRD para generar este documento."; Epics without an approved Architecture, "Primero apruebe la arquitectura para generar las épicas e historias."; document already generated, "El documento ya existe. Use Regenerar para reemplazarlo.". The order of the assistant's script MUST NOT change because of generation. Approving, regenerating and saving a dependent document follow the same availability (see their requirements).
 (Previously: Architecture and Epics-and-stories had no availability rule, and availability did not depend on other documents.)
 
 #### Scenario: Architecture needs an approved PRD [UNIT]
 - GIVEN a Large Planning initiative with the PRD in Draft
 - WHEN the owner generates the Architecture
-- THEN it is rejected with "Primero apruebe el PRD para generar la arquitectura." and nothing is stored
+- THEN it is rejected with "Primero apruebe el PRD para generar este documento." and nothing is stored
 
 #### Scenario: Architecture available after the PRD is approved [UNIT]
 - GIVEN the same initiative after the PRD is approved
@@ -444,7 +444,7 @@ Approving MUST be a manual action of the owner on a Draft document with the expe
 #### Scenario: Approving a dependent with a Draft upstream is rejected [UNIT]
 - GIVEN an Approved Architecture whose PRD was edited (Draft) and an Architecture edit that is Draft
 - WHEN the Architecture is approved
-- THEN it is rejected with "Primero apruebe el PRD para generar la arquitectura." and stays Draft
+- THEN it is rejected with "Primero apruebe el PRD para generar este documento." and stays Draft
 
 #### Scenario: Editing the PRD reopens the initiative, re-approving completes [UNIT]
 - GIVEN a ReadyToBuild Large initiative whose PRD is edited and then approved again
@@ -571,7 +571,7 @@ Regenerating MUST replace the whole content, including manual edits, with a new 
 #### Scenario: Regenerating needs an approved upstream [UNIT]
 - GIVEN an Architecture and a PRD back in Draft
 - WHEN the owner regenerates the Architecture with confirmation
-- THEN it is rejected with "Primero apruebe el PRD para generar la arquitectura." and nothing changes
+- THEN it is rejected with "Primero apruebe el PRD para generar este documento." and nothing changes
 
 #### Scenario: No cascade [UNIT]
 - GIVEN an Approved Architecture and Draft Epics
