@@ -86,25 +86,52 @@ internal static class ArtifactGuards
     }
 
     /// <summary>
-    /// The text of the Brief the PRD may build on: only for a Standard PRD, and only while the owner's Brief is Approved
-    /// at this moment. Every other case (a Draft or missing Brief, Small, Large, another user's Brief) is null.
+    /// Builds the whole drafting request, so Generate and Regenerate read the same inputs. The Brief goes into a Standard
+    /// PRD, the PRD into the Architecture and the Epics, and the Architecture into the Epics, each only while that document
+    /// is Approved at this moment (a Draft or missing one, or another user's, is null). The Architecture and the Epics
+    /// carry no conversation answers: the approved text is their source.
     /// </summary>
-    public static async Task<string?> ApprovedBriefAsync(
+    public static async Task<DraftRequest> DraftRequestAsync(
+        IArtifactRepository repository,
+        InitiativeDetails initiative,
+        string ownerId,
+        ArtifactType type,
+        ConversationAnswers answers,
+        CancellationToken cancellationToken)
+    {
+        var depth = initiative.Depth!.Value;
+        var brief = type == ArtifactType.Prd && depth == InitiativeDepth.Standard
+            ? await ApprovedTextAsync(repository, initiative.Id, ownerId, ArtifactType.Brief, cancellationToken)
+            : null;
+        var chained = type is ArtifactType.Architecture or ArtifactType.EpicsAndStories;
+        var prd = chained
+            ? await ApprovedTextAsync(repository, initiative.Id, ownerId, ArtifactType.Prd, cancellationToken)
+            : null;
+        var architecture = type == ArtifactType.EpicsAndStories
+            ? await ApprovedTextAsync(repository, initiative.Id, ownerId, ArtifactType.Architecture, cancellationToken)
+            : null;
+
+        return new DraftRequest(
+            type,
+            initiative.Name,
+            initiative.Description,
+            depth,
+            chained ? [] : answers.Answers,
+            brief,
+            prd,
+            architecture);
+    }
+
+    private static async Task<string?> ApprovedTextAsync(
         IArtifactRepository repository,
         Guid initiativeId,
         string ownerId,
         ArtifactType type,
-        InitiativeDepth depth,
         CancellationToken cancellationToken)
     {
-        if (type != ArtifactType.Prd || depth != InitiativeDepth.Standard)
-        {
-            return null;
-        }
+        var artifact = await repository.GetAsync(initiativeId, type, ownerId, cancellationToken);
 
-        var brief = await repository.GetAsync(initiativeId, ArtifactType.Brief, ownerId, cancellationToken);
-
-        return brief is { WasApproved: true } ? brief.Content : null;
+        return artifact is { WasApproved: true } ? artifact.Content : null;
     }
 
     /// <summary>Reads everything the view needs, fresh. Null when the initiative does not exist for the caller.</summary>

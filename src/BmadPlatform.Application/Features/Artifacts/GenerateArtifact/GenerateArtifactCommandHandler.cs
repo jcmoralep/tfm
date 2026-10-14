@@ -31,12 +31,8 @@ public sealed class GenerateArtifactCommandHandler(
             throw new DomainException(ArtifactTexts.AlreadyExists);
         }
 
-        var depth = initiative.Depth!.Value;
-        var brief = await ArtifactGuards.ApprovedBriefAsync(repository, initiative.Id, ownerId, request.Type, depth, cancellationToken);
-
-        var markdown = await drafter.DraftAsync(
-            new DraftRequest(request.Type, initiative.Name, initiative.Description, depth, answers.Answers, brief),
-            cancellationToken);
+        var draftRequest = await ArtifactGuards.DraftRequestAsync(repository, initiative, ownerId, request.Type, answers, cancellationToken);
+        var markdown = await drafter.DraftAsync(draftRequest, cancellationToken);
 
         var artifact = Artifact.Create(initiative.Id, ownerId, request.Type, markdown, timeProvider.GetUtcNow());
         await repository.AddAsync(artifact, cancellationToken);

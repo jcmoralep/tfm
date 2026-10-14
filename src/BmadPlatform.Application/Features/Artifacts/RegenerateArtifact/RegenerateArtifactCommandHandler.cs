@@ -38,12 +38,8 @@ public sealed class RegenerateArtifactCommandHandler(
         var summaries = await repository.ListAsync(initiative.Id, ownerId, cancellationToken);
         ArtifactGuards.RequireAvailable(ArtifactCatalog.Availability(request.Type, initiative.Status, initiative.Depth, answers, summaries));
 
-        var depth = initiative.Depth!.Value;
-        var brief = await ArtifactGuards.ApprovedBriefAsync(repository, initiative.Id, ownerId, request.Type, depth, cancellationToken);
-
-        var markdown = await drafter.DraftAsync(
-            new DraftRequest(request.Type, initiative.Name, initiative.Description, depth, answers.Answers, brief),
-            cancellationToken);
+        var draftRequest = await ArtifactGuards.DraftRequestAsync(repository, initiative, ownerId, request.Type, answers, cancellationToken);
+        var markdown = await drafter.DraftAsync(draftRequest, cancellationToken);
         var content = Artifact.NormalizeContent(markdown);
 
         if (initiative.Status == InitiativeStatus.ReadyToBuild)

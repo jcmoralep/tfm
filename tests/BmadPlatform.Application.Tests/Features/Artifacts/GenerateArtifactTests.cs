@@ -215,6 +215,70 @@ public sealed class GenerateArtifactTests
         Assert.Null(context.Drafter.Requests[^1].BriefMarkdown);
     }
 
+    [Fact]
+    public async Task The_architecture_waits_for_an_approved_prd_then_is_drafted_from_its_text_alone()
+    {
+        var id = await context.AtClosing(InitiativeDepth.Large);
+        await context.Generate(id, ArtifactType.Prd);
+
+        var waiting = await Assert.ThrowsAsync<DomainException>(() => context.Generate(id, ArtifactType.Architecture));
+
+        Assert.Equal(ArtifactTexts.ReasonFor(ArtifactAvailability.WaitingForPrd), waiting.Message);
+
+        await context.Approve(id, ArtifactType.Prd, 1);
+        await context.Generate(id, ArtifactType.Architecture);
+
+        var request = context.Drafter.Requests[^1];
+        Assert.Equal(ArtifactType.Architecture, request.Type);
+        Assert.Equal(context.StoredArtifact(id, ArtifactType.Prd).Content, request.PrdMarkdown);
+        Assert.Null(request.ArchitectureMarkdown);
+        Assert.Empty(request.Answers);
+    }
+
+    [Theory]
+    [InlineData(ArtifactType.Architecture, true, false, true, false, false)]
+    [InlineData(ArtifactType.Architecture, false, false, false, false, false)]
+    [InlineData(ArtifactType.EpicsAndStories, true, true, true, true, false)]
+    [InlineData(ArtifactType.EpicsAndStories, true, false, true, false, false)]
+    [InlineData(ArtifactType.EpicsAndStories, false, true, false, true, false)]
+    [InlineData(ArtifactType.Prd, true, true, false, false, true)]
+    public async Task Upstream_text_travels_only_while_that_document_is_approved_and_the_chain_carries_no_answers(
+        ArtifactType type,
+        bool prdApproved,
+        bool architectureApproved,
+        bool expectPrd,
+        bool expectArchitecture,
+        bool expectAnswers)
+    {
+        var id = await context.AtClosing(InitiativeDepth.Large);
+        await Store(id, ArtifactType.Prd, "# PRD", prdApproved);
+        await Store(id, ArtifactType.Architecture, "# Arquitectura", architectureApproved);
+
+        var request = await ArtifactGuards.DraftRequestAsync(
+            context.Artifacts,
+            await context.Assistant.Details(id),
+            AssistantTestContext.UserA,
+            type,
+            (await context.Assistant.Answers(id))!,
+            default);
+
+        Assert.Equal(expectPrd ? "# PRD" : null, request.PrdMarkdown);
+        Assert.Equal(expectArchitecture ? "# Arquitectura" : null, request.ArchitectureMarkdown);
+        Assert.Equal(expectAnswers, request.Answers.Count > 0);
+    }
+
+    private async Task Store(Guid id, ArtifactType type, string content, bool approved)
+    {
+        var artifact = Artifact.Create(id, AssistantTestContext.UserA, type, content, context.Clock.GetUtcNow());
+
+        if (approved)
+        {
+            artifact.Approve(context.Clock.GetUtcNow());
+        }
+
+        await context.Artifacts.AddAsync(artifact, default);
+    }
+
     private void AssertNothingStored()
     {
         Assert.Empty(context.Artifacts.Stored);

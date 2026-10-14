@@ -6,7 +6,7 @@ namespace BmadPlatform.Application.Features.Artifacts;
 
 /// <summary>
 /// One document of a level's required set. <paramref name="Type"/> is null for documents that arrive in a later
-/// step (Architecture, Epics and stories), which are listed but can never be generated or approved yet.
+/// step (Epics and stories), which is listed but can never be generated or approved yet.
 /// </summary>
 public sealed record ArtifactSlot(string Label, ArtifactType? Type);
 
@@ -33,7 +33,7 @@ public static class ArtifactCatalog
     private static readonly ArtifactSlot[] Large =
     [
         new("PRD", ArtifactType.Prd),
-        new("Arquitectura", null),
+        new("Arquitectura", ArtifactType.Architecture),
         new("Épicas e historias", null),
     ];
 

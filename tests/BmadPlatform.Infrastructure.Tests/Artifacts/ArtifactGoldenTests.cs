@@ -48,6 +48,33 @@ public sealed class ArtifactGoldenTests
     {
         var answers = Answers(depth, Texts(), [unknownKey]);
         var markdown = await Draft(Request(type, depth, answers));
+
+        await AssertGolden(file, markdown);
+        Assert.Empty(ArtifactFormatChecker.Check(type, markdown));
+        Assert.Equal(["Q-1"], OpenQuestions.Unassigned(markdown));
+    }
+
+    // The Architecture reads the approved PRD golden and no answers; its questions are pre-assigned to development.
+    [Fact]
+    public async Task The_architecture_equals_its_golden_and_passes_every_check()
+    {
+        var prd = await File.ReadAllTextAsync(GoldenPath("prd-large.md"));
+        var request = Request(ArtifactType.Architecture, InitiativeDepth.Large, []) with { PrdMarkdown = prd };
+        var markdown = await Draft(request);
+
+        await AssertGolden("architecture-large.md", markdown);
+        Assert.Equal(markdown, await Draft(request));
+        Assert.Empty(ArtifactFormatChecker.Check(ArtifactType.Architecture, markdown));
+        Assert.Empty(OpenQuestions.Unassigned(markdown));
+        Assert.All(OpenQuestions.Parse(markdown), question => Assert.Equal("Equipo de desarrollo", question.Owner));
+        Assert.DoesNotMatch(@"\b(TBD|TODO|FIXME|XXX)\b", markdown);
+        Assert.Equal(
+            Enumerable.Range(1, ArchitectureDecisionItems.Parse(markdown).Count).Select(n => $"AD-{n}"),
+            ArchitectureDecisionItems.Parse(markdown).Select(decision => decision.Id));
+    }
+
+    private static async Task AssertGolden(string file, string markdown)
+    {
         var expected = Utf8.GetBytes(markdown + "\n");
         var path = GoldenPath(file);
 
@@ -61,7 +88,5 @@ public sealed class ArtifactGoldenTests
 
         Assert.DoesNotContain((byte)'\r', stored);
         Assert.Equal(Utf8.GetString(expected), Utf8.GetString(stored));
-        Assert.Empty(ArtifactFormatChecker.Check(type, markdown));
-        Assert.Equal(["Q-1"], OpenQuestions.Unassigned(markdown));
     }
 }

@@ -63,6 +63,15 @@ internal sealed partial class DraftComposer
 
     public DraftRequest Request { get; }
 
+    /// <summary>The clip of the current rung of the budget ladder; layouts that quote text read their limits from it.</summary>
+    public int AnswerBudget => answerBudget;
+
+    /// <summary>The decisions the model proposed for the Architecture; empty with no items (the fake).</summary>
+    public IReadOnlyList<DecisionItem> Decisions => items?.Decisions ?? [];
+
+    /// <summary>The development questions the model proposed for the Architecture; empty with no items.</summary>
+    public IReadOnlyList<string> ModelQuestions => items?.DevelopmentQuestions ?? [];
+
     /// <summary>The initiative name on one line.</summary>
     public string InitiativeName => Collapse(Request.InitiativeName);
 
@@ -233,6 +242,22 @@ internal sealed partial class DraftComposer
         }
 
         Line("- " + Assumption(fallbackAssumption));
+    }
+
+    /// <summary>
+    /// The model's items for a slot that has no fixed fallback, written as list items. Nothing is written, and false is
+    /// returned, when the model gave none. The model can never claim an answer here: the slot is a guess or a gap.
+    /// </summary>
+    public bool OptionalOpen(string slotId)
+    {
+        if (ModelItemsOf(slotId, mayClaimAnswer: false) is not { Count: > 0 } modelItems)
+        {
+            return false;
+        }
+
+        WriteModelItems(modelItems, null, value => "- " + value);
+
+        return true;
     }
 
     /// <summary>Registers an open question written by the model; its text is already clean. Returns its identifier.</summary>
