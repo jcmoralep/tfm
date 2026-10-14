@@ -1,3 +1,5 @@
+using BmadPlatform.Application.Common.Exceptions;
+
 namespace BmadPlatform.Application.Features.Artifacts;
 
 /// <summary>
@@ -21,6 +23,26 @@ public static class ArtifactTexts
     public const string TopicsUncovered = "Aún no se puede generar este documento: termine primero las preguntas del asistente.";
 
     public const string ComingLater = "Disponible en un paso posterior.";
+
+    // Why a model-backed draft failed. They are about the document and never say a message was saved: a failed draft stores nothing.
+    public const string DraftQuota = "El asistente alcanzó su límite de uso por ahora. No se generó el documento; inténtelo de nuevo más tarde.";
+
+    public const string DraftTimeout = "El asistente tardó demasiado en responder. No se generó el documento; inténtelo de nuevo.";
+
+    public const string DraftMisconfigured = "El asistente no está configurado correctamente. No se generó el documento; avise a quien mantiene la plataforma.";
+
+    public const string DraftBlocked = "El asistente no pudo redactar el documento con las respuestas actuales. Revise sus respuestas (puede deshacer la última y escribirla de otra forma) e inténtelo de nuevo.";
+
+    public const string DraftMalformed = "El asistente devolvió un borrador que no se pudo usar. Inténtelo de nuevo.";
+
+    public static string DraftUnavailableFor(AssistantUnavailableReason reason) => reason switch
+    {
+        AssistantUnavailableReason.Quota => DraftQuota,
+        AssistantUnavailableReason.Auth or AssistantUnavailableReason.Model => DraftMisconfigured,
+        AssistantUnavailableReason.Blocked => DraftBlocked,
+        AssistantUnavailableReason.Malformed => DraftMalformed,
+        _ => DraftTimeout,
+    };
 
     public static string UnassignedQuestions(IEnumerable<string> ids) =>
         $"Asigne un responsable y una condición de revisión a las preguntas pendientes antes de aprobar: {string.Join(", ", ids)}.";

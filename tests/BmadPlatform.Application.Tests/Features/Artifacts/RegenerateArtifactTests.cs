@@ -84,6 +84,27 @@ public sealed class RegenerateArtifactTests
         Assert.DoesNotContain(context.Sender.Sent, request => request is ReopenPlanningCommand);
     }
 
+    [Theory]
+    [InlineData(AssistantUnavailableReason.Quota)]
+    [InlineData(AssistantUnavailableReason.Timeout)]
+    [InlineData(AssistantUnavailableReason.Blocked)]
+    [InlineData(AssistantUnavailableReason.Malformed)]
+    public async Task A_failed_regeneration_with_a_reason_changes_nothing_and_returns_the_document_message(AssistantUnavailableReason reason)
+    {
+        var id = await context.AtClosing(InitiativeDepth.Standard);
+        await context.Generate(id, ArtifactType.Prd);
+        await context.Save(id, ArtifactType.Prd, 1, "# PRD editado");
+        await context.Approve(id, ArtifactType.Prd, 2);
+        context.Drafter.FailuresRemaining = 1;
+        context.Drafter.Failure = new AssistantUnavailableException(ArtifactTexts.DraftUnavailableFor(reason), reason);
+
+        var error = await Assert.ThrowsAsync<AssistantUnavailableException>(() => context.Regenerate(id, ArtifactType.Prd, 2));
+
+        var stored = context.StoredArtifact(id, ArtifactType.Prd);
+        Assert.Equal(ArtifactTexts.DraftUnavailableFor(reason), error.Message);
+        Assert.Equal((2, ArtifactStatus.Approved, "# PRD editado"), (stored.Version, stored.Status, stored.Content));
+    }
+
     [Fact]
     public async Task Regenerating_a_document_not_generated_is_rejected()
     {

@@ -117,14 +117,16 @@ public sealed class ProviderRegistrationTests
     }
 
     [Fact]
-    public void Gemini_with_valid_options_refuses_to_start_until_the_drafter_exists_and_never_falls_back_to_the_fake()
+    public void Gemini_with_a_key_resolves_the_model_assistant_and_the_model_drafter_as_singletons()
     {
-        var error = Assert.Throws<InvalidOperationException>(
-            () => Build(Config(("Assistant:Provider", "gemini"), ("Gemini:ApiKey", Key))));
+        using var serviceProvider = Build(Config(("Assistant:Provider", "gemini"), ("Gemini:ApiKey", Key)));
 
-        Assert.Contains("drafter", error.Message);
-        Assert.Contains("later slice", error.Message);
-        Assert.DoesNotContain(Key, error.Message);
+        var assistant = serviceProvider.GetRequiredService<IAssistantService>();
+        var drafter = serviceProvider.GetRequiredService<IArtifactDrafter>();
+
+        Assert.IsType<GeminiAssistantService>(assistant);
+        Assert.IsType<GeminiArtifactDrafter>(drafter);
+        Assert.Same(drafter, serviceProvider.GetRequiredService<IArtifactDrafter>());
     }
 
     [Fact]

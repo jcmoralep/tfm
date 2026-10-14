@@ -95,3 +95,26 @@ Tasks 3.1 to 3.G done. Tests: Application 709, Infrastructure 259, Web 196, Arch
 - Tests: `PushbackTests` (pipeline with the scripted double and its new `Verdicts` queue), journey Theories,
   joined-answers Theory, two Gemini service facts.
 - Pending: Chrome item C-6 (live) in the final walkthrough.
+
+## S4a: Drafter for Spec and Brief (branch feat/gemini-s4a-drafter, size:exception)
+
+Tasks 4a.1 to 4a.G done. Tests: Application 717, Infrastructure 286, Web 196, Architecture 24 (all green, no key,
+no network). Release build: 0 code warnings (NU1507 only).
+
+- 4a.1 proof: before and after the refactor `ArtifactGoldenTests` + `FakeArtifactDrafterTests` ran green with no edit
+  (61 tests; the full Infrastructure suite 259 before the new tests).
+- `DraftRenderer` (budget loop moved out of the Fake), `DraftItem`/`DraftItems`, composer `items`, `Open`,
+  `OpenQuestion`, `ModelText`. Spec/Brief layouts call `Open` for constraints, differentiator, scope-inside, vision.
+- `DraftSlots` (Spec 7 slots, Brief 8; differentiator AllowsAnswer=false), `DraftPrompt` (English system text,
+  Spanish "usted" output, answers inside one delimited block, neutralized and collapsed), `GeminiArtifactDrafter`
+  (`GeminiClient` Draft kind, Malformed on unknown slot/source, no Fake fallback), `ArtifactTexts.Draft*`.
+- PRD delegates to the `FakeArtifactDrafter` with the comment `S4b replaces this` and a test pinning it.
+- DI: the temporary startup stop is gone; Gemini registers the client, assistant and drafter (`AddGeminiDrafter`).
+- Safeguards in code: "No sé"/"nothing" topics ignore model items (Q-n by code); an `answer` item with no answer
+  from the person or in an AllowsAnswer=false slot becomes an assumption; empty slot with an answer quotes it, with
+  none takes the default assumption (equal to the Fake's text); forged ids/markers stripped; 20 items then "y N más.";
+  per-slot budget loop keeps the 20,000 cap.
+- Tests: `GeminiArtifactDrafterTests` (27 cases), registration (Gemini resolves both seams, Fake resolves the golden
+  Spec), failure Theories through `GenerateArtifact`/`RegenerateArtifact` with reasoned drafter failures.
+- Rollback boundary: revert the three commits; the Fake drafter stays the default.
+- Pending: Chrome item C-5 for a document failure (live), the PRD drafter (S4b).

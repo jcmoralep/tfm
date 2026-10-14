@@ -144,6 +144,23 @@ public sealed class GenerateArtifactTests
     }
 
     [Theory]
+    [InlineData(AssistantUnavailableReason.Quota)]
+    [InlineData(AssistantUnavailableReason.Timeout)]
+    [InlineData(AssistantUnavailableReason.Blocked)]
+    [InlineData(AssistantUnavailableReason.Malformed)]
+    public async Task A_drafter_failure_with_a_reason_stores_nothing_and_returns_the_document_message(AssistantUnavailableReason reason)
+    {
+        var id = await context.AtClosing(InitiativeDepth.Small);
+        context.Drafter.FailuresRemaining = 1;
+        context.Drafter.Failure = new AssistantUnavailableException(ArtifactTexts.DraftUnavailableFor(reason), reason);
+
+        var error = await Assert.ThrowsAsync<AssistantUnavailableException>(() => context.Generate(id, ArtifactType.Spec));
+
+        Assert.Equal((reason, ArtifactTexts.DraftUnavailableFor(reason)), (error.Reason, error.Message));
+        AssertNothingStored();
+    }
+
+    [Theory]
     [InlineData("   ")]
     [InlineData("TOO_LONG")]
     public async Task A_draft_that_breaks_the_content_rules_stores_nothing(string output)

@@ -22,7 +22,7 @@ internal static class BriefLayout
         c.Items(AssistantScript.Keys.Idea);
 
         c.Heading("Qué lo hace distinto");
-        c.Line("- " + c.Assumption("Aún no se ha descrito qué diferencia a esta solución de otras opciones; se confirma con quien propone la iniciativa."));
+        c.Open(DraftSlots.Differentiator, "Aún no se ha descrito qué diferencia a esta solución de otras opciones; se confirma con quien propone la iniciativa.");
 
         c.Heading("A quién sirve");
         c.Items(AssistantScript.Keys.Users);
@@ -32,12 +32,12 @@ internal static class BriefLayout
 
         c.Heading("Alcance");
         c.Raw("### Dentro");
-        c.Line("- " + c.Assumption("Lo que entra en el alcance se define con el equipo durante la planificación."));
+        c.Open(DraftSlots.ScopeInside, "Lo que entra en el alcance se define con el equipo durante la planificación.");
         c.Raw("### Fuera");
         c.Items(AssistantScript.Keys.OutOfScope);
 
         c.Heading("Visión");
-        c.Line("- " + c.Assumption("Aún no se ha descrito la visión a largo plazo; se confirma con quien propone la iniciativa."));
+        c.Open(DraftSlots.Vision, "Aún no se ha descrito la visión a largo plazo; se confirma con quien propone la iniciativa.");
 
         c.AssumptionIndex();
         c.OpenQuestions("Preguntas pendientes", "No hay preguntas pendientes.");

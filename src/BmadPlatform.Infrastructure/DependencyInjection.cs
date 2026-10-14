@@ -72,18 +72,16 @@ public static class DependencyInjection
             var gemini = GeminiOptions.BindAndValidate(configuration);
             services.AddGeminiClient(gemini);
 
+            // The one switch selects both seams: a model-backed document never falls back to the Fake drafter.
             services.AddGeminiAssistant();
-
-            // Temporary until the drafter that uses the client is registered (slice S4a): the one switch selects both
-            // seams, so never fall back silently to the Fake drafter.
-            throw new InvalidOperationException(
-                "Assistant:Provider is Gemini and its options are valid, and the Gemini assistant exists, but the drafter " +
-                "that uses the Gemini client arrives in a later slice. Set Assistant:Provider to Fake.");
+            services.AddGeminiDrafter();
         }
-
-        // Deterministic stand-ins. The short pause lets people see the "typing" and loading states.
-        services.AddSingleton<IAssistantService>(_ => new FakeAssistantService(TimeSpan.FromMilliseconds(900)));
-        services.AddSingleton<IArtifactDrafter>(_ => new FakeArtifactDrafter(TimeSpan.FromMilliseconds(900)));
+        else
+        {
+            // Deterministic stand-ins. The short pause lets people see the "typing" and loading states.
+            services.AddSingleton<IAssistantService>(_ => new FakeAssistantService(TimeSpan.FromMilliseconds(900)));
+            services.AddSingleton<IArtifactDrafter>(_ => new FakeArtifactDrafter(TimeSpan.FromMilliseconds(900)));
+        }
 
         // The .md download; a new format would be one more implementation (the PDF is the browser printing the page).
         services.AddSingleton<IArtifactExporter, MarkdownArtifactExporter>();
