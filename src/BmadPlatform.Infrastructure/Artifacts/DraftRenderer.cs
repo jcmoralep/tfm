@@ -27,12 +27,19 @@ internal static class DraftRenderer
             }
         }
 
+        // Last rung of the ladder: the Epics drop their trailing stories one by one, so what was left out shows up as an
+        // uncovered requirement with a question and the document never ends in the middle of a story.
+        for (var dropped = 1; dropped <= EpicsLayout.MaxStories && draft.Length > Artifact.ContentMaxLength && request.Type == ArtifactType.EpicsAndStories; dropped++)
+        {
+            draft = Compose(request, AnswerBudgets[^1], items, dropped);
+        }
+
         return draft;
     }
 
-    private static string Compose(DraftRequest request, int answerBudget, DraftItems? items)
+    private static string Compose(DraftRequest request, int answerBudget, DraftItems? items, int droppedStories = 0)
     {
-        var composer = new DraftComposer(request, answerBudget, items);
+        var composer = new DraftComposer(request, answerBudget, items, droppedStories);
 
         switch (request.Type)
         {
@@ -47,6 +54,9 @@ internal static class DraftRenderer
                 break;
             case ArtifactType.Architecture:
                 ArchitectureLayout.Write(composer);
+                break;
+            case ArtifactType.EpicsAndStories:
+                EpicsLayout.Write(composer);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(request), request.Type, "Unknown document type.");

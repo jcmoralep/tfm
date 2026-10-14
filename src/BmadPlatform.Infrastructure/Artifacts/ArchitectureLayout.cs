@@ -177,7 +177,7 @@ internal static partial class ArchitectureLayout
         !HasPlaceholder(raw) && DraftComposer.ModelText(raw) is { Length: > 0 } text ? DraftComposer.Clip(text, budget.FieldClip) : fallback;
 
     // TBD and TODO markers, "{{token}}" and "<token>" placeholders, and "{token}" (which the BMAD spine linter flags).
-    private static bool HasPlaceholder(string? text)
+    internal static bool HasPlaceholder(string? text)
     {
         try
         {

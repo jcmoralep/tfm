@@ -78,9 +78,22 @@ public static class ArtifactOutline
         Top(AssumptionIndexTitle),
     ];
 
+    // The fixed sections of the epics file; the epics and stories themselves ("## Epic N: ...") are numbered by code and
+    // are not part of the outline.
+    private static readonly OutlineSection[] Epics =
+    [
+        Top("Resumen"),
+        Top("Inventario de requisitos"),
+        Top(CoverageMapTitle),
+        Top("Lista de épicas"),
+        Top(DevelopmentQuestionsTitle),
+        Top(AssumptionIndexTitle),
+    ];
+
     public static IReadOnlyList<OutlineSection> Sections(ArtifactType type) => type switch
     {
         ArtifactType.Architecture => Architecture,
+        ArtifactType.EpicsAndStories => Epics,
         ArtifactType.Brief => Brief,
         ArtifactType.Prd => Prd,
         ArtifactType.Spec => Spec,
