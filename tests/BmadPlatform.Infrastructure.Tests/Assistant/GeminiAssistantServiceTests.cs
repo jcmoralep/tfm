@@ -21,12 +21,14 @@ public sealed class GeminiAssistantServiceTests
         string topicKey,
         IReadOnlyList<ConversationTurn>? history = null,
         bool offersLevels = false,
-        InitiativeDepth? depth = InitiativeDepth.Standard) =>
+        InitiativeDepth? depth = InitiativeDepth.Standard,
+        string? followUpFor = null) =>
         new(
             new InitiativeSnapshot("App de pedidos", "Consultar pedidos", DepthMode.Manual, depth),
             AssistantScript.Get(topicKey),
             history ?? [],
-            offersLevels);
+            offersLevels,
+            followUpFor is null ? null : AssistantScript.Get(followUpFor));
 
     private static ConversationTurn Asked(string key) => new(MessageRole.Assistant, "pregunta", key, null, null);
 
@@ -269,6 +271,36 @@ public sealed class GeminiAssistantServiceTests
             Assert.DoesNotContain("DISTINCTIVE-ANSWER", any.AllText, StringComparison.Ordinal);
             Assert.DoesNotContain(Key, any.AllText, StringComparison.Ordinal);
         }
+    }
+
+    [Fact]
+    public async Task A_needs_more_verdict_with_a_follow_up_allowed_is_returned_with_the_wording_about_the_answered_topic()
+    {
+        var handler = StubHttpHandler.Replying(StubHttpHandler.Ok(Model(verdict: "needs_more", question: "¿Qué parte del reporte cambia?")));
+        var (service, _) = Create(handler);
+
+        var reply = await service.ReplyAsync(Request("users", AfterIdea("mejorar el reporte"), followUpFor: "idea"), default);
+
+        var user = UserContent(Assert.Single(handler.Requests));
+        Assert.Equal(ReplyVerdict.NeedsMore, reply.Verdict);
+        Assert.StartsWith("Entendido. ¿Qué parte del reporte cambia?", reply.Text, StringComparison.Ordinal);
+        Assert.Contains("<answered_topic>key: idea", user, StringComparison.Ordinal);
+        Assert.Contains("follow_up_allowed: true", user, StringComparison.Ordinal);
+        Assert.Contains(AssistantScript.Get("idea").SufficiencyHint!, user, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task The_answered_topic_says_the_follow_up_is_not_allowed_when_the_answer_is_not_eligible()
+    {
+        var handler = StubHttpHandler.Replying(StubHttpHandler.Ok(Model(verdict: "needs_more")));
+        var (service, _) = Create(handler);
+        var request = Request("users", AfterIdea());
+
+        var reply = await service.ReplyAsync(request, default);
+
+        var user = UserContent(Assert.Single(handler.Requests));
+        Assert.Contains("<answered_topic>key: idea | follow_up_allowed: false</answered_topic>", user, StringComparison.Ordinal);
+        Assert.Equal(await Script(request), reply);
     }
 
     [Fact]

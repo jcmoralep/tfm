@@ -59,8 +59,8 @@ public sealed class GeminiAssistantService(GeminiClient client, ILogger<GeminiAs
             ? string.Empty
             : last!.Kind == AnswerKind.Unknown ? FakeAssistantService.Acknowledge(request.History, request.NextTopic) : null;
 
-        // Pushback arrives with the follow-up wiring: until then no NeedsMore can be honoured.
-        var check = ReplyGuard.Check(Parse(response.Json), answerPrecedes, followUpAllowed: false, owned);
+        // Code decides whether a follow-up is allowed; a NeedsMore without that permission is rejected like malformed output.
+        var check = ReplyGuard.Check(Parse(response.Json), answerPrecedes, followUpAllowed: request.FollowUpFor is not null, owned);
 
         if (!check.Accepted)
         {
@@ -69,7 +69,7 @@ public sealed class GeminiAssistantService(GeminiClient client, ILogger<GeminiAs
             return await script.ReplyAsync(request, cancellationToken);
         }
 
-        return new AssistantReply(ReplyGuard.Assemble(check.Reply!), null);
+        return new AssistantReply(ReplyGuard.Assemble(check.Reply!), null, check.Verdict);
     }
 
     private static TurnReply Parse(JsonNode json) =>
