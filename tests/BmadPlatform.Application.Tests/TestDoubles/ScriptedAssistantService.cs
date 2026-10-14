@@ -17,6 +17,9 @@ public sealed class ScriptedAssistantService : IAssistantService
     /// <summary>Number of upcoming calls that throw <see cref="AssistantUnavailableException"/>.</summary>
     public int FailuresRemaining { get; set; }
 
+    /// <summary>The reason carried by the failing calls.</summary>
+    public AssistantUnavailableReason FailureReason { get; set; } = AssistantUnavailableReason.Timeout;
+
     /// <summary>Returned for the depth proposal; null lets the application default to Standard.</summary>
     public InitiativeDepth? SuggestedDepth { get; set; }
 
@@ -37,7 +40,7 @@ public sealed class ScriptedAssistantService : IAssistantService
         {
             FailuresRemaining--;
 
-            throw new AssistantUnavailableException();
+            throw new AssistantUnavailableException(AssistantTexts.Unavailable, FailureReason);
         }
 
         return new AssistantReply(Marker(request.NextTopic.Key), SuggestedDepth);

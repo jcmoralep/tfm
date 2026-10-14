@@ -283,9 +283,7 @@ public sealed class SendMessageTests
 
         var error = await Assert.ThrowsAsync<AssistantUnavailableException>(() => context.Send(id, opened.Version, "Mi idea"));
 
-        Assert.Equal(
-            "El asistente no está disponible en este momento. Su mensaje quedó guardado; inténtelo de nuevo en unos minutos.",
-            error.Message);
+        Assert.Equal(AssistantTexts.Unavailable, error.Message);
         var pending = await context.Current(id);
         Assert.Equal(MessageRole.User, context.StoredMessages(id).Last().Role);
         Assert.True(pending.NeedsResume);
@@ -298,6 +296,27 @@ public sealed class SendMessageTests
         Assert.Equal(AssistantScript.Keys.Users, stored[^1].TopicKey);
         Assert.True(resumed.CanSend);
         Assert.False(resumed.NeedsResume);
+    }
+
+    [Theory]
+    [InlineData(AssistantUnavailableReason.Quota, AssistantTexts.Quota)]
+    [InlineData(AssistantUnavailableReason.Auth, AssistantTexts.Misconfigured)]
+    [InlineData(AssistantUnavailableReason.Model, AssistantTexts.Misconfigured)]
+    public async Task A_failure_reason_picks_its_own_message_and_the_answer_stays_stored(
+        AssistantUnavailableReason reason,
+        string expected)
+    {
+        var id = await context.Initiatives.CreateClarifying("App");
+        var opened = await context.Start(id);
+        context.Assistant.FailuresRemaining = 1;
+        context.Assistant.FailureReason = reason;
+
+        var error = await Assert.ThrowsAsync<AssistantUnavailableException>(() => context.Send(id, opened.Version, "Mi idea"));
+
+        Assert.Equal(expected, error.Message);
+        Assert.Equal(reason, error.Reason);
+        Assert.Equal(MessageRole.User, context.StoredMessages(id).Last().Role);
+        Assert.Single(context.Assistant.Requests.Skip(1));
     }
 
     [Fact]

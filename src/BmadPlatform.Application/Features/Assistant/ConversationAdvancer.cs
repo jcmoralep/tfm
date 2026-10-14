@@ -86,12 +86,13 @@ public sealed class ConversationAdvancer(
         catch (AssistantUnavailableException exception)
         {
             logger.LogWarning(
-                "The assistant could not reply for initiative {InitiativeId} on topic {TopicKey} ({CauseType}).",
+                "The assistant could not reply for initiative {InitiativeId} on topic {TopicKey} ({Reason}).",
                 initiativeId,
                 request.NextTopic.Key,
-                exception.InnerException?.GetType().Name ?? exception.GetType().Name);
+                exception.Reason);
 
-            throw;
+            // The chat shows the reason-specific text (the answer is already stored).
+            throw new AssistantUnavailableException(AssistantTexts.UnavailableFor(exception.Reason), exception.Reason, exception);
         }
     }
 
