@@ -131,6 +131,16 @@ else
             <p id="approve-blocked" class="mt-4 rounded-control bg-warning-soft px-3 py-2 text-sm text-warning-ink">@ArtifactLabels.ApproveBlocked(view.UnassignedQuestions)</p>
         }
 
+        @if (view.Generated && view.StaleUpstream is { } staleUpstream)
+        {
+            <p id="stale-upstream" class="mt-4 rounded-control bg-warning-soft px-3 py-2 text-sm text-warning-ink print:hidden">@ArtifactLabels.StaleUpstreamNote(staleUpstream)</p>
+        }
+
+        @if (view.Generated && ArtifactLabels.NeedsDevelopmentReview(view.Type))
+        {
+            <p class="mt-4 text-sm text-ink-muted">@ArtifactLabels.DevelopmentReviewReminder</p>
+        }
+
         @if (!editing && confirm == PanelKind.Regenerate)
         {
             <ConfirmPanel Id="regenerate-panel" Title="¿Regenerar este documento?" ConfirmLabel="Sí, regenerar" Destructive="true"
@@ -151,7 +161,7 @@ else
         {
             <ConfirmPanel Id="approve-panel" Title="¿Aprobar este documento?" ConfirmLabel="Sí, aprobar"
                           Busy="busy" OnConfirm="ApproveAsync" OnCancel="CancelPanel">
-                <p>Aprobar lo marca como versión final para desarrollo.</p>
+                <p>@ArtifactLabels.ApproveConfirmText(view.Type)</p>
                 @if (view.ApprovalCompletesSet)
                 {
                     <p class="mt-1 font-medium">Con esta aprobación la iniciativa quedará Lista para construir.</p>
