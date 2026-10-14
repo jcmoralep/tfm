@@ -9,4 +9,9 @@
     <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The shared log-capturing double; one source of truth across test projects. -->
+    <Compile Include="..\BmadPlatform.Application.Tests\TestDoubles\CapturingLoggerProvider.cs" Link="Gemini\CapturingLoggerProvider.cs" />
+  </ItemGroup>
+
 </Project>
