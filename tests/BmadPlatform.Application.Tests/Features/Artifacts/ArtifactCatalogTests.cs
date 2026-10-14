@@ -15,7 +15,7 @@ public sealed class ArtifactCatalogTests
     private static ArtifactSummary Summary(ArtifactType type, ArtifactStatus status, int minutes = 0) =>
         new(type, status, 1, Noon.AddMinutes(minutes));
 
-    // The catalog still lists no type for the new documents, so the chain is exercised with explicit slots.
+    // The Large set as the catalog lists it, passed explicitly so the chain tests do not depend on the catalog.
     private static readonly ArtifactSlot[] Chain =
     [
         new("PRD", ArtifactType.Prd),
@@ -49,7 +49,7 @@ public sealed class ArtifactCatalogTests
         var large = ArtifactCatalog.RequiredFor(InitiativeDepth.Large);
 
         Assert.Equal(new[] { "PRD", "Arquitectura", "Épicas e historias" }, large.Select(s => s.Label));
-        Assert.Equal(new ArtifactType?[] { ArtifactType.Prd, ArtifactType.Architecture, null }, large.Select(s => s.Type));
+        Assert.Equal(new ArtifactType?[] { ArtifactType.Prd, ArtifactType.Architecture, ArtifactType.EpicsAndStories }, large.Select(s => s.Type));
     }
 
     [Theory]

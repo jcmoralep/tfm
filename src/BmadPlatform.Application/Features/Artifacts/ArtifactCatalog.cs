@@ -34,7 +34,7 @@ public static class ArtifactCatalog
     [
         new("PRD", ArtifactType.Prd),
         new("Arquitectura", ArtifactType.Architecture),
-        new("Épicas e historias", null),
+        new("Épicas e historias", ArtifactType.EpicsAndStories),
     ];
 
     /// <summary>The slots of the level in delivery order. Empty while no level is set.</summary>
