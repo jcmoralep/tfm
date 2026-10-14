@@ -146,7 +146,7 @@ else
             <ConfirmPanel Id="regenerate-panel" Title="¿Regenerar este documento?" ConfirmLabel="Sí, regenerar" Destructive="true"
                           Busy="busy" OnConfirm="RegenerateAsync" OnCancel="CancelPanel">
                 <p>Se reemplazará todo el contenido, incluidos sus cambios manuales.</p>
-                @if (view.Questions.Count > 0)
+                @if (view.Questions.Count > 0 && !ArtifactLabels.NeedsDevelopmentReview(view.Type))
                 {
                     <p class="mt-1">@ArtifactLabels.RegenerateOwnersLost</p>
                 }

@@ -115,7 +115,7 @@ internal static class DraftPrompt
         return builder.Append("</slots>").ToString();
     }
 
-    private const string ItemsSchema = """
+    internal const string ItemsSchema = """
         {
           "type": "array",
           "items": {
@@ -138,6 +138,6 @@ internal static class DraftPrompt
     private static string Clip(string text, int max) => text.Length <= max ? text : text[..max];
 
     // One line, with no angle brackets: the person's text cannot open a tag or fake another block.
-    private static string Line(string? text) =>
+    internal static string Line(string? text) =>
         string.Join(' ', PromptText.Neutralize(text).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 }
