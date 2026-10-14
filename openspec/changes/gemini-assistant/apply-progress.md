@@ -118,3 +118,30 @@ no network). Release build: 0 code warnings (NU1507 only).
   Spec), failure Theories through `GenerateArtifact`/`RegenerateArtifact` with reasoned drafter failures.
 - Rollback boundary: revert the three commits; the Fake drafter stays the default.
 - Pending: Chrome item C-5 for a document failure (live), the PRD drafter (S4b).
+
+## S4b: PRD drafter and Brief inheritance (branch feat/gemini-s4b-prd, size:exception)
+
+Tasks 4b.1 to 4b.G done. Tests: Application 723, Infrastructure 300, Web 196, Architecture 24 (all green, no key,
+no network). Release build: 0 code warnings (NU1507 only).
+
+- `DraftRequest.BriefMarkdown?`; `ArtifactGuards.ApprovedBriefAsync` (PRD + Standard + owner's Brief `WasApproved`,
+  else null; read through the owner-scoped repository, so another user's Brief reads as missing). Generate and
+  regenerate pass it; regenerate reads the Brief as approved at that moment.
+- `DraftSlots.For(type, depth)`: PRD slots (idea, users, problem, non-users, glossary, capabilities, constraints,
+  [Large: qualities, integrations], out-of-scope, priorities, success). `non-users` and `glossary` AllowsAnswer=false.
+  A slot the level lacks (qualities in a Standard PRD) is an unknown key, so Malformed.
+- `GeminiArtifactDrafter` drafts the PRD; the Fake delegation and its pinning test are gone (replaced by PRD tests).
+- `DraftPrompt`: `<brief>` block (neutralized, clipped to the document cap) and a BRIEF rules block added to the system
+  text only when the request carries a Brief; Spec and Brief prompts are unchanged.
+- `BriefFacts` (heuristic, documented): a PRD `answer` item whose normalized text equals (or, with at least four words,
+  contains / is contained in) a Brief `A-n` text is downgraded to an assumption; Brief `Q-n` texts the model did not
+  restate are carried (max 10) through `DraftItems.CarriedQuestions` and `DraftComposer.CarryBriefQuestions`, which
+  skips a question already registered (for example the one a "No sé" forces) and writes new `Q-n` with the default suffix.
+- With a Brief in the request an `answer` item for a topic the person did not answer is kept (the Brief states it).
+- `PrdLayout`: non-users and glossary go through `Open`; the Fake output is byte-identical (goldens untouched).
+- Tests: handler Theory + foreign Brief + regenerate fact; Fake ignores the Brief; PRD Standard/Large zero-warning and
+  empty-slot-equals-Fake cases added to the existing Theories; prompt with/without Brief, repeat downgrade, carried
+  question (omitted/restated), "No sé" on constraints, Recorridos (one assumption, no UJ-n), failures through a PRD
+  request, no Brief text in logs.
+- Rollback boundary: revert the two code commits; the Fake drafter stays the default.
+- Pending: Chrome item C-4 (live) in the final walkthrough.
