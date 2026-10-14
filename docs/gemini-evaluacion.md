@@ -129,6 +129,8 @@ Fichas por llamada (de los registros): turnos de 976 a 1.482 de entrada y 77 a 1
 - Con `Gemini__Model=gemini-3.1-flash-lite`: estado 200, 5,1 s, `finishReason` STOP, tokens: prompt 1276, respuesta 420, razonamiento 1315.
 - Resultado: dos decisiones (AD-1, AD-2) con referencias válidas a FR/NFR del PRD, mapa de capacidades cubierto, ninguna tecnología ni versión nombrada, la pila en Diferido, cinco preguntas para desarrollo ya asignadas, cero avisos de formato. `Logs/` sin contenido.
 
-## Épicas e historias con Gemini (architecture-epics S6)
+## Épicas e historias con Gemini (architecture-epics S6, 2026-10-14)
 
-- Pendiente de la comprobación manual con la clave real (tarea 6.10): fecha, modelo, tokens (sin el cuerpo de la respuesta), si cada requisito funcional quedó en una historia o en una pregunta para desarrollo, y que `Logs/` no guarde contenido.
+- Iniciativa Grande con PRD y Arquitectura aprobados. Modelo `gemini-3.1-flash-lite`: estado 200, 2,4 s, `finishReason` STOP, tokens: prompt 2242, respuesta 554.
+- Resultado: dos épicas y dos historias numeradas por el código, `Cubre:` con referencias válidas, los dos requisitos funcionales cubiertos (mapa de cobertura completo), inventario con los números del PRD, cinco preguntas para desarrollo ya asignadas, cero avisos de formato. Aprobar quedó habilitado, y con los tres documentos aprobados la iniciativa pasó a «Lista para construir»; las tres descargas respondieron 200.
+- `Logs/` sin contenido de la iniciativa. El modelo por defecto (`gemini-3.6-flash`) no se probó en esta ocasión por su saturación del mismo día.

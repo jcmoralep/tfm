@@ -151,9 +151,9 @@ Branch `feat/arch-epics-s6-gemini-epics`. Three commits.
 - [x] 6.7 (README done; the Epics live results are added by 6.10, placeholder section in place) README paragraph on the Gemini switch mentions the two new types; `docs/gemini-evaluacion.md` gets the Architecture and Epics live results from 5.4 and 6.10. [DOC].
 - [x] 6.8 `docs/mejoras-posteriores.md` (modify): web-verified stack or starter recommendation (BMAD's own step; not implemented, stack stays in Diferido and a development question). [DOC]
 - [x] 6.9 `docs/mejoras-posteriores.md` (modify): **cascade invalidation** (final decision 2026-10-14): when the PRD or Architecture changes after a dependent was drafted, only the advisory amber hint exists; automatic invalidation, a stored version link, forced re-approval and blocking completion on stale dependents are deferred. Note that a Large initiative can complete with Approved-but-stale Architecture/Epics. [DOC]
-- [ ] 6.10 **Live check** [LIVE, never CI]: Gemini Large end to end in Chrome (conversation, PRD, Architecture, Epics, three approvals, exports); every document renders without format warnings, every FR is in a story or a development question, `Logs/` holds no content. Covers SPEC-AR "Large initiative end to end with a live key" [LIVE, UI].
+- [x] 6.10 **Live check** [LIVE, never CI]: Gemini Large end to end in Chrome (conversation, PRD, Architecture, Epics, three approvals, exports); every document renders without format warnings, every FR is in a story or a development question, `Logs/` holds no content. Covers SPEC-AR "Large initiative end to end with a live key" [LIVE, UI].
 - [x] 6.11 Commit 3 gate, then commit: `docs: add the step 6 follow-ups and the live evaluation notes`.
-- [ ] 6.G **Slice gate S6**: restore + build + full tests; `rg "style=|<script" src/BmadPlatform.Web` clean; `rg "ApiKey" src --glob "*.json"` no value. PR title `feat(gemini): Epics drafting and step 6 docs (S6)`. Merge to main before Group F.
+- [x] 6.G **Slice gate S6**: restore + build + full tests; `rg "style=|<script" src/BmadPlatform.Web` clean; `rg "ApiKey" src --glob "*.json"` no value. PR title `feat(gemini): Epics drafting and step 6 docs (S6)`. Merge to main before Group F.
 
 ## Group F: Closing docs and real-BMAD checks
 
