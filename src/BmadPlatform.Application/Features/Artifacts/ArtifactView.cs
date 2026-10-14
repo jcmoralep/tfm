@@ -16,6 +16,9 @@ namespace BmadPlatform.Application.Features.Artifacts;
 /// </param>
 /// <param name="Questions">The open questions read from the Markdown, in document order.</param>
 /// <param name="UnassignedQuestions">The distinct ids still to assign; while any remain the draft cannot be approved.</param>
+/// <param name="StaleUpstream">
+/// The document this one depends on that changed after this one was drafted. Advisory only: nothing is blocked.
+/// </param>
 public sealed record ArtifactView(
     Guid InitiativeId,
     string InitiativeName,
@@ -37,7 +40,8 @@ public sealed record ArtifactView(
     bool ApprovalCompletesSet,
     bool CompletionPending,
     IReadOnlyList<OpenQuestion> Questions,
-    IReadOnlyList<string> UnassignedQuestions)
+    IReadOnlyList<string> UnassignedQuestions,
+    ArtifactType? StaleUpstream = null)
 {
     // The synthesized ToString would print the document, which can contain initiative information.
     public override string ToString() =>

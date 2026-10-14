@@ -24,6 +24,10 @@ public static class ArtifactTexts
 
     public const string ComingLater = "Disponible en un paso posterior.";
 
+    public const string WaitingForPrd = "Primero apruebe el PRD para generar la arquitectura.";
+
+    public const string WaitingForArchitecture = "Primero apruebe la arquitectura para generar las épicas e historias.";
+
     // Why a model-backed draft failed. They are about the document and never say a message was saved: a failed draft stores nothing.
     public const string DraftQuota = "El asistente alcanzó su límite de uso por ahora. No se generó el documento; inténtelo de nuevo más tarde.";
 
@@ -56,6 +60,8 @@ public static class ArtifactTexts
         ArtifactAvailability.InitiativeDraft => DraftInitiative,
         ArtifactAvailability.LevelNotSet or ArtifactAvailability.NotRequired => NotForLevel,
         ArtifactAvailability.NotYetSupported => ComingLater,
+        ArtifactAvailability.WaitingForPrd => WaitingForPrd,
+        ArtifactAvailability.WaitingForArchitecture => WaitingForArchitecture,
         _ => TopicsUncovered,
     };
 }

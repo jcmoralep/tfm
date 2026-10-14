@@ -35,7 +35,8 @@ public sealed class RegenerateArtifactCommandHandler(
         ArtifactGuards.RequireVersion(artifact, request.ExpectedVersion);
 
         var answers = await ArtifactGuards.GetAnswersAsync(sender, request.InitiativeId, cancellationToken);
-        ArtifactGuards.RequireAvailable(ArtifactCatalog.Availability(request.Type, initiative.Status, initiative.Depth, answers));
+        var summaries = await repository.ListAsync(initiative.Id, ownerId, cancellationToken);
+        ArtifactGuards.RequireAvailable(ArtifactCatalog.Availability(request.Type, initiative.Status, initiative.Depth, answers, summaries));
 
         var depth = initiative.Depth!.Value;
         var brief = await ArtifactGuards.ApprovedBriefAsync(repository, initiative.Id, ownerId, request.Type, depth, cancellationToken);

@@ -37,7 +37,51 @@ public sealed class ArtifactViewBuilderTests
         return artifact;
     }
 
-    private static ArtifactSummary Summary(ArtifactType type, ArtifactStatus status) => new(type, status, 1);
+    private static ArtifactSummary Summary(ArtifactType type, ArtifactStatus status, int minutes = 0) =>
+        new(type, status, 1, Now.AddMinutes(minutes));
+
+    [Theory]
+    [InlineData(ArtifactType.Architecture, 10, 0, 0, ArtifactType.Prd)]
+    [InlineData(ArtifactType.Architecture, 0, 0, 0, null)]
+    [InlineData(ArtifactType.Architecture, -10, 0, 0, null)]
+    [InlineData(ArtifactType.EpicsAndStories, 0, 20, 10, ArtifactType.Architecture)]
+    [InlineData(ArtifactType.EpicsAndStories, 0, 5, 10, null)]
+    public void The_stale_upstream_hint_follows_the_timestamps(
+        ArtifactType type, int prdMinutes, int architectureMinutes, int epicsMinutes, ArtifactType? expected)
+    {
+        var summaries = new List<ArtifactSummary>
+        {
+            Summary(ArtifactType.Prd, ArtifactStatus.Approved, prdMinutes),
+            Summary(ArtifactType.Architecture, ArtifactStatus.Approved, type == ArtifactType.Architecture ? 0 : architectureMinutes),
+        };
+
+        if (type == ArtifactType.EpicsAndStories)
+        {
+            summaries.Add(Summary(type, ArtifactStatus.Draft, epicsMinutes));
+        }
+
+        var view = ArtifactViewBuilder.Build(
+            Details(InitiativeStatus.Planning, InitiativeDepth.Large),
+            new ConversationAnswers(true, true, []),
+            type,
+            Artifact.Create(Guid.NewGuid(), "user-a", type, "# Documento", Now),
+            summaries);
+
+        Assert.Equal(expected, view.StaleUpstream);
+    }
+
+    [Fact]
+    public void There_is_no_hint_when_the_dependent_does_not_exist()
+    {
+        var view = ArtifactViewBuilder.Build(
+            Details(InitiativeStatus.Planning, InitiativeDepth.Large),
+            new ConversationAnswers(true, true, []),
+            ArtifactType.Architecture,
+            null,
+            [Summary(ArtifactType.Prd, ArtifactStatus.Approved, 10)]);
+
+        Assert.Null(view.StaleUpstream);
+    }
 
     [Theory]
     [InlineData(InitiativeStatus.Draft, InitiativeDepth.Small, ArtifactType.Spec, Doc.None, false, false, false, false, false, false)]

@@ -23,7 +23,8 @@ public sealed class GenerateArtifactCommandHandler(
         var initiative = await ArtifactGuards.GetInitiativeAsync(sender, request.InitiativeId, cancellationToken);
         var answers = await ArtifactGuards.GetAnswersAsync(sender, request.InitiativeId, cancellationToken);
 
-        ArtifactGuards.RequireAvailable(ArtifactCatalog.Availability(request.Type, initiative.Status, initiative.Depth, answers));
+        var summaries = await repository.ListAsync(initiative.Id, ownerId, cancellationToken);
+        ArtifactGuards.RequireAvailable(ArtifactCatalog.Availability(request.Type, initiative.Status, initiative.Depth, answers, summaries));
 
         if (await repository.GetAsync(initiative.Id, request.Type, ownerId, cancellationToken) is not null)
         {

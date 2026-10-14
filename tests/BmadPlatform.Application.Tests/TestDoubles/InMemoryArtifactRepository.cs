@@ -40,7 +40,7 @@ public sealed class InMemoryArtifactRepository : IArtifactRepository
     {
         IReadOnlyList<ArtifactSummary> summaries = stored
             .Where(a => a.InitiativeId == initiativeId && a.OwnerId == ownerId)
-            .Select(a => new ArtifactSummary(a.Type, a.Status, a.Version))
+            .Select(a => new ArtifactSummary(a.Type, a.Status, a.Version, a.UpdatedAt))
             .ToList();
 
         return Task.FromResult(summaries);
