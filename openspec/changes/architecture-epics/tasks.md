@@ -98,7 +98,7 @@ Branch `feat/arch-epics-s3-fake-architecture`. Three commits. This slice switche
 - [x] 3.7 Commit 2 gate, then commit: `feat(artifacts): draft the Architecture from the approved PRD with the Fake drafter`.
 - [x] 3.8 **Gemini guard.** `GeminiArtifactDrafter` throws `NotSupportedException` for the two new types between S3 and S5 (design note); verify the page shows `ActionFailed`, not a crash. No code beyond the guard if it already throws [UNIT]. **Done:** `DraftSlots.For` already throws before any request; `ArtifactsCard` and `ArtifactDocument` catch it in their generic handler (ActionFailed); a Theory proves both new types throw `NotSupportedException` with no HTTP request.
 - [x] 3.9 **Real-BMAD check 1 (lint, part)** [BMAD]: export the golden, save as `ARCHITECTURE-SPINE.md` in a scratch BMAD 6.12.1 repo, run `lint_spine.py`; record whether the `binds`/`prevents`/`rule` and TODO checks are case-sensitive and the frontmatter keys required (design Open Question 2). Observations are noted for task F.2; a failure triggers a fix inside this slice (labels or fixed texts only). Do not commit the scratch repo. **Result (2026-10-14):** `lint_spine.py` on the exported golden reported `ok: true`, 0 findings; the placeholder check is case-sensitive (probe: only uppercase `TODO` flagged), the AD field check is a lowercase substring test, no frontmatter key is required; no fix needed. Details in design Open Question 2.
-- [ ] 3.10 **Chrome walkthrough S3**:
+- [x] 3.10 **Chrome walkthrough S3**:
   - [ ] Fresh Large initiative, Fake, drive to the closing, generate and approve the PRD.
   - [ ] Arquitectura card now offers Generar; Épicas still shows the "apruebe primero la Arquitectura" reason or is unavailable.
   - [ ] Generate the Architecture: rendered page shows AD blocks, the map table, Diferido with the stack entry, no format warnings; Q-n lines show the development suffix and Aprobar is enabled.
@@ -106,7 +106,7 @@ Branch `feat/arch-epics-s3-fake-architecture`. Three commits. This slice switche
   - [ ] Edit the PRD (card goes back to Draft): the Architecture page shows the amber note; save, export and Regenerar are still usable. Re-approve the PRD: the note is gone only after the Architecture is regenerated or edited (timestamp rule, D3).
   - [ ] Descargar the Architecture `.md`: name starts with `architecture-`, note and frontmatter present.
   - [ ] `rg "style=|<script"` on touched razor files; review `Logs/`; tear down.
-- [ ] 3.G **Slice gate S3**: restore + build + full tests; goldens pass; `ModuleBoundaryTests` pass. PR title `feat(artifacts): Architecture draft with the Fake drafter, export and golden (S3)`. Merge to main before S4.
+- [x] 3.G **Slice gate S3**: restore + build + full tests; goldens pass; `ModuleBoundaryTests` pass. PR title `feat(artifacts): Architecture draft with the Fake drafter, export and golden (S3)`. Merge to main before S4.
 
 ## Group S4: Fake Epics end to end (~420)
 
