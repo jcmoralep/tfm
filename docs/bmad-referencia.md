@@ -73,9 +73,11 @@ Estas tres comprobaciones necesitan ejecutar BMAD de verdad. **No se han ejecuta
 
 | Comprobación | Fecha | Versión | Resultado | Evidencia |
 |---|---|---|---|---|
-| 1. `bmad-build` con `SPEC.md` | — | 6.12.1 | no ejecutado | — |
-| 2. Épicas: `FR-n` a `FR1:` con el mismo número | — | 6.12.1 | no ejecutado | — |
-| 3. Encabezados en español y sufijo `Q-n` | — | 6.12.1 | no ejecutado | — |
+| 1. `bmad-build` con `SPEC.md` | 2026-10-14 | 6.12.1 | cumple | Construcción completa: tomó `SPEC.md` como intención inicial (sin `status`, no lo reanuda), usó FR-1..3 y respondió Q-1 con A-2; 10 pruebas pasan y creó su propio `spec-order-lookup.md`. Sin quejas de estructura; sí de que Q-1 y A-2 se contradicen, de FR sin criterios de aceptación y de que el comando de verificación del ejemplo falla en Node 24. |
+| 2. Épicas: `FR-n` a `FR1:` con el mismo número | 2026-10-14 | 6.12.1 | cumple en la lectura; la regla `FR1:` no se confirmó | Extrajo 5 FR y 2 NFR sin perder ninguno ni renumerar, pero escribió `FR-1` con guion (decisión del agente, para trazar con el PRD). El paso no obliga a `FR1:`. |
+| 3. Encabezados en español y sufijo `Q-n` | 2026-10-14 | 6.12.1 | cumple | Cumple también con `bmad-prd` en modo sin interfaz (validar): `prd.md` quedó idéntico byte a byte; leyó los encabezados en español, `FR/NFR/SM/A-n` y la línea `Q-1` con su sufijo como responsable y condición de revisión. Nota: la evaluación fue "Fair" por contenido del ejemplo. |
+
+Notas de la ejecución del 2026-10-14: `bmad-build` necesita `uv` en el PATH (sin él se detiene al activarse) y, en modo sin interfaz, permitir `uv run`. El inventario de `epics.md` aceptó `FR-n` con guion, así que escribir `FR3:` (decisión del cambio `bmad-alignment`) es una elección de la plataforma y no un requisito de BMAD. La falta de frontmatter que señaló `bmad-prd` no aplica: la exportación lo añade (RF-36) y el golden es el Markdown guardado. La línea `- Pendiente: ver Q-1.` del golden `prd-large.md` es la marca intencional de un dato que falta (la plataforma la escribe a propósito y las pruebas la exigen); BMAD la conservó como una nota dentro de la lista, sin dañar nada. No requiere ajuste.
 
 ## 8. Cierre de conformidad del cambio `bmad-alignment`
 
