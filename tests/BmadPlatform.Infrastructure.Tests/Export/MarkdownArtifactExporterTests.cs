@@ -35,6 +35,7 @@ public sealed class MarkdownArtifactExporterTests
     [InlineData(ArtifactType.Prd, "prd-portal-de-clientes-2026-10-13.md", "bmad-architecture")]
     [InlineData(ArtifactType.Spec, "spec-portal-de-clientes-2026-10-13.md", "bmad-build")]
     [InlineData(ArtifactType.Architecture, "architecture-portal-de-clientes-2026-10-13.md", "bmad-create-epics-and-stories")]
+    [InlineData(ArtifactType.EpicsAndStories, "epics-portal-de-clientes-2026-10-13.md", "bmad-build")]
     public void Each_type_gets_its_file_name_and_names_the_bmad_skill_that_takes_it(ArtifactType type, string fileName, string skill)
     {
         var export = Export(type);
@@ -57,6 +58,22 @@ public sealed class MarkdownArtifactExporterTests
         Assert.All(
             new[] { ArtifactType.Spec, ArtifactType.Brief, ArtifactType.Prd },
             type => Assert.DoesNotContain("\ntype:", Export(type).Content));
+    }
+
+    [Fact]
+    public void The_epics_name_their_inputs_in_the_frontmatter_the_target_file_and_ask_for_the_development_review()
+    {
+        var epics = Export(ArtifactType.EpicsAndStories, ArtifactStatus.Approved);
+
+        Assert.StartsWith(
+            "---\ntitle: \"Portal de clientes\"\nstepsCompleted: ['step-01-validate-prerequisites']\ninputDocuments: [prd.md, ARCHITECTURE-SPINE.md]\nstatus: approved\ncreated: 2026-10-12\nupdated: 2026-10-13\n---\n\n> **Nota de uso**",
+            epics.Content);
+        Assert.Contains("`planning-artifacts/epics.md`", epics.Content);
+        Assert.Contains("para revisión del equipo de desarrollo", epics.Content);
+        Assert.Contains("«Preguntas para desarrollo»", epics.Content);
+        Assert.All(
+            new[] { ArtifactType.Spec, ArtifactType.Brief, ArtifactType.Prd, ArtifactType.Architecture },
+            type => Assert.DoesNotContain("inputDocuments", Export(type).Content));
     }
 
     [Fact]

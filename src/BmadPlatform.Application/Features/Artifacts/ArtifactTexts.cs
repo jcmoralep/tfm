@@ -24,7 +24,7 @@ public static class ArtifactTexts
 
     public const string ComingLater = "Disponible en un paso posterior.";
 
-    public const string WaitingForPrd = "Primero apruebe el PRD para generar la arquitectura.";
+    public const string WaitingForPrd = "Primero apruebe el PRD para generar este documento.";
 
     public const string WaitingForArchitecture = "Primero apruebe la arquitectura para generar las épicas e historias.";
 

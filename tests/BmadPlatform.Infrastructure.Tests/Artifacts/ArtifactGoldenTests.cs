@@ -73,6 +73,27 @@ public sealed class ArtifactGoldenTests
             ArchitectureDecisionItems.Parse(markdown).Select(decision => decision.Id));
     }
 
+    // The Epics read the approved PRD and Architecture goldens and no answers; every requirement is covered or asked about.
+    [Fact]
+    public async Task The_epics_equal_their_golden_and_pass_every_check()
+    {
+        var request = Request(ArtifactType.EpicsAndStories, InitiativeDepth.Large, []) with
+        {
+            PrdMarkdown = await File.ReadAllTextAsync(GoldenPath("prd-large.md")),
+            ArchitectureMarkdown = await File.ReadAllTextAsync(GoldenPath("architecture-large.md")),
+        };
+        var markdown = await Draft(request);
+
+        await AssertGolden("epics-large.md", markdown);
+        Assert.Equal(markdown, await Draft(request));
+        Assert.Empty(ArtifactFormatChecker.Check(ArtifactType.EpicsAndStories, markdown));
+        Assert.Empty(OpenQuestions.Unassigned(markdown));
+        Assert.DoesNotMatch(@"\b(TBD|TODO|FIXME|XXX)\b", markdown);
+        Assert.Equal(
+            ["FR-1", "FR-2", "FR-3", "FR-4", "FR-5", "NFR-1", "NFR-2"],
+            RequirementItems.Parse(markdown).Select(item => item.Id));
+    }
+
     private static async Task AssertGolden(string file, string markdown)
     {
         var expected = Utf8.GetBytes(markdown + "\n");

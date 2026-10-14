@@ -17,16 +17,36 @@ internal sealed record DraftItem(string Text, DraftItemSource Source);
 /// </summary>
 internal sealed record DecisionItem(string Title, IReadOnlyList<string> Binds, string Prevents, string Rule);
 
+/// <summary>One acceptance criterion of a story, as <c>Given … When … Then …</c>.</summary>
+internal sealed record CriterionItem(string Given, string When, string Then);
+
+/// <summary>
+/// One story as the model proposes it. The covers are raw requirement identifiers: the layout keeps only those the
+/// approved PRD defines. The code numbers the story.
+/// </summary>
+internal sealed record StoryItem(
+    string Title,
+    string AsA,
+    string IWant,
+    string SoThat,
+    IReadOnlyList<string> Covers,
+    IReadOnlyList<CriterionItem> Criteria);
+
+/// <summary>One epic as the model proposes it: a goal and its stories in delivery order. The code numbers the epic.</summary>
+internal sealed record EpicItem(string Title, string Goal, IReadOnlyList<StoryItem> Stories);
+
 /// <summary>
 /// The model's items by slot id (the topic key for a slot fed by a topic); a slot absent from the map has no items.
 /// <paramref name="CarriedQuestions"/> are the open questions of the approved Brief that the PRD must not lose;
-/// <paramref name="Decisions"/> and <paramref name="DevelopmentQuestions"/> belong to the Architecture.
+/// <paramref name="Decisions"/> and <paramref name="DevelopmentQuestions"/> belong to the Architecture (the questions also
+/// to the Epics, with <paramref name="Epics"/>).
 /// </summary>
 internal sealed record DraftItems(
     IReadOnlyDictionary<string, IReadOnlyList<DraftItem>> BySlot,
     IReadOnlyList<string>? CarriedQuestions = null,
     IReadOnlyList<DecisionItem>? Decisions = null,
-    IReadOnlyList<string>? DevelopmentQuestions = null)
+    IReadOnlyList<string>? DevelopmentQuestions = null,
+    IReadOnlyList<EpicItem>? Epics = null)
 {
     public IReadOnlyList<DraftItem> Of(string slotId) =>
         BySlot.TryGetValue(slotId, out var items) ? items : [];

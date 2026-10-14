@@ -73,15 +73,73 @@ public sealed class ApproveArtifactTests
         Assert.DoesNotContain(context.Sender.Sent, request => request is MarkReadyToBuildCommand);
     }
 
-    [Fact]
-    public async Task Large_never_completes_because_its_later_documents_cannot_exist()
+    private static readonly ArtifactType[] LargeChain = [ArtifactType.Prd, ArtifactType.Architecture, ArtifactType.EpicsAndStories];
+
+    // Generates and approves the documents of the chain in order, up to and including <paramref name="last"/>.
+    private async Task<Guid> LargeApprovedThrough(ArtifactType last)
     {
         var id = await context.AtClosing(InitiativeDepth.Large);
-        await context.Generate(id, ArtifactType.Prd);
 
-        await context.Approve(id, ArtifactType.Prd, 1);
+        foreach (var type in LargeChain.Take(Array.IndexOf(LargeChain, last) + 1))
+        {
+            await context.Generate(id, type);
+            await context.Approve(id, type, 1);
+        }
+
+        return id;
+    }
+
+    [Theory]
+    [InlineData(ArtifactType.Prd, InitiativeStatus.Planning)]
+    [InlineData(ArtifactType.Architecture, InitiativeStatus.Planning)]
+    [InlineData(ArtifactType.EpicsAndStories, InitiativeStatus.ReadyToBuild)]
+    public async Task Large_is_ready_to_build_only_when_the_prd_the_architecture_and_the_epics_are_approved(ArtifactType last, InitiativeStatus expected)
+    {
+        var id = await LargeApprovedThrough(last);
+
+        Assert.Equal(expected, await context.StatusOf(id));
+    }
+
+    [Theory]
+    [InlineData(ArtifactType.Prd)]
+    [InlineData(ArtifactType.Architecture)]
+    [InlineData(ArtifactType.EpicsAndStories)]
+    public async Task Editing_any_of_the_three_documents_reopens_a_ready_large_initiative(ArtifactType edited)
+    {
+        var id = await LargeApprovedThrough(ArtifactType.EpicsAndStories);
+
+        await context.Save(id, edited, 1, "# Editado\n\n- **FR-1**: cambiado");
 
         Assert.Equal(InitiativeStatus.Planning, await context.StatusOf(id));
+        Assert.Equal(ArtifactStatus.Draft, context.StoredArtifact(id, edited).Status);
+    }
+
+    [Fact]
+    public async Task Approving_the_prd_again_after_an_edit_completes_with_the_dependents_untouched_even_if_stale()
+    {
+        var id = await LargeApprovedThrough(ArtifactType.EpicsAndStories);
+        await context.Save(id, ArtifactType.Prd, 1, "# Editado\n\n- **FR-1**: cambiado");
+        context.Clock.Advance(TimeSpan.FromMinutes(5));
+
+        var view = await context.Approve(id, ArtifactType.Prd, 2);
+
+        Assert.Equal(InitiativeStatus.ReadyToBuild, await context.StatusOf(id));
+        Assert.All(
+            new[] { ArtifactType.Architecture, ArtifactType.EpicsAndStories },
+            type => Assert.Equal((1, ArtifactStatus.Approved), (context.StoredArtifact(id, type).Version, context.StoredArtifact(id, type).Status)));
+        Assert.Equal(ArtifactStatus.Approved, view.Status);
+    }
+
+    [Fact]
+    public async Task Regenerating_the_prd_leaves_the_approved_dependents_alone()
+    {
+        var id = await LargeApprovedThrough(ArtifactType.EpicsAndStories);
+
+        await context.Regenerate(id, ArtifactType.Prd, 1);
+
+        Assert.Equal((2, ArtifactStatus.Draft), (context.StoredArtifact(id, ArtifactType.Prd).Version, context.StoredArtifact(id, ArtifactType.Prd).Status));
+        Assert.Equal(ArtifactStatus.Approved, context.StoredArtifact(id, ArtifactType.Architecture).Status);
+        Assert.Equal(ArtifactStatus.Approved, context.StoredArtifact(id, ArtifactType.EpicsAndStories).Status);
     }
 
     [Fact]

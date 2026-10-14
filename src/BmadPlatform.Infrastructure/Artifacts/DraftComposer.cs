@@ -53,11 +53,12 @@ internal sealed partial class DraftComposer
     // The longest a single model item may be, so one rambling item cannot take the whole budget of a section.
     private const int MaxModelTextLength = 400;
 
-    public DraftComposer(DraftRequest request, int answerBudget, DraftItems? items = null)
+    public DraftComposer(DraftRequest request, int answerBudget, DraftItems? items = null, int droppedStories = 0)
     {
         Request = request;
         this.answerBudget = answerBudget;
         this.items = items;
+        DroppedStories = droppedStories;
         answers = request.Answers.GroupBy(a => a.TopicKey).ToDictionary(g => g.Key, g => g.Last(), StringComparer.Ordinal);
     }
 
@@ -68,6 +69,15 @@ internal sealed partial class DraftComposer
 
     /// <summary>The decisions the model proposed for the Architecture; empty with no items (the fake).</summary>
     public IReadOnlyList<DecisionItem> Decisions => items?.Decisions ?? [];
+
+    /// <summary>The epics the model proposed; empty with no items (the fake).</summary>
+    public IReadOnlyList<EpicItem> Epics => items?.Epics ?? [];
+
+    /// <summary>
+    /// How many stories, counted from the end, the Epics layout leaves out: the last rung of the budget ladder. The
+    /// renderer raises it until the document fits.
+    /// </summary>
+    public int DroppedStories { get; }
 
     /// <summary>The development questions the model proposed for the Architecture; empty with no items.</summary>
     public IReadOnlyList<string> ModelQuestions => items?.DevelopmentQuestions ?? [];
