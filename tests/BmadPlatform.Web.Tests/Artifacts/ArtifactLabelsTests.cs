@@ -12,7 +12,9 @@ public sealed class ArtifactLabelsTests
     [InlineData("brief", true, ArtifactType.Brief)]
     [InlineData("prd", true, ArtifactType.Prd)]
     [InlineData("PRD", false, default(ArtifactType))]
-    [InlineData("arquitectura", false, default(ArtifactType))]
+    [InlineData("arquitectura", true, ArtifactType.Architecture)]
+    [InlineData("epicas-e-historias", true, ArtifactType.EpicsAndStories)]
+    [InlineData("Arquitectura", false, default(ArtifactType))]
     [InlineData("", false, default(ArtifactType))]
     [InlineData(null, false, default(ArtifactType))]
     public void Slugs_parse_exactly(string? slug, bool expected, ArtifactType expectedType)
@@ -25,6 +27,8 @@ public sealed class ArtifactLabelsTests
     [InlineData(ArtifactType.Spec)]
     [InlineData(ArtifactType.Brief)]
     [InlineData(ArtifactType.Prd)]
+    [InlineData(ArtifactType.Architecture)]
+    [InlineData(ArtifactType.EpicsAndStories)]
     public void Every_slug_round_trips(ArtifactType type)
     {
         Assert.True(ArtifactLabels.TryParseSlug(ArtifactLabels.Slug(type), out var parsed));
@@ -87,6 +91,18 @@ public sealed class ArtifactLabelsTests
     public void Edit_hint_warns_only_when_saving_undoes_an_approval(ArtifactStatus status, InitiativeStatus initiative, string? expected)
     {
         Assert.Equal(expected, ArtifactLabels.EditHint(status, initiative));
+    }
+
+    [Theory]
+    [InlineData(ArtifactType.Spec, false)]
+    [InlineData(ArtifactType.Brief, false)]
+    [InlineData(ArtifactType.Prd, false)]
+    [InlineData(ArtifactType.Architecture, true)]
+    [InlineData(ArtifactType.EpicsAndStories, true)]
+    public void Approval_copy_mentions_development_review_only_for_the_draft_documents(ArtifactType type, bool review)
+    {
+        Assert.Equal(review, ArtifactLabels.ApproveConfirmText(type).Contains("revisa", StringComparison.Ordinal));
+        Assert.Equal(review, ArtifactLabels.NeedsDevelopmentReview(type));
     }
 
     [Theory]

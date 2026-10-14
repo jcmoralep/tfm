@@ -16,7 +16,7 @@ public static class ArtifactViewBuilder
         Artifact? artifact,
         IReadOnlyList<ArtifactSummary> summaries)
     {
-        var availability = ArtifactCatalog.Availability(type, initiative.Status, initiative.Depth, answers);
+        var availability = ArtifactCatalog.Availability(type, initiative.Status, initiative.Depth, answers, summaries);
         var required = ArtifactCatalog.RequiredFor(initiative.Depth).Any(slot => slot.Type == type);
 
         // A document of a type the level no longer requires is kept but hidden, and nothing can be done with it.
@@ -53,7 +53,8 @@ public static class ArtifactViewBuilder
             ApprovalCompletesSet: canApprove && planning && covered && ArtifactCatalog.IsSetComplete(initiative.Depth, WithApproved(summaries, type)),
             CompletionPending: planning && covered && ArtifactCatalog.IsSetComplete(initiative.Depth, summaries),
             questions,
-            unassigned);
+            unassigned,
+            ArtifactCatalog.StaleUpstream(type, summaries));
     }
 
     public static ArtifactsOverview BuildOverview(
@@ -88,7 +89,7 @@ public static class ArtifactViewBuilder
             return new ArtifactSlotView(slot.Label, null, ArtifactAvailability.NotYetSupported, false, null, 0, ArtifactTexts.ComingLater);
         }
 
-        var availability = ArtifactCatalog.Availability(type, initiative.Status, initiative.Depth, answers);
+        var availability = ArtifactCatalog.Availability(type, initiative.Status, initiative.Depth, answers, summaries);
         var summary = summaries.FirstOrDefault(s => s.Type == type);
 
         return summary is null

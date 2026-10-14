@@ -37,6 +37,10 @@ public static class ArtifactLabels
 
     public const string PrdSlug = "prd";
 
+    public const string ArchitectureSlug = "arquitectura";
+
+    public const string EpicsSlug = "epicas-e-historias";
+
     /// <summary>Query string flag the card adds so the document page can show the green "generated" notice.</summary>
     public const string GeneratedFlag = "generado";
 
@@ -120,11 +124,28 @@ public static class ArtifactLabels
         _ => null,
     };
 
+    /// <summary>The documents handed to the development team as drafts to review, not as final technical decisions.</summary>
+    public static bool NeedsDevelopmentReview(ArtifactType type) =>
+        type is ArtifactType.Architecture or ArtifactType.EpicsAndStories;
+
+    public const string DevelopmentReviewReminder = "Es un borrador para revisión del equipo de desarrollo. Sus preguntas se resuelven con desarrollo antes de construir.";
+
+    /// <summary>The body of the approval confirmation; the button stays "Aprobar" for every type.</summary>
+    public static string ApproveConfirmText(ArtifactType type) => NeedsDevelopmentReview(type)
+        ? "Aprobar lo marca como el borrador que se entrega al equipo de desarrollo. No son decisiones técnicas finales: desarrollo lo revisa antes de construir."
+        : "Aprobar lo marca como versión final para desarrollo.";
+
+    /// <summary>The amber advice shown when the document this one depends on changed after it was drafted.</summary>
+    public static string StaleUpstreamNote(ArtifactType upstream) =>
+        $"{(upstream == ArtifactType.Prd ? "El PRD" : "La arquitectura")} cambió después de generar este documento. Cuando esté aprobado, use Regenerar para actualizarlo.";
+
     public static string TypeName(ArtifactType type) => type switch
     {
         ArtifactType.Spec => "Especificación",
         ArtifactType.Brief => "Brief",
         ArtifactType.Prd => "PRD",
+        ArtifactType.Architecture => "Arquitectura",
+        ArtifactType.EpicsAndStories => "Épicas e historias",
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
     };
 
@@ -134,6 +155,8 @@ public static class ArtifactLabels
         ArtifactType.Spec => "Descripción corta de lo que se va a construir.",
         ArtifactType.Brief => "Resumen de la idea: el problema, para quién es y qué cambia.",
         ArtifactType.Prd => "Qué debe hacer el producto y cómo se medirá el éxito.",
+        ArtifactType.Architecture => "Borrador de las decisiones técnicas principales, para que desarrollo lo revise.",
+        ArtifactType.EpicsAndStories => "El trabajo dividido en épicas e historias, para que desarrollo lo revise.",
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
     };
 
@@ -149,6 +172,8 @@ public static class ArtifactLabels
         ArtifactType.Spec => SpecSlug,
         ArtifactType.Brief => BriefSlug,
         ArtifactType.Prd => PrdSlug,
+        ArtifactType.Architecture => ArchitectureSlug,
+        ArtifactType.EpicsAndStories => EpicsSlug,
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
     };
 
@@ -165,6 +190,12 @@ public static class ArtifactLabels
                 return true;
             case PrdSlug:
                 type = ArtifactType.Prd;
+                return true;
+            case ArchitectureSlug:
+                type = ArtifactType.Architecture;
+                return true;
+            case EpicsSlug:
+                type = ArtifactType.EpicsAndStories;
                 return true;
             default:
                 type = default;

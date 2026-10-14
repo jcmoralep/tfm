@@ -10,7 +10,35 @@ public sealed class ArtifactCatalogTests
 {
     private static ConversationAnswers Answers(bool clarify, bool plan) => new(clarify, plan, []);
 
-    private static ArtifactSummary Summary(ArtifactType type, ArtifactStatus status) => new(type, status, 1);
+    private static readonly DateTimeOffset Noon = new(2026, 10, 14, 12, 0, 0, TimeSpan.Zero);
+
+    private static ArtifactSummary Summary(ArtifactType type, ArtifactStatus status, int minutes = 0) =>
+        new(type, status, 1, Noon.AddMinutes(minutes));
+
+    // The catalog still lists no type for the new documents, so the chain is exercised with explicit slots.
+    private static readonly ArtifactSlot[] Chain =
+    [
+        new("PRD", ArtifactType.Prd),
+        new("Arquitectura", ArtifactType.Architecture),
+        new("Épicas e historias", ArtifactType.EpicsAndStories),
+    ];
+
+    private static ArtifactAvailability Chained(ArtifactType type, ArtifactStatus? prd, ArtifactStatus? architecture)
+    {
+        var summaries = new List<ArtifactSummary>();
+
+        if (prd is { } p)
+        {
+            summaries.Add(Summary(ArtifactType.Prd, p));
+        }
+
+        if (architecture is { } a)
+        {
+            summaries.Add(Summary(ArtifactType.Architecture, a));
+        }
+
+        return ArtifactCatalog.Availability(type, InitiativeStatus.Planning, InitiativeDepth.Large, Answers(true, true), summaries, Chain);
+    }
 
     [Fact]
     public void Required_set_per_level()
@@ -48,7 +76,7 @@ public sealed class ArtifactCatalogTests
         Assert.False(ArtifactCatalog.IsSetComplete(null, []));
         Assert.Equal(
             ArtifactAvailability.LevelNotSet,
-            ArtifactCatalog.Availability(ArtifactType.Brief, InitiativeStatus.Clarifying, null, Answers(true, true)));
+            ArtifactCatalog.Availability(ArtifactType.Brief, InitiativeStatus.Clarifying, null, Answers(true, true), []));
     }
 
     [Fact]
@@ -58,10 +86,10 @@ public sealed class ArtifactCatalogTests
 
         Assert.Equal(
             ArtifactAvailability.Available,
-            ArtifactCatalog.Availability(ArtifactType.Brief, InitiativeStatus.Clarifying, InitiativeDepth.Standard, answers));
+            ArtifactCatalog.Availability(ArtifactType.Brief, InitiativeStatus.Clarifying, InitiativeDepth.Standard, answers, []));
         Assert.Equal(
             ArtifactAvailability.WaitingForClosing,
-            ArtifactCatalog.Availability(ArtifactType.Prd, InitiativeStatus.Clarifying, InitiativeDepth.Standard, answers));
+            ArtifactCatalog.Availability(ArtifactType.Prd, InitiativeStatus.Clarifying, InitiativeDepth.Standard, answers, []));
     }
 
     [Fact]
@@ -69,10 +97,10 @@ public sealed class ArtifactCatalogTests
     {
         Assert.Equal(
             ArtifactAvailability.WaitingForClarify,
-            ArtifactCatalog.Availability(ArtifactType.Brief, InitiativeStatus.Clarifying, InitiativeDepth.Standard, Answers(false, false)));
+            ArtifactCatalog.Availability(ArtifactType.Brief, InitiativeStatus.Clarifying, InitiativeDepth.Standard, Answers(false, false), []));
         Assert.Equal(
             ArtifactAvailability.WaitingForClarify,
-            ArtifactCatalog.Availability(ArtifactType.Brief, InitiativeStatus.Clarifying, InitiativeDepth.Standard, null));
+            ArtifactCatalog.Availability(ArtifactType.Brief, InitiativeStatus.Clarifying, InitiativeDepth.Standard, null, []));
     }
 
     [Fact]
@@ -80,13 +108,13 @@ public sealed class ArtifactCatalogTests
     {
         Assert.Equal(
             ArtifactAvailability.WaitingForClosing,
-            ArtifactCatalog.Availability(ArtifactType.Spec, InitiativeStatus.Clarifying, InitiativeDepth.Small, Answers(true, false)));
+            ArtifactCatalog.Availability(ArtifactType.Spec, InitiativeStatus.Clarifying, InitiativeDepth.Small, Answers(true, false), []));
         Assert.Equal(
             ArtifactAvailability.WaitingForClosing,
-            ArtifactCatalog.Availability(ArtifactType.Spec, InitiativeStatus.Clarifying, InitiativeDepth.Small, Answers(true, true)));
+            ArtifactCatalog.Availability(ArtifactType.Spec, InitiativeStatus.Clarifying, InitiativeDepth.Small, Answers(true, true), []));
         Assert.Equal(
             ArtifactAvailability.Available,
-            ArtifactCatalog.Availability(ArtifactType.Spec, InitiativeStatus.Planning, InitiativeDepth.Small, Answers(true, true)));
+            ArtifactCatalog.Availability(ArtifactType.Spec, InitiativeStatus.Planning, InitiativeDepth.Small, Answers(true, true), []));
     }
 
     [Fact]
@@ -94,10 +122,10 @@ public sealed class ArtifactCatalogTests
     {
         Assert.Equal(
             ArtifactAvailability.WaitingForClosing,
-            ArtifactCatalog.Availability(ArtifactType.Prd, InitiativeStatus.Planning, InitiativeDepth.Standard, Answers(true, false)));
+            ArtifactCatalog.Availability(ArtifactType.Prd, InitiativeStatus.Planning, InitiativeDepth.Standard, Answers(true, false), []));
         Assert.Equal(
             ArtifactAvailability.Available,
-            ArtifactCatalog.Availability(ArtifactType.Prd, InitiativeStatus.Planning, InitiativeDepth.Standard, Answers(true, true)));
+            ArtifactCatalog.Availability(ArtifactType.Prd, InitiativeStatus.Planning, InitiativeDepth.Standard, Answers(true, true), []));
     }
 
     [Fact]
@@ -105,7 +133,7 @@ public sealed class ArtifactCatalogTests
     {
         Assert.Equal(
             ArtifactAvailability.Available,
-            ArtifactCatalog.Availability(ArtifactType.Prd, InitiativeStatus.Planning, InitiativeDepth.Large, Answers(true, true)));
+            ArtifactCatalog.Availability(ArtifactType.Prd, InitiativeStatus.Planning, InitiativeDepth.Large, Answers(true, true), []));
     }
 
     [Theory]
@@ -116,7 +144,7 @@ public sealed class ArtifactCatalogTests
     {
         Assert.Equal(
             ArtifactAvailability.InitiativeDraft,
-            ArtifactCatalog.Availability(type, InitiativeStatus.Draft, InitiativeDepth.Standard, Answers(true, true)));
+            ArtifactCatalog.Availability(type, InitiativeStatus.Draft, InitiativeDepth.Standard, Answers(true, true), []));
     }
 
     [Fact]
@@ -124,10 +152,10 @@ public sealed class ArtifactCatalogTests
     {
         Assert.Equal(
             ArtifactAvailability.Available,
-            ArtifactCatalog.Availability(ArtifactType.Spec, InitiativeStatus.ReadyToBuild, InitiativeDepth.Small, Answers(true, true)));
+            ArtifactCatalog.Availability(ArtifactType.Spec, InitiativeStatus.ReadyToBuild, InitiativeDepth.Small, Answers(true, true), []));
         Assert.Equal(
             ArtifactAvailability.Available,
-            ArtifactCatalog.Availability(ArtifactType.Brief, InitiativeStatus.ReadyToBuild, InitiativeDepth.Standard, Answers(true, true)));
+            ArtifactCatalog.Availability(ArtifactType.Brief, InitiativeStatus.ReadyToBuild, InitiativeDepth.Standard, Answers(true, true), []));
     }
 
     [Theory]
@@ -139,7 +167,7 @@ public sealed class ArtifactCatalogTests
     {
         Assert.Equal(
             ArtifactAvailability.NotRequired,
-            ArtifactCatalog.Availability(type, InitiativeStatus.Planning, depth, Answers(true, true)));
+            ArtifactCatalog.Availability(type, InitiativeStatus.Planning, depth, Answers(true, true), []));
     }
 
     [Fact]
@@ -172,6 +200,82 @@ public sealed class ArtifactCatalogTests
     public void Large_never_completes_in_this_change()
     {
         Assert.False(ArtifactCatalog.IsSetComplete(InitiativeDepth.Large, [Summary(ArtifactType.Prd, ArtifactStatus.Approved)]));
+    }
+
+    [Theory]
+    [InlineData(ArtifactType.Architecture, null, null, ArtifactAvailability.WaitingForPrd)]
+    [InlineData(ArtifactType.Architecture, ArtifactStatus.Draft, null, ArtifactAvailability.WaitingForPrd)]
+    [InlineData(ArtifactType.Architecture, ArtifactStatus.Approved, null, ArtifactAvailability.Available)]
+    [InlineData(ArtifactType.EpicsAndStories, ArtifactStatus.Approved, null, ArtifactAvailability.WaitingForArchitecture)]
+    [InlineData(ArtifactType.EpicsAndStories, ArtifactStatus.Approved, ArtifactStatus.Draft, ArtifactAvailability.WaitingForArchitecture)]
+    [InlineData(ArtifactType.EpicsAndStories, ArtifactStatus.Draft, ArtifactStatus.Approved, ArtifactAvailability.WaitingForPrd)]
+    [InlineData(ArtifactType.EpicsAndStories, ArtifactStatus.Approved, ArtifactStatus.Approved, ArtifactAvailability.Available)]
+    [InlineData(ArtifactType.Prd, null, null, ArtifactAvailability.Available)]
+    public void Dependent_documents_wait_for_their_approved_upstream(
+        ArtifactType type, ArtifactStatus? prd, ArtifactStatus? architecture, ArtifactAvailability expected)
+    {
+        Assert.Equal(expected, Chained(type, prd, architecture));
+    }
+
+    [Fact]
+    public void Coverage_is_checked_before_upstream()
+    {
+        Assert.Equal(
+            ArtifactAvailability.WaitingForClosing,
+            ArtifactCatalog.Availability(
+                ArtifactType.Architecture,
+                InitiativeStatus.Clarifying,
+                InitiativeDepth.Large,
+                Answers(true, false),
+                [Summary(ArtifactType.Prd, ArtifactStatus.Approved)],
+                Chain));
+    }
+
+    [Fact]
+    public void Set_availability_is_coverage_only_and_ignores_upstream()
+    {
+        // The PRD is back in Draft while the dependents are approved: coverage still holds, so completion is not lost.
+        Assert.True(ArtifactCatalog.IsSetAvailable(InitiativeStatus.Planning, InitiativeDepth.Standard, Answers(true, true)));
+        Assert.False(ArtifactCatalog.IsSetAvailable(InitiativeStatus.Planning, InitiativeDepth.Standard, Answers(true, false)));
+        Assert.Equal(
+            ArtifactAvailability.WaitingForPrd,
+            Chained(ArtifactType.Architecture, ArtifactStatus.Draft, ArtifactStatus.Approved));
+    }
+
+    [Theory]
+    [InlineData(10, 0, ArtifactType.Prd)]
+    [InlineData(0, 0, null)]
+    [InlineData(-10, 0, null)]
+    public void Stale_upstream_compares_the_timestamps(int prdMinutes, int architectureMinutes, ArtifactType? expected)
+    {
+        var summaries = new[]
+        {
+            Summary(ArtifactType.Prd, ArtifactStatus.Approved, prdMinutes),
+            Summary(ArtifactType.Architecture, ArtifactStatus.Draft, architectureMinutes),
+        };
+
+        Assert.Equal(expected, ArtifactCatalog.StaleUpstream(ArtifactType.Architecture, summaries));
+    }
+
+    [Fact]
+    public void Stale_upstream_is_absent_without_a_dependent_or_an_upstream()
+    {
+        Assert.Null(ArtifactCatalog.StaleUpstream(ArtifactType.Architecture, [Summary(ArtifactType.Prd, ArtifactStatus.Approved, 10)]));
+        Assert.Null(ArtifactCatalog.StaleUpstream(ArtifactType.Architecture, [Summary(ArtifactType.Architecture, ArtifactStatus.Draft)]));
+        Assert.Null(ArtifactCatalog.StaleUpstream(ArtifactType.Prd, [Summary(ArtifactType.Prd, ArtifactStatus.Draft, 10)]));
+    }
+
+    [Fact]
+    public void Epics_report_the_first_stale_upstream()
+    {
+        var summaries = new[]
+        {
+            Summary(ArtifactType.Prd, ArtifactStatus.Approved, 5),
+            Summary(ArtifactType.Architecture, ArtifactStatus.Approved, 20),
+            Summary(ArtifactType.EpicsAndStories, ArtifactStatus.Draft, 10),
+        };
+
+        Assert.Equal(ArtifactType.Architecture, ArtifactCatalog.StaleUpstream(ArtifactType.EpicsAndStories, summaries));
     }
 
     private static ArtifactType?[] Types(InitiativeDepth depth) => [.. ArtifactCatalog.RequiredFor(depth).Select(s => s.Type)];

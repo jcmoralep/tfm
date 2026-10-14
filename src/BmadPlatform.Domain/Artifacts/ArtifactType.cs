@@ -1,9 +1,14 @@
 namespace BmadPlatform.Domain.Artifacts;
 
-/// <summary>The documents the platform can generate in this step. Architecture and epics arrive in step 6.</summary>
+/// <summary>
+/// The documents of the platform. Architecture and epics and stories are known values (stored as strings, no
+/// migration) but no catalog entry offers them yet, so nothing can generate one.
+/// </summary>
 public enum ArtifactType
 {
     Spec,
     Brief,
     Prd,
+    Architecture,
+    EpicsAndStories,
 }

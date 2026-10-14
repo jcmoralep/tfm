@@ -33,7 +33,8 @@ public sealed class ApproveArtifactCommandHandler(
         ArtifactGuards.RequireVersion(artifact, request.ExpectedVersion);
 
         var answers = await ArtifactGuards.GetAnswersAsync(sender, request.InitiativeId, cancellationToken);
-        ArtifactGuards.RequireAvailable(ArtifactCatalog.Availability(request.Type, initiative.Status, initiative.Depth, answers));
+        var current = await repository.ListAsync(initiative.Id, ownerId, cancellationToken);
+        ArtifactGuards.RequireAvailable(ArtifactCatalog.Availability(request.Type, initiative.Status, initiative.Depth, answers, current));
 
         if (artifact.Status != ArtifactStatus.Approved)
         {

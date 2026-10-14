@@ -30,7 +30,7 @@ internal sealed class ArtifactRepository(IDbContextFactory<ApplicationDbContext>
         return await context.Set<Artifact>()
             .AsNoTracking()
             .Where(artifact => artifact.InitiativeId == initiativeId && artifact.OwnerId == ownerId)
-            .Select(artifact => new ArtifactSummary(artifact.Type, artifact.Status, artifact.Version))
+            .Select(artifact => new ArtifactSummary(artifact.Type, artifact.Status, artifact.Version, artifact.UpdatedAt))
             .ToListAsync(cancellationToken);
     }
 
