@@ -128,3 +128,7 @@ Fichas por llamada (de los registros): turnos de 976 a 1.482 de entrada y 77 a 1
 - Iniciativa Grande con el PRD aprobado del recorrido de prueba. `gemini-3.6-flash` respondió 503 dos veces seguidas (saturación, 8,6 s y 4,5 s): la aplicación mostró «El asistente tardó demasiado en responder…», no guardó nada y el documento anterior quedó intacto.
 - Con `Gemini__Model=gemini-3.1-flash-lite`: estado 200, 5,1 s, `finishReason` STOP, tokens: prompt 1276, respuesta 420, razonamiento 1315.
 - Resultado: dos decisiones (AD-1, AD-2) con referencias válidas a FR/NFR del PRD, mapa de capacidades cubierto, ninguna tecnología ni versión nombrada, la pila en Diferido, cinco preguntas para desarrollo ya asignadas, cero avisos de formato. `Logs/` sin contenido.
+
+## Épicas e historias con Gemini (architecture-epics S6)
+
+- Pendiente de la comprobación manual con la clave real (tarea 6.10): fecha, modelo, tokens (sin el cuerpo de la respuesta), si cada requisito funcional quedó en una historia o en una pregunta para desarrollo, y que `Logs/` no guarde contenido.
