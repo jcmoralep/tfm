@@ -85,6 +85,28 @@ internal static class ArtifactGuards
         await repository.SaveAsync(artifact, expectedVersion, cancellationToken);
     }
 
+    /// <summary>
+    /// The text of the Brief the PRD may build on: only for a Standard PRD, and only while the owner's Brief is Approved
+    /// at this moment. Every other case (a Draft or missing Brief, Small, Large, another user's Brief) is null.
+    /// </summary>
+    public static async Task<string?> ApprovedBriefAsync(
+        IArtifactRepository repository,
+        Guid initiativeId,
+        string ownerId,
+        ArtifactType type,
+        InitiativeDepth depth,
+        CancellationToken cancellationToken)
+    {
+        if (type != ArtifactType.Prd || depth != InitiativeDepth.Standard)
+        {
+            return null;
+        }
+
+        var brief = await repository.GetAsync(initiativeId, ArtifactType.Brief, ownerId, cancellationToken);
+
+        return brief is { WasApproved: true } ? brief.Content : null;
+    }
+
     /// <summary>Reads everything the view needs, fresh. Null when the initiative does not exist for the caller.</summary>
     public static async Task<ArtifactView?> LoadViewAsync(
         ISender sender,

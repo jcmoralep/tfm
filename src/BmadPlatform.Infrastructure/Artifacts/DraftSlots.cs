@@ -1,5 +1,6 @@
 using BmadPlatform.Application.Features.Assistant.Script;
 using BmadPlatform.Domain.Artifacts;
+using BmadPlatform.Domain.Initiatives;
 
 namespace BmadPlatform.Infrastructure.Artifacts;
 
@@ -19,6 +20,8 @@ internal static class DraftSlots
     public const string Differentiator = "differentiator";
     public const string ScopeInside = "scope-inside";
     public const string Vision = "vision";
+    public const string NonUsers = "non-users";
+    public const string Glossary = "glossary";
 
     private const string MetricRule = "Every metric needs a target, a way to measure it and a counter-metric; add the missing ones as assumption or unknown items.";
 
@@ -45,12 +48,38 @@ internal static class DraftSlots
         Open(Vision, "Visión", true, "The long-term vision. Use answer only for what the answers state."),
     ];
 
-    /// <summary>The slots the model fills for a type. The PRD has none yet: its drafter arrives in the next slice.</summary>
-    public static IReadOnlyList<DraftSlot> For(ArtifactType type) => type switch
+    private static readonly DraftSlot[] PrdStandard =
+    [
+        Topic(AssistantScript.Keys.Idea, "Visión", "The vision: what the solution is and the change it brings, in one or two plain sentences."),
+        Topic(AssistantScript.Keys.Users, "Usuario objetivo", "Who will use it: the roles or groups of people."),
+        Topic(AssistantScript.Keys.Problem, "Trabajos por hacer", "The jobs people need to get done, each tied to the problem."),
+        Open(NonUsers, "No usuarios", false, "Who will not use it. The person was never asked: assumption or unknown only."),
+        Open(Glossary, "Glosario", false, "Terms specific to the initiative. The person was never asked: assumption or unknown only."),
+        Topic(AssistantScript.Keys.Capabilities, "Funcionalidades", "What a person must be able to do, one capability per item."),
+        Topic(AssistantScript.Keys.Constraints, "Requisitos no funcionales", "Rules, limits or deadlines the solution must respect, one per item. Bounds and numbers the person did not give are assumptions or unknowns."),
+        Topic(AssistantScript.Keys.OutOfScope, "No objetivos", "What is explicitly left out for now. At least one item."),
+        Topic(AssistantScript.Keys.Priorities, "Alcance del MVP", "What matters most and what comes first."),
+        Topic(AssistantScript.Keys.Success, "Métricas de éxito", "How success will be noticed. " + MetricRule),
+    ];
+
+    private static readonly DraftSlot[] PrdLarge =
+    [
+        .. PrdStandard.TakeWhile(slot => slot.Id != AssistantScript.Keys.OutOfScope),
+        Topic(AssistantScript.Keys.Qualities, "Requisitos no funcionales", "Conditions of speed, security or availability, one per item. Any bound the person did not give is an assumption or unknown."),
+        Topic(AssistantScript.Keys.Integrations, "Integraciones", "The systems or teams the solution must coordinate with, one per item."),
+        .. PrdStandard.SkipWhile(slot => slot.Id != AssistantScript.Keys.OutOfScope),
+    ];
+
+    /// <summary>
+    /// The slots the model fills for a type and level. Only the PRD depends on the level: the integrations and the quality
+    /// conditions are asked (and drafted) for Large alone, so they are not slots of a Standard PRD.
+    /// </summary>
+    public static IReadOnlyList<DraftSlot> For(ArtifactType type, InitiativeDepth depth = InitiativeDepth.Standard) => type switch
     {
         ArtifactType.Spec => Spec,
         ArtifactType.Brief => Brief,
-        _ => throw new NotSupportedException($"The model does not draft {type} yet."),
+        ArtifactType.Prd => depth == InitiativeDepth.Large ? PrdLarge : PrdStandard,
+        _ => throw new NotSupportedException($"The model does not draft {type}."),
     };
 
     private static DraftSlot Topic(string key, string section, string guidance) =>

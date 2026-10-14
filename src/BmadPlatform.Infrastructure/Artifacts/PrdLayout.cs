@@ -35,13 +35,13 @@ internal static class PrdLayout
         c.Items(AssistantScript.Keys.Problem);
 
         c.Heading("No usuarios");
-        c.Line("- " + c.Assumption("No se indicó qué personas no usarán la solución; se confirma con quien propone la iniciativa."));
+        c.Open(DraftSlots.NonUsers, "No se indicó qué personas no usarán la solución; se confirma con quien propone la iniciativa.");
 
         c.Heading("Recorridos clave");
         WriteJourneys(c);
 
         c.Heading("Glosario");
-        c.Line("- " + c.Assumption("No se definieron términos propios de la iniciativa; se completa el glosario al revisar el documento con el equipo."));
+        c.Open(DraftSlots.Glossary, "No se definieron términos propios de la iniciativa; se completa el glosario al revisar el documento con el equipo.");
 
         c.Heading("Funcionalidades");
         c.Raw("### Capacidades principales");
@@ -81,6 +81,7 @@ internal static class PrdLayout
         c.Heading("Métricas de éxito");
         c.Items(AssistantScript.Keys.Success, c.Numbered(ItemPrefix.SuccessMetric));
 
+        c.CarryBriefQuestions();
         c.OpenQuestions("Preguntas abiertas", "No hay preguntas abiertas.");
         c.AssumptionIndex();
     }

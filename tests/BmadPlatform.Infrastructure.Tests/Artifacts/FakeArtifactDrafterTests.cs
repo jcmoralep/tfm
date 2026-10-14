@@ -620,4 +620,14 @@ public sealed partial class FakeArtifactDrafterTests
         Assert.All(new[] { "FR", "UJ", "SM" }, prefix => Assert.True(Definitions(document, prefix).Count() <= 40));
         Assert.Empty(ArtifactFormatChecker.Check(type, document));
     }
+
+    [Fact]
+    public async Task The_fake_ignores_the_brief_text()
+    {
+        var request = Request(ArtifactType.Prd, InitiativeDepth.Standard);
+
+        var withBrief = await Draft(request with { BriefMarkdown = "# Brief\n\n- [ASSUMPTION: A-1] algo del Brief" });
+
+        Assert.Equal(await Draft(request), withBrief);
+    }
 }
