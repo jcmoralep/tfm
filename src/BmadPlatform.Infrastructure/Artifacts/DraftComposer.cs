@@ -394,7 +394,7 @@ internal sealed partial class DraftComposer
         }
     }
 
-    public void OpenQuestions(string title, string none)
+    public void OpenQuestions(string title, string none, string? suffix = null)
     {
         Heading(title);
 
@@ -407,7 +407,7 @@ internal sealed partial class DraftComposer
 
         foreach (var (id, questionText) in questions)
         {
-            Line(ArtifactOutline.Item(id, questionText + OpenQuestionsReader.DefaultSuffix));
+            Line(ArtifactOutline.Item(id, questionText + (suffix ?? OpenQuestionsReader.DefaultSuffix)));
         }
     }
 
@@ -496,8 +496,9 @@ internal sealed partial class DraftComposer
     [GeneratedRegex(@"\*+|_{2,}|`+|~~", RegexOptions.None, 1000)]
     private static partial Regex EmphasisRegex();
 
-    // "FR-9", "Q - 2:" or "NFR3" at the start: the shapes the format checker reads as a definition.
-    [GeneratedRegex(@"^(?:(?:FR|NFR|SM|UJ|A|Q|AD)\s?-\s?\d+|(?:FR|NFR|UJ)\s?\d+)\s*:?", RegexOptions.IgnoreCase, 1000)]
+    // "FR-9", "Q - 2:" or "NFR3" at the start: the shapes the format checker reads as a definition. Also the numbering
+    // the code owns in the Epics: "Epic 2", "Story 2.1", "Épica 2" and "Historia 2.1".
+    [GeneratedRegex(@"^(?:(?:FR|NFR|SM|UJ|A|Q|AD)\s?-\s?\d+|(?:FR|NFR|UJ)\s?\d+|(?:Epic|Épica)\s?\d+|(?:Story|Historia)\s?\d+\.\d+)\s*:?", RegexOptions.IgnoreCase, 1000)]
     private static partial Regex ForgedIdRegex();
 
     [GeneratedRegex(@"\b(Responsable|Revisar)\s*:", RegexOptions.IgnoreCase, 1000)]
