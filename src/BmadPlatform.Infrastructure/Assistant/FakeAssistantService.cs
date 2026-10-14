@@ -54,7 +54,7 @@ public sealed class FakeAssistantService(TimeSpan replyDelay = default) : IAssis
     }
 
     private static AssistantReply Compose(string acknowledgement, string prompt, string example, string why, InitiativeDepth? suggested) =>
-        new($"{acknowledgement}{prompt}\n\nPor ejemplo: {example}\n\nPor qué lo pregunto: {why}", suggested);
+        new(TurnLayout.Compose(acknowledgement, prompt, example, why), suggested);
 
     // The size answer decides the suggestion; "No sé" and anything else fall back to Standard.
     private static InitiativeDepth SuggestDepth(IReadOnlyList<ConversationTurn> history) =>
