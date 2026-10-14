@@ -73,9 +73,11 @@ Estas tres comprobaciones necesitan ejecutar BMAD de verdad. **No se han ejecuta
 
 | Comprobación | Fecha | Versión | Resultado | Evidencia |
 |---|---|---|---|---|
-| 1. `bmad-build` con `SPEC.md` | — | 6.12.1 | no ejecutado | — |
-| 2. Épicas: `FR-n` a `FR1:` con el mismo número | — | 6.12.1 | no ejecutado | — |
-| 3. Encabezados en español y sufijo `Q-n` | — | 6.12.1 | no ejecutado | — |
+| 1. `bmad-build` con `SPEC.md` | 2026-10-14 | 6.12.1 | cumple (solo la lectura inicial) | Acepta el archivo como contexto sin quejarse de la estructura ni exigir `CAP-N`. Un archivo sin `status` en el frontmatter se trata como intención inicial y crea su propio `spec-{slug}.md`; no lo reanuda. No se ejecutó la construcción. |
+| 2. Épicas: `FR-n` a `FR1:` con el mismo número | 2026-10-14 | 6.12.1 | cumple en la lectura; la regla `FR1:` no se confirmó | Extrajo 5 FR y 2 NFR sin perder ninguno ni renumerar, pero escribió `FR-1` con guion (decisión del agente, para trazar con el PRD). El paso no obliga a `FR1:`. |
+| 3. Encabezados en español y sufijo `Q-n` | 2026-10-14 | 6.12.1 | cumple | Los encabezados en español no importaron (bastan las marcas `**FR-n**`/`**NFR-n**`); la línea `Q-1` con el sufijo se conservó carácter por carácter en `epics.md`. Se probó con el paso de épicas, no con `bmad-prd`. |
+
+Notas de la ejecución del 2026-10-14: `bmad-build` necesita `uv` en el PATH (sin él se detiene al activarse) y, en modo sin interfaz, permitir `uv run`. El inventario de `epics.md` aceptó `FR-n` con guion, así que escribir `FR3:` (decisión del cambio `bmad-alignment`) es una elección de la plataforma y no un requisito de BMAD. La línea `- Pendiente: ver Q-1.` del golden `prd-large.md` queda dentro de la lista de requisitos no funcionales sin identificador: conviene revisarla.
 
 ## 8. Cierre de conformidad del cambio `bmad-alignment`
 
