@@ -43,7 +43,7 @@ public sealed class ProviderRegistrationTests
         Assert.Equal("gemini-3.8-flash", options.Model);
         Assert.Equal("https://generativelanguage.googleapis.com/v1beta", options.BaseUrl);
         Assert.Equal("low", options.ThinkingLevel);
-        Assert.Equal((30, 90, 2), (options.TurnTimeoutSeconds, options.DraftTimeoutSeconds, options.MaxConcurrentCalls));
+        Assert.Equal((60, 120, 2), (options.TurnTimeoutSeconds, options.DraftTimeoutSeconds, options.MaxConcurrentCalls));
     }
 
     [Fact]

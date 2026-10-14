@@ -329,7 +329,7 @@ With only a connection string, `Read` returns Fake, so `ArtifactDrafterRegistrat
 
 ## Timeouts, Cancellation, Concurrency
 
-- **Deadlines.** Turn calls: 30 s. Draft calls: 90 s. `CancellationTokenSource.CreateLinkedTokenSource(ct)` plus `CancelAfter(deadline)` covers `semaphore.WaitAsync`, `SendAsync`, the body read, `Task.Delay(retry)` and the retry.
+- **Deadlines.** Turn calls: 60 s. Draft calls: 120 s (raised from 30 and 90 after the live probe: one turn took 38 s under high demand). `CancellationTokenSource.CreateLinkedTokenSource(ct)` plus `CancelAfter(deadline)` covers `semaphore.WaitAsync`, `SendAsync`, the body read, `Task.Delay(retry)` and the retry.
 - **Timeout versus cancellation.** If `ct.IsCancellationRequested`, rethrow `OperationCanceledException`. Otherwise the deadline fired, so the reason is Timeout.
 - **No token from the circuit.** The circuit sends `CancellationToken.None` (`ChatPanel.razor:279,322`), so the deadline is the only stop. This is accepted: the chat shows "Reintentar" after at most about 30 s.
 - **Concurrency.** One `SemaphoreSlim(MaxConcurrentCalls)` in the singleton `GeminiClient`, shared by turns and drafts. A call holds its slot across its retry and releases it in `finally`. A wait past the deadline gives Timeout with no request sent.
@@ -362,7 +362,7 @@ Blocked output
 Document draft (PRD, Standard)
 GenerateArtifact -> answers via GetConversationAnswersQuery -> ApprovedBriefAsync (Approved? Content : null)
   -> DraftRequest(..., BriefMarkdown) -> GeminiArtifactDrafter -> DraftSlots(Prd, Standard) -> DraftPrompt
-  -> GeminiClient (Draft deadline 90 s) -> JSON {slot:[{text,source}]} -> unknown key/source => Malformed
+  -> GeminiClient (Draft deadline 120 s) -> JSON {slot:[{text,source}]} -> unknown key/source => Malformed
   -> BriefFacts downgrade/carry -> DraftRenderer (budget loop) -> DraftComposer + PrdLayout -> Markdown
   -> Artifact.Create / Replace (nothing stored on any throw)
 ```

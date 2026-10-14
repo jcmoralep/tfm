@@ -22,9 +22,9 @@ public sealed class GeminiOptions
 
     public string ThinkingLevel { get; set; } = "low";
 
-    public int TurnTimeoutSeconds { get; set; } = 30;
+    public int TurnTimeoutSeconds { get; set; } = 60;
 
-    public int DraftTimeoutSeconds { get; set; } = 90;
+    public int DraftTimeoutSeconds { get; set; } = 120;
 
     public int MaxConcurrentCalls { get; set; } = 2;
 
