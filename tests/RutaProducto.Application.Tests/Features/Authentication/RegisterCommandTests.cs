@@ -1,5 +1,7 @@
 using RutaProducto.Application.Abstractions.Authentication;
+using RutaProducto.Application.Abstractions.Captcha;
 using RutaProducto.Application.Features.Authentication.Register;
+using RutaProducto.Application.Tests.TestDoubles;
 
 namespace RutaProducto.Application.Tests.Features.Authentication;
 
@@ -49,11 +51,19 @@ public sealed class RegisterCommandTests
     }
 
     [Fact]
+    public void ToString_does_not_expose_the_captcha_token()
+    {
+        var text = new RegisterCommand("ana@example.com", "Secret-123", "Secret-123", "TOKEN-xyz").ToString();
+
+        Assert.DoesNotContain("TOKEN-xyz", text);
+    }
+
+    [Fact]
     public async Task A_new_account_is_created_with_the_trimmed_email_and_signed_in()
     {
         var authService = new RecordingAuthService(RegistrationResult.Succeeded);
 
-        var result = await new RegisterCommandHandler(authService).Handle(
+        var result = await new RegisterCommandHandler(authService, new FakeCaptchaVerifier()).Handle(
             new RegisterCommand("  ana@example.com ", "Secret-123", "Secret-123"), CancellationToken.None);
 
         Assert.Equal(RegistrationStatus.Succeeded, result.Status);
@@ -68,11 +78,41 @@ public sealed class RegisterCommandTests
     {
         var authService = new RecordingAuthService(new RegistrationResult(status, []));
 
-        var result = await new RegisterCommandHandler(authService).Handle(
+        var result = await new RegisterCommandHandler(authService, new FakeCaptchaVerifier()).Handle(
             new RegisterCommand("ana@example.com", "Secret-123", "Secret-123"), CancellationToken.None);
 
         Assert.Equal(status, result.Status);
         Assert.Null(authService.SignedInEmail);
+    }
+
+    [Theory]
+    [InlineData(CaptchaOutcome.Rejected, RegistrationStatus.CaptchaRejected)]
+    [InlineData(CaptchaOutcome.Unavailable, RegistrationStatus.CaptchaUnavailable)]
+    public async Task A_captcha_that_did_not_pass_creates_no_account_and_signs_no_one_in(
+        CaptchaOutcome outcome, RegistrationStatus expected)
+    {
+        var authService = new RecordingAuthService(RegistrationResult.Succeeded);
+
+        var result = await new RegisterCommandHandler(authService, new FakeCaptchaVerifier(outcome)).Handle(
+            new RegisterCommand("ana@example.com", "Secret-123", "Secret-123", "tok"), CancellationToken.None);
+
+        Assert.Equal(expected, result.Status);
+        Assert.Null(authService.RegisteredEmail);
+        Assert.Null(authService.SignedInEmail);
+    }
+
+    [Fact]
+    public async Task A_passed_captcha_receives_the_token_and_registration_goes_on_as_before()
+    {
+        var authService = new RecordingAuthService(RegistrationResult.Succeeded);
+        var captcha = new FakeCaptchaVerifier(CaptchaOutcome.Passed);
+
+        var result = await new RegisterCommandHandler(authService, captcha).Handle(
+            new RegisterCommand("ana@example.com", "Secret-123", "Secret-123", "tok"), CancellationToken.None);
+
+        Assert.Equal(RegistrationStatus.Succeeded, result.Status);
+        Assert.Equal("tok", captcha.LastToken);
+        Assert.Equal("ana@example.com", authService.SignedInEmail);
     }
 
     private sealed class RecordingAuthService(RegistrationResult registration) : IAuthService

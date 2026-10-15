@@ -27,6 +27,8 @@ public enum RegistrationStatus
     Succeeded,
     EmailTaken,
     InvalidPassword,
+    CaptchaRejected,
+    CaptchaUnavailable,
 }
 
 /// <param name="Status">Outcome of the registration.</param>
@@ -36,6 +38,10 @@ public sealed record RegistrationResult(RegistrationStatus Status, IReadOnlyList
     public static RegistrationResult Succeeded { get; } = new(RegistrationStatus.Succeeded, []);
 
     public static RegistrationResult EmailTaken { get; } = new(RegistrationStatus.EmailTaken, []);
+
+    public static RegistrationResult CaptchaRejected { get; } = new(RegistrationStatus.CaptchaRejected, []);
+
+    public static RegistrationResult CaptchaUnavailable { get; } = new(RegistrationStatus.CaptchaUnavailable, []);
 
     public static RegistrationResult InvalidPassword(IReadOnlyList<string> errors) => new(RegistrationStatus.InvalidPassword, errors);
 }
