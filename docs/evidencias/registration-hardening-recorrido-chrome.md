@@ -77,3 +77,7 @@ Auditoría de la spec `openspec/changes/registration-hardening/specs/authenticat
 | Recuperación | Link hidden without email [UI] | Fila «Valores por defecto» (enlace oculto y las tres páginas con 302 a `/not-found?codigo=404` y luego 404) |
 | Recuperación | Full flow [UI] | Fila «Recuperación (S5)» |
 | Data Protection | Caveat documented [DOC] | `README.md` (viñetas «Redespliegue») y `AGENTS.md` §4.6 (viñeta «Redespliegue y Data Protection») |
+
+## Comprobación de extremo a extremo de la corrección C1 (2026-10-15)
+
+Con MySQL real, correo y captcha activos: escribir `NUEVO1@EXAMPLE.COM` en «olvidé mi contraseña» envió el correo a la dirección guardada `nuevo1@example.com`; una variante con tilde (`nuevó1@example.com`) se rechazó con el mensaje neutro «El correo electrónico solo puede llevar letras sin acentos…» sin enviar nada; una dirección desconocida mostró el texto uniforme y no generó correo.
