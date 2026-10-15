@@ -8,11 +8,12 @@ public sealed class AppSettingsSecretsTests
     [Theory]
     [InlineData("appsettings.json")]
     [InlineData("appsettings.Development.json")]
-    public void The_turnstile_secret_is_never_committed(string file)
+    public void The_turnstile_secret_and_the_smtp_password_are_never_committed(string file)
     {
         var configuration = new ConfigurationBuilder().AddJsonFile(PathOf(file), optional: false).Build();
 
         Assert.True(string.IsNullOrEmpty(configuration["Turnstile:SecretKey"]));
+        Assert.True(string.IsNullOrEmpty(configuration["Smtp:Password"]));
     }
 
     private static string PathOf(string file)

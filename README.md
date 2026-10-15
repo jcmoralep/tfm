@@ -162,6 +162,28 @@ El formulario de `/registro` puede exigir Cloudflare Turnstile. Está **apagado 
 - La verificación **falla cerrado**: si Cloudflare no responde (10 s) o contesta un error, el formulario no se procesa. Para recuperar el registro durante una caída de Turnstile, use `Captcha__Provider=None` y reinicie.
 - El script de Cloudflare es la única excepción a «vistas solo con clases CSS» (AGENTS.md §2). Los registros no contienen el token, la clave ni respuestas de Cloudflare: solo el resultado, la duración y códigos de error cortos.
 
+## Correo electrónico (RF-80)
+
+La infraestructura para enviar correo (cola en segundo plano y cliente SMTP) existe, pero **todavía no se envía ningún correo**: lo usarán la confirmación del correo y la recuperación de contraseña en cambios posteriores. Está **apagada por defecto** (`Email:Provider=None`: no hay cola ni proceso en segundo plano). Claves (variables de entorno con `__`):
+
+| Clave | Por defecto | Descripción |
+|---|---|---|
+| `Email:Provider` | `None` | `None` o `Smtp` (sin distinguir mayúsculas); otro valor impide arrancar |
+| `Email:RequireConfirmedEmail` | `false` | Reservada para la confirmación del correo; `true` exige `Email:Provider=Smtp` o el arranque falla |
+| `Email:PublicBaseUrl` | (vacía) | Origen público para los enlaces de los correos (por ejemplo `https://ruta.example.com`); obligatorio con `Smtp`, `https` salvo `localhost` |
+| `Smtp:Host` | (vacía) | Servidor SMTP; obligatorio con `Smtp` |
+| `Smtp:Port` | `587` | 1 a 65535; el **465 (TLS implícito) no se admite** porque `System.Net.Mail` solo habla STARTTLS: use el 587 |
+| `Smtp:EnableSsl` | `true` | STARTTLS; `false` solo se acepta con `localhost` o `127.0.0.1` (receptores de prueba) |
+| `Smtp:Username` | (vacía) | Opcional; sin usuario no se envían credenciales |
+| `Smtp__Password` | (sin valor) | Obligatoria solo si hay `Smtp:Username`; solo user-secrets (`Smtp:Password`) o variable de entorno, nunca en el repositorio |
+| `Smtp:From` | (vacía) | Dirección del remitente; obligatoria con `Smtp` |
+| `Smtp:FromName` | `Ruta de Producto` | Nombre del remitente |
+| `Smtp:TimeoutSeconds` | `30` | 1 a 120 |
+
+- **Proveedores gratuitos para probar o desplegar:** Brevo (plan gratuito con SMTP), Resend (SMTP con clave de API como contraseña) o una cuenta de Gmail con contraseña de aplicación (`smtp.gmail.com`, puerto 587). Compruebe en el plan del despliegue que el puerto 587 de salida está permitido.
+- Los enlaces de los correos se construyen **solo** con `Email:PublicBaseUrl`, nunca con la cabecera `Host`.
+- La cola es en memoria (100 mensajes): un envío fallido se registra y no se reintenta, y lo que esté en cola se pierde al reiniciar. Los registros guardan solo el tipo de correo, el tipo de excepción y el código de estado SMTP, nunca la dirección, el asunto, el cuerpo ni un enlace.
+
 ## Base de datos
 
 1. Inicie MySQL 8.4:
