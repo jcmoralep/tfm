@@ -1,5 +1,7 @@
 using BmadPlatform.Application.Common.Exceptions;
 using BmadPlatform.Application.Features.Assistant.Script;
+using BmadPlatform.Application.Features.Context;
+using BmadPlatform.Application.Features.Context.GetContextForAssistant;
 using BmadPlatform.Application.Features.Initiatives;
 using BmadPlatform.Application.Features.Initiatives.GetInitiative;
 using BmadPlatform.Application.Features.Initiatives.StartPlanning;
@@ -58,8 +60,9 @@ public sealed class ConversationAdvancer(
 
             var offersLevels = OffersLevelChoice(conversation, next);
             var followUpFor = ConversationJourney.FollowUpCandidate(ConversationViewBuilder.JourneyOf(initiative), conversation.Messages);
+            var context = await sender.Send(new GetContextForAssistantQuery(initiative.Id), cancellationToken);
             var reply = await ReplyAsync(
-                BuildRequest(conversation, initiative, next, offersLevels, followUpFor),
+                BuildRequest(conversation, initiative, next, offersLevels, followUpFor, context),
                 initiative.Id,
                 cancellationToken);
 
@@ -114,13 +117,15 @@ public sealed class ConversationAdvancer(
         InitiativeDetails initiative,
         AssistantTopic next,
         bool offersLevels,
-        AssistantTopic? followUpFor) =>
+        AssistantTopic? followUpFor,
+        IReadOnlyList<ContextExcerpt> context) =>
         new(
             new InitiativeSnapshot(initiative.Name, initiative.Description, initiative.DepthMode, initiative.Depth),
             next,
             [.. conversation.VisibleMessages.Select(m => new ConversationTurn(m.Role, m.Content, m.TopicKey, m.QuickReplyKey, m.AnswerKind))],
             offersLevels,
-            followUpFor);
+            followUpFor,
+            context);
 
     // The proposal turns into the three levels after "Elegir otro nivel", and stays that way if the user types
     // instead of picking one.

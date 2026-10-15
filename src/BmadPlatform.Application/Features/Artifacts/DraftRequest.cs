@@ -1,4 +1,5 @@
 using BmadPlatform.Application.Features.Assistant;
+using BmadPlatform.Application.Features.Context;
 using BmadPlatform.Domain.Artifacts;
 using BmadPlatform.Domain.Initiatives;
 
@@ -11,6 +12,8 @@ namespace BmadPlatform.Application.Features.Artifacts;
 /// <c>PrdMarkdown</c> is the text of the approved PRD, set for the Architecture and the Epics and stories while the PRD is
 /// Approved; <c>ArchitectureMarkdown</c> is the approved Architecture, set for the Epics and stories only. Those two
 /// documents carry no conversation answers: their source is the approved upstream text.
+/// <c>Context</c> is the text-like attached context (notes and text files) as reference data, set for the Spec, the
+/// Brief and the PRD only and null when there is none; the fake drafter ignores it.
 /// </summary>
 public sealed record DraftRequest(
     ArtifactType Type,
@@ -20,4 +23,5 @@ public sealed record DraftRequest(
     IReadOnlyList<TopicAnswer> Answers,
     string? BriefMarkdown = null,
     string? PrdMarkdown = null,
-    string? ArchitectureMarkdown = null);
+    string? ArchitectureMarkdown = null,
+    IReadOnlyList<ContextExcerpt>? Context = null);

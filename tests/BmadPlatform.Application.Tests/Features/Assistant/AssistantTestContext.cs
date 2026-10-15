@@ -5,6 +5,7 @@ using BmadPlatform.Application.Features.Assistant.Script;
 using BmadPlatform.Application.Features.Assistant.SendMessage;
 using BmadPlatform.Application.Features.Assistant.StartConversation;
 using BmadPlatform.Application.Features.Assistant.UndoLastAnswer;
+using BmadPlatform.Application.Features.Context;
 using BmadPlatform.Application.Features.Initiatives;
 using BmadPlatform.Application.Tests.Features.Initiatives;
 using BmadPlatform.Application.Tests.TestDoubles;
@@ -25,7 +26,12 @@ public sealed class AssistantTestContext
 
     public AssistantTestContext()
     {
-        Sender = new InitiativesSender(Initiatives.Repository, Initiatives.User, Initiatives.Clock);
+        ContextRoutes = new ContextRoutes(
+            Attachments,
+            Storage,
+            new ContextLimits(10L * 1024 * 1024),
+            LoggerFactory.Create(builder => builder.AddProvider(Logs)));
+        Sender = new InitiativesSender(Initiatives.Repository, Initiatives.User, Initiatives.Clock, ContextRoutes);
         Advancer = new ConversationAdvancer(
             Sender,
             Assistant,
@@ -37,6 +43,13 @@ public sealed class AssistantTestContext
     public CapturingLoggerProvider Logs { get; } = new();
 
     public InitiativeTestContext Initiatives { get; } = new();
+
+    /// <summary>Attachments and stored files of the initiatives, read by the assistant as context.</summary>
+    public InMemoryAttachmentRepository Attachments { get; } = new();
+
+    public InMemoryFileStorage Storage { get; } = new();
+
+    public ContextRoutes ContextRoutes { get; }
 
     public InMemoryConversationRepository Conversations { get; } = new();
 
