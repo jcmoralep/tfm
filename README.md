@@ -148,6 +148,20 @@ Los POST de `/login`, `/registro`, `/confirmar-correo/reenviar`, `/recuperar-con
 
 - El cupo es **uno por IP**, compartido por todos esos formularios. Detrás de un proxy (Railway) la IP que ve la aplicación es la del proxy hasta que se configuren las cabeceras reenviadas (cambio de preparación para Railway): sin ellas todas las personas compartirían un solo cupo, así que no active el límite en ese entorno antes.
 
+## Captcha en el registro (RF-79)
+
+El formulario de `/registro` puede exigir Cloudflare Turnstile. Está **apagado por defecto** (`Captcha:Provider=None`: sin widget ni solicitudes a Cloudflare). Claves (variables de entorno con `__`):
+
+| Clave | Por defecto | Descripción |
+|---|---|---|
+| `Captcha:Provider` | `None` | `None` o `Turnstile` (sin distinguir mayúsculas); otro valor impide arrancar |
+| `Turnstile:SiteKey` | (vacía) | Clave del sitio (pública); obligatoria con `Turnstile` |
+| `Turnstile__SecretKey` | (sin valor) | Clave secreta; obligatoria con `Turnstile`; solo user-secrets (`Turnstile:SecretKey`) o variable de entorno, nunca en el repositorio |
+
+- **Cómo obtener las claves:** cuenta gratuita de Cloudflare, sección Turnstile, widget gestionado para el dominio de la aplicación. Para probar sin cuenta hay claves de prueba: sitio `1x00000000000000000000AA` con secreto `1x0000000000000000000000000000000AA` (siempre pasa), secreto `2x0000000000000000000000000000000AA` (siempre falla) y sitio `2x00000000000000000000AB` (siempre bloquea). Úselas solo en su entorno local.
+- La verificación **falla cerrado**: si Cloudflare no responde (10 s) o contesta un error, el formulario no se procesa. Para recuperar el registro durante una caída de Turnstile, use `Captcha__Provider=None` y reinicie.
+- El script de Cloudflare es la única excepción a «vistas solo con clases CSS» (AGENTS.md §2). Los registros no contienen el token, la clave ni respuestas de Cloudflare: solo el resultado, la duración y códigos de error cortos.
+
 ## Base de datos
 
 1. Inicie MySQL 8.4:

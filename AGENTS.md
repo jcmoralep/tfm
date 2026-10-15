@@ -16,7 +16,7 @@ Es un MVP interno y una demostración del flujo completo "iniciativa → constru
 | Lenguaje / runtime | C# sobre la última LTS de .NET (**confirmar versión; sugerida .NET 10**) |
 | Interfaz | **Blazor Web App, Interactive Server** |
 | Estilos | **Tailwind CSS** con el **CLI independiente** (sin Node.js), integrado al build de .NET |
-| JavaScript | Vanilla, solo con módulos ES e `IJSRuntime` para lo que Blazor no cubre (portapapeles, descargas, arrastrar y soltar) |
+| JavaScript | Vanilla, solo con módulos ES e `IJSRuntime` para lo que Blazor no cubre (portapapeles, descargas, arrastrar y soltar). **Única excepción de terceros:** el script `api.js` de Cloudflare Turnstile, en `/registro` y `/recuperar-contrasena`, solo con `Captcha:Provider=Turnstile`; se carga directo desde Cloudflare (no se aloja ni se hace pasar por un proxy, lo prohíbe Cloudflare) y vive solo en `CaptchaWidget.razor` |
 | Arquitectura | **Clean Architecture** modular |
 | Patrón | **CQRS con MediatR** |
 | Datos | **MySQL** con EF Core (proveedor `Pomelo.EntityFrameworkCore.MySql`) |
@@ -103,6 +103,7 @@ Reglas de dependencia: Web → Application → Domain; Infrastructure → Applic
 - El estilo visual de referencia es **Intercom**. El `DESIGN.md` de la raíz (obtenido de VoltAgent/awesome-design-md, carpeta `design-md/intercom`) es la fuente de verdad para toda la interfaz: tokens, tipografía, componentes y patrones conversacionales.
 - La **maqueta aprobada** es `docs/design/opcion-c-intercom-azul.png` ("Opción C · estilo Intercom, conversacional, azul"): acento azul, fondo gris azulado muy claro, tarjetas blancas con bordes redondeados, navegación en píldora, burbujas de conversación, respuestas rápidas con contorno azul y recorrido por pasos en un panel lateral. Donde la maqueta y `DESIGN.md` difieran (paleta y acento), **prevalece la maqueta**; `DESIGN.md` aporta estructura, espaciados y patrones.
 - No copiar logotipos ni elementos de marca. El naranja `#ff5600` es el color de marca de Fin AI, por lo que no se usa como acento.
+- **Vistas solo con clases CSS** (sin `style=` ni JavaScript en línea), con una única excepción documentada: el script de terceros de Cloudflare Turnstile (`https://challenges.cloudflare.com/turnstile/v0/api.js`) dentro de `Components/Shared/CaptchaWidget.razor`, en `/registro` y `/recuperar-contrasena`, solo con `Captcha:Provider=Turnstile`. No se aloja ni se pasa por un proxy (Cloudflare lo prohíbe) y no hay otro script de terceros.
 - Los tokens visuales viven en un único archivo de tema de Tailwind, de modo que cualquier ajuste (acento, tipografía) sea un cambio de un solo archivo.
 
 ### 4.6 Autenticación
