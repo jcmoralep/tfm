@@ -2,6 +2,8 @@ using BmadPlatform.Application.Features.Context;
 using BmadPlatform.Application.Features.Context.AddFileAttachment;
 using BmadPlatform.Application.Features.Context.AddLinkAttachment;
 using BmadPlatform.Application.Features.Context.AddNoteAttachment;
+using BmadPlatform.Application.Features.Context.DeleteAttachment;
+using BmadPlatform.Application.Features.Context.GetAttachmentDownload;
 using BmadPlatform.Application.Features.Context.GetContext;
 using BmadPlatform.Application.Tests.Features.Initiatives;
 using BmadPlatform.Application.Tests.TestDoubles;
@@ -66,6 +68,14 @@ public sealed class ContextTestContext
     public Task<ContextView> AddLink(Guid initiativeId, string url) =>
         new AddLinkAttachmentCommandHandler(Sender, Attachments, User, Clock, Limits)
             .Handle(new AddLinkAttachmentCommand(initiativeId, url), default);
+
+    public Task<ContextView> Delete(Guid initiativeId, Guid attachmentId) =>
+        new DeleteAttachmentCommandHandler(Sender, Attachments, Storage, User, Limits, Loggers.CreateLogger<DeleteAttachmentCommandHandler>())
+            .Handle(new DeleteAttachmentCommand(initiativeId, attachmentId), default);
+
+    public Task<AttachmentDownload?> Download(Guid initiativeId, Guid attachmentId) =>
+        new GetAttachmentDownloadQueryHandler(Sender, Attachments, Storage, User, Loggers.CreateLogger<GetAttachmentDownloadQueryHandler>())
+            .Handle(new GetAttachmentDownloadQuery(initiativeId, attachmentId), default);
 
     public Task<ContextView> AddNote(Guid initiativeId, string title, string text) =>
         new AddNoteAttachmentCommandHandler(Sender, Attachments, User, Clock, Limits)

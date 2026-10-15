@@ -3,6 +3,8 @@ using BmadPlatform.Application.Features.Context;
 using BmadPlatform.Application.Features.Context.AddFileAttachment;
 using BmadPlatform.Application.Features.Context.AddLinkAttachment;
 using BmadPlatform.Application.Features.Context.AddNoteAttachment;
+using BmadPlatform.Application.Features.Context.DeleteAttachment;
+using BmadPlatform.Application.Features.Context.GetAttachmentDownload;
 using BmadPlatform.Application.Features.Context.GetContext;
 using BmadPlatform.Application.Features.Initiatives.GetInitiative;
 using BmadPlatform.Application.Features.Initiatives.MarkReadyToBuild;
@@ -67,6 +69,18 @@ public sealed class ModulesSender(
                     this, context.Attachments, currentUser, timeProvider, context.Limits).Handle(command, cancellationToken);
 
                 return (TResponse)(object)note;
+            case DeleteAttachmentCommand command when context is not null:
+                var deleted = await new DeleteAttachmentCommandHandler(
+                    this, context.Attachments, context.Storage, currentUser, context.Limits,
+                    context.Loggers.CreateLogger<DeleteAttachmentCommandHandler>()).Handle(command, cancellationToken);
+
+                return (TResponse)(object)deleted;
+            case GetAttachmentDownloadQuery query when context is not null:
+                var download = await new GetAttachmentDownloadQueryHandler(
+                    this, context.Attachments, context.Storage, currentUser,
+                    context.Loggers.CreateLogger<GetAttachmentDownloadQueryHandler>()).Handle(query, cancellationToken);
+
+                return (TResponse)(object?)download!;
             default:
                 throw new NotSupportedException($"{request.GetType().Name} is not routed by this double.");
         }

@@ -10,7 +10,8 @@ public sealed class InMemoryFileStorage(List<string>? journal = null) : IFileSto
 {
     private readonly Dictionary<string, byte[]> files = [];
 
-    public IReadOnlyDictionary<string, byte[]> Files => files;
+    /// <summary>The stored bytes by key; a test may remove one to simulate a lost object.</summary>
+    public Dictionary<string, byte[]> Files => files;
 
     public Exception? FailOnSave { get; set; }
 
