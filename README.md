@@ -164,7 +164,7 @@ El formulario de `/registro` puede exigir Cloudflare Turnstile. Está **apagado 
 
 ## Correo electrónico (RF-80)
 
-El correo de la cuenta se envía con una cola en segundo plano y un cliente SMTP. Hoy lo usa la confirmación del correo (RF-81); la recuperación de contraseña llegará después. Está **apagado por defecto** (`Email:Provider=None`: no hay cola ni proceso en segundo plano). Claves (variables de entorno con `__`):
+El correo de la cuenta se envía con una cola en segundo plano y un cliente SMTP. Lo usan la confirmación del correo (RF-81) y la recuperación de contraseña (RF-82). Está **apagado por defecto** (`Email:Provider=None`: no hay cola ni proceso en segundo plano). Claves (variables de entorno con `__`):
 
 | Clave | Por defecto | Descripción |
 |---|---|---|
@@ -192,6 +192,15 @@ Con `Email__Provider=Smtp` y `Email__RequireConfirmedEmail=true`, el registro en
 - **Redespliegue:** los enlaces se protegen con Data Protection; mientras sus claves no se persistan (preparación para Railway), un reinicio invalida los enlaces pendientes y la persona pide uno nuevo.
 - **Probar en local:** `docker run --rm -d --name mailpit -p 1025:1025 -p 8025:8025 axllent/mailpit`, con `Email__Provider=Smtp`, `Email__RequireConfirmedEmail=true`, `Email__PublicBaseUrl=https://localhost:<puerto>`, `Smtp__Host=localhost`, `Smtp__Port=1025`, `Smtp__EnableSsl=false` y `Smtp__From=no-reply@ruta.local`; el correo se lee en `http://localhost:8025`.
 - Si la confirmación estorba durante una caída del correo, `Email__RequireConfirmedEmail=false` y reiniciar la deja como antes.
+
+## Recuperación de contraseña (RF-82)
+
+Con `Email__Provider=Smtp` (la confirmación del correo no hace falta), la pantalla de inicio de sesión muestra «¿Olvidaste tu contraseña?». `/recuperar-contrasena` pide el correo y responde siempre el mismo texto; a toda cuenta existente le llega un enlace a `/restablecer-contrasena`, de un solo uso y válido 2 horas. Restablecer deja el correo confirmado y **no** inicia sesión: la persona entra con la contraseña nueva. Con `Email:Provider=None` las dos páginas no existen. Si `Captcha__Provider=Turnstile`, `/recuperar-contrasena` también exige el captcha.
+
+- **Probar en local:** el mismo Mailpit de la sección anterior. Sin Docker, `pip install aiosmtpd` y `python -m aiosmtpd -n -l 127.0.0.1:1025` imprime los mensajes en su consola (use las mismas variables `Smtp__*`). Para el captcha, las claves de prueba de Turnstile están en la sección de captcha; úselas solo en su entorno local.
+- **Railway y el correo saliente:** antes de activar el correo en Railway, compruebe que el plan permite conexiones SMTP salientes (el puerto 587); algunos planes las bloquean. Si están bloqueadas, deje `Email__Provider=None` (la recuperación queda desactivada) o use un proveedor con API HTTP en una fase posterior (`docs/mejoras-posteriores.md`). **Comprobación manual pendiente:** la entrega a Gmail y Outlook (carpeta de correo no deseado) depende del proveedor; anote lo que observe con la cuenta real.
+- **Redespliegue:** los enlaces de restablecimiento dependen de las claves de Data Protection, igual que los de confirmación: mientras no se persistan, un reinicio los invalida y la persona pide uno nuevo en `/recuperar-contrasena`.
+- Un restablecimiento no levanta un bloqueo por intentos fallidos: la persona espera a que termine (`docs/mejoras-posteriores.md`).
 
 ## Base de datos
 
