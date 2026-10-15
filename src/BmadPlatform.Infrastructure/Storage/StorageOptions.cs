@@ -51,7 +51,7 @@ public sealed class StorageOptions
 
         var size = configuration[Key("MaxFileSizeMb")];
 
-        if (size is not null)
+        if (!string.IsNullOrWhiteSpace(size))
         {
             options.MaxFileSizeMb = int.TryParse(size, NumberStyles.Integer, CultureInfo.InvariantCulture, out var megabytes)
                 && megabytes is >= 1 and <= MaxFileSizeMbLimit

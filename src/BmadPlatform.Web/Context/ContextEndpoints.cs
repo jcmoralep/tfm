@@ -37,17 +37,19 @@ internal static class ContextEndpoints
             host.SetAuthenticationState(Task.FromResult(new AuthenticationState(httpContext.User)));
         }
 
+        // A user-supplied file must never be interpreted by the browser: always an opaque attachment, no sniffing,
+        // and no copy kept by browsers or proxies. Set before the lookup so the uniform 404 carries them too
+        // (the status-code-pages re-execution keeps response headers). Results.File disposes the stream and
+        // writes Content-Disposition.
+        httpContext.Response.Headers.XContentTypeOptions = "nosniff";
+        httpContext.Response.Headers.CacheControl = "no-store";
+
         var download = await mediator.Send(new GetAttachmentDownloadQuery(id, attachmentId), cancellationToken);
 
         if (download is null)
         {
             return Results.NotFound();
         }
-
-        // A user-supplied file must never be interpreted by the browser: always an opaque attachment, no sniffing,
-        // and no copy kept by browsers or proxies. Results.File disposes the stream and writes Content-Disposition.
-        httpContext.Response.Headers.XContentTypeOptions = "nosniff";
-        httpContext.Response.Headers.CacheControl = "no-store";
 
         return Results.File(download.Content, "application/octet-stream", download.FileName, enableRangeProcessing: false);
     }
