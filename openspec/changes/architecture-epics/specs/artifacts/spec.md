@@ -8,22 +8,22 @@ Scenario tags: **[UNIT]** xUnit at validator, handler or pure-class level (hand-
 
 ### Requirement: Stale-upstream hint (RF-54, RF-73, RF-74)
 
-When Architecture or Epics-and-stories exists and one of its upstream documents is in status Draft, the document page MUST show a non-blocking hint in Spanish, for example "El PRD volvió a borrador después de redactar esta arquitectura. Revise si conviene regenerarla." (Architecture) and "La Arquitectura (o el PRD) volvió a borrador después de redactar estas épicas. Revise si conviene regenerarlas." (Epics), naming each upstream that is in Draft. The hint MUST be derived at read time from the current statuses only (no stored flag, no clock, no content comparison), so it disappears as soon as every upstream is Approved again. It MUST NOT block save, approve (beyond the availability rule of "Approval and completion"), regenerate or export, and MUST NOT cause any automatic regeneration or status change in the dependent document (no cascade). It MUST NOT appear on a dependent document that does not exist, nor on Brief, PRD or Spec (the Brief-to-PRD relation is unchanged). The document view MUST expose it (`StaleUpstream`: the list of upstream types that are Draft; empty when none).
+When Architecture or Epics-and-stories exists and one of its upstream documents was edited, regenerated or approved after the dependent was last updated, the document page MUST show a non-blocking amber hint in Spanish naming that upstream, for example "El PRD cambió después de generar este documento. Cuando esté aprobado, use Regenerar para actualizarlo." (the wording is `ArtifactLabels.StaleUpstreamNote`; for the Architecture as upstream it reads "La arquitectura cambió ..."). The rule MUST be derived at read time from the `UpdatedAt` timestamps only (no stored flag, no content comparison): the dependent is stale when the `UpdatedAt` of an upstream is later than its own, checking the upstreams in order (the PRD for the Architecture; the PRD, then the Architecture, for the Epics). The document view MUST expose it as `StaleUpstream`, a single `ArtifactType?` holding the first stale upstream (null when none). Consequences, accepted by the user on 2026-10-14 (design decision 3): any change of an upstream raises the hint, even a minor edit; re-approving the upstream does NOT clear it; the hint clears when the dependent itself is edited, regenerated or approved, because each of those actions updates its timestamp (so approving a stale dependent without regenerating it dismisses the advice; the hint is advisory only). The hint MUST NOT block save, approve (beyond the availability rule of "Approval and completion"), regenerate or export, and MUST NOT cause any automatic regeneration or status change in the dependent document (no cascade; cascade invalidation is listed in `docs/mejoras-posteriores.md`). It MUST NOT appear on a dependent document that does not exist, nor on Brief, PRD or Spec (the Brief-to-PRD relation is unchanged).
 
-#### Scenario: PRD back in Draft marks the Architecture [UNIT]
+#### Scenario: Upstream changed after the dependent marks it [UNIT]
 - GIVEN a Large initiative with an Approved PRD and a generated Architecture, and the PRD is then edited
 - WHEN the Architecture view is built
-- THEN `StaleUpstream` is ["Prd"]
+- THEN `StaleUpstream` is Prd
 
-#### Scenario: Re-approving the PRD clears the hint [UNIT]
-- GIVEN the situation above and the PRD approved again
-- WHEN the Architecture view is built
-- THEN `StaleUpstream` is empty
-
-#### Scenario: Epics list both upstreams in Draft [UNIT]
-- GIVEN generated Epics and both PRD and Architecture in Draft
+#### Scenario: The first stale upstream is reported [UNIT]
+- GIVEN generated Epics and both the PRD and the Architecture updated after them
 - WHEN the Epics view is built
-- THEN `StaleUpstream` is ["Prd", "Architecture"]
+- THEN `StaleUpstream` is Prd (the first upstream in order), and it is Architecture when only the Architecture is newer
+
+#### Scenario: The dependent's own update clears the hint [UNIT]
+- GIVEN an Architecture and a PRD updated at the same instant or earlier than it (as after the Architecture is edited, regenerated or approved)
+- WHEN the Architecture view is built
+- THEN `StaleUpstream` is null
 
 #### Scenario: No dependent, no hint [UNIT]
 - GIVEN a Large initiative with a Draft PRD and no Architecture
@@ -31,30 +31,31 @@ When Architecture or Epics-and-stories exists and one of its upstream documents 
 - THEN no entry carries a hint
 
 #### Scenario: The hint does not block or cascade [UNIT]
-- GIVEN an Architecture with `StaleUpstream` not empty
-- WHEN the owner saves an edit, exports it, and the PRD is re-approved
+- GIVEN an Architecture with `StaleUpstream` not null
+- WHEN the owner saves an edit, exports it, and the PRD is approved again
 - THEN the edit and the export succeed, and the Architecture content, version and status are changed only by the edit
 
 #### Scenario: Hint in the page [UI]
-- GIVEN an Architecture whose PRD is in Draft
+- GIVEN an Architecture whose PRD changed after it was drafted
 - WHEN the page renders
 - THEN a visible notice names the PRD and offers no automatic action
 
 ### Requirement: Architecture document layout (RF-73, RF-36, RF-44, RN-02)
 
-The Architecture MUST be Markdown shaped as the BMAD 6.12.1 architecture spine, with these Spanish headings in this order (BMAD sections that the platform cannot fill honestly are cut, as the spine template allows, not left empty): 1 Propósito y alcance, 2 Paradigma de diseño, 3 Invariantes heredados, 4 Decisiones de arquitectura, 5 Convenciones de consistencia, 6 Mapa de capacidades a arquitectura, 7 Diferido, 8 Preguntas para desarrollo, 9 Índice de suposiciones. The document MUST NOT contain a Stack section, a Structural Seed section, a technology name, a version number or a framework that is not written in the approved PRD.
+The Architecture MUST be Markdown shaped as the BMAD 6.12.1 architecture spine, titled `# Arquitectura: <initiative name>`, with these seven Spanish `##` headings in this order (the sections that the platform cannot fill honestly are not sections, as the spine template allows: the stack, the structural seed and the consistency conventions are Diferido entries): 1 Paradigma de diseño, 2 Invariantes heredadas, 3 Invariantes y reglas, 4 Mapa de capacidades, 5 Diferido, 6 Preguntas para desarrollo, 7 Índice de suposiciones. The document MUST NOT contain a Stack section, a Structural Seed section, a technology name, a version number or a framework that is not written in the approved PRD.
 
-- **Decisiones de arquitectura** holds the AD blocks. Each MUST be `### AD-n — <title>` with `n` assigned by the composer from 1, in document order, without gaps within a generation (RF-44; the model never writes the id). Each block MUST contain exactly three labelled lines whose bold labels are `**Vincula (binds):**`, `**Previene (prevents):**` and `**Regla (rule):**` (the lowercase-English lint-safe form fixed by design decision 7), so the substrings `binds`, `prevents` and `rule` appear in lowercase and pass the BMAD spine linter whether it is case-sensitive or not. `Vincula (binds)` lists one or more PRD identifiers (`FR-n`, `NFR-n`) separated by commas, and only identifiers defined in the approved PRD received by the drafter may be kept: any other bind MUST be dropped; a block left with no valid bind MUST be dropped. At most 12 blocks are written, followed by one plain line "y N más." when there were more. Every `Previene` and `Regla` text is a proposal to confirm, so it carries `[ASSUMPTION: A-n]` unless the PRD states it.
-- **Invariantes heredados** lists the PRD's non-functional requirements by citation (`NFR-n` plus its text); when the PRD has none, the section carries an assumption.
-- **Mapa de capacidades a arquitectura** MUST be computed by code, never by the model: one line `- FR-n → AD-m, AD-k` per functional requirement of the PRD in PRD order, from the valid binds. A requirement bound by no AD block MUST be listed as `- FR-n → sin decisión asociada` and MUST also yield a development question (see "Preguntas para desarrollo").
-- **Diferido** MUST list, each with its reason, what is deliberately left to the development team. It MUST always contain the entry "Tecnologías y versiones" stating that the platform does not know the company's stack and that the team decides it, and the development question that refers to it (for example "¿Qué stack tecnológico, y con qué versiones, usará el equipo para construir esto?"). The drafter MUST NOT propose a stack, starter or version.
-- The text MUST contain no `TBD`, `TODO`, `FIXME`, unfilled template token (`<...>`, `{{...}}`) or placeholder row; item text that contains one MUST be rewritten as an `unknown` item (a development question) before rendering.
-- Numbering, `[ASSUMPTION: A-n]`, the Índice de suposiciones, the triage suffix, the 20-item section limit, `#` escaping and the content cap follow the baseline rules; `AD-n` blocks count as items of their section.
+- **Paradigma de diseño** holds the items of the model or, with none, the assumption "El paradigma de diseño lo propone el equipo de desarrollo al revisar este borrador."
+- **Invariantes heredadas** is written by code: the PRD identifiers (`FR-n` and `NFR-n`, in PRD order) that the architecture must satisfy, plus the fixed lines "Lo que el PRD deja fuera sigue fuera." and "Las preguntas abiertas del PRD siguen vigentes."; it does not repeat the NFR text. When the PRD has no identifiers the section carries an assumption.
+- **Invariantes y reglas** holds the AD blocks. Each MUST be `### AD-n — <title>` with `n` assigned by the composer from 1, in document order, without gaps within a generation (RF-44; the model never writes the id). Each block MUST contain exactly three labelled lines whose bold labels are `**Vincula (binds):**`, `**Previene (prevents):**` and `**Regla (rule):**` (the lowercase-English lint-safe form fixed by design decision 7), so the substrings `binds`, `prevents` and `rule` appear in lowercase and pass the BMAD spine linter whether it is case-sensitive or not. `Vincula (binds)` lists one or more PRD identifiers (`FR-n`, `NFR-n`) separated by commas, in PRD order, and only identifiers defined in the approved PRD received by the drafter may be kept: any other bind MUST be dropped; a block left with no valid bind MUST be dropped. At most 10 blocks are written. A decision with a valid bind that does not fit under the cap is dropped and MUST yield one development question that says how many were omitted. `Previene` and `Regla` are proposals for the development team to confirm, so they ALWAYS carry `[ASSUMPTION: A-n]`, whether or not the PRD states them. With no usable model decision, the Fake rule writes one block per non-functional requirement of the PRD (the title is the requirement text); with none, the section carries one assumption.
+- **Mapa de capacidades** MUST be computed by code, never by the model, as a table with the columns `Requisito`, `Qué pide`, `Decisiones`: one row per functional requirement of the PRD in PRD order, the last column listing the AD ids whose binds include it, or "Ninguna todavía" when no block binds it. A requirement with no decision MUST also yield the development question "¿Qué decisión de arquitectura cubre FR-n?" (at most 8, then one summary question for the rest).
+- **Diferido** MUST start with two entries written by code, each with its reason: "Tecnología (pila)" (the platform does not know the company's stack and the development team decides it) and "Esqueleto y convenciones" (they depend on the stack), followed by the model's deferred items. The first development question of the document (Q-1) MUST be "¿Qué tecnología (lenguajes, marcos y versiones) usará la solución?". The drafter MUST NOT propose a stack, starter or version. The guarantee that the model names no technology that the PRD does not name is a prompt instruction plus the assumption marker on `Previene` and `Regla`; the AD title and the Paradigma items are not marked individually (limit recorded in `docs/mejoras-posteriores.md`).
+- The text MUST contain no `TBD`, `TODO`, `FIXME`, `XXX`, unfilled template token (`<...>`, `{...}`, `{{...}}`) or placeholder row; an AD block whose text contains one has that text replaced by a fixed sentence and yields a development question; a model question or deferred item that contains one is not written.
+- Numbering, `[ASSUMPTION: A-n]`, the Índice de suposiciones, the triage suffix, the `#` escaping and the content cap follow the baseline rules; `AD-n` blocks count as items of their section. The question list may exceed the baseline 20-line limit of a section by a few lines in the worst case (stack question, up to 9 requirement questions, one placeholder question, one omission question and up to 10 model questions); it is a safety margin accepted by design.
 
 #### Scenario: Sections and order [UNIT]
 - GIVEN a Large initiative with an Approved PRD that defines FR-1 to FR-3 and NFR-1
 - WHEN the Architecture is drafted
-- THEN the headings 1 to 9 appear in that order and no Stack heading exists
+- THEN the seven headings appear in that order and no Stack heading exists
 
 #### Scenario: AD blocks are numbered by code and lint-safe [UNIT]
 - GIVEN a stub reply with three decisions, one titled "AD-9 Persistencia"
@@ -74,17 +75,22 @@ The Architecture MUST be Markdown shaped as the BMAD 6.12.1 architecture spine, 
 #### Scenario: Capability map is computed [UNIT]
 - GIVEN AD-1 binding FR-1 and FR-2, and a PRD that also defines FR-3
 - WHEN the Architecture is drafted
-- THEN the map contains `FR-1 → AD-1`, `FR-2 → AD-1` and `FR-3 → sin decisión asociada`, and a development question about FR-3 exists
+- THEN the table has the rows `| FR-1 | … | AD-1 |`, `| FR-2 | … | AD-1 |` and `| FR-3 | … | Ninguna todavía |`, and the question "¿Qué decisión de arquitectura cubre FR-3?" exists
+
+#### Scenario: Decisions beyond the cap are asked about [UNIT]
+- GIVEN a stub reply with 12 decisions that each bind a valid requirement
+- WHEN the Architecture is drafted
+- THEN 10 blocks are written and a development question says that 2 decisions were omitted beyond the maximum of 10
 
 #### Scenario: No stack, stack deferred [UNIT]
 - GIVEN any drafted Architecture
 - WHEN its text is read
-- THEN there is no Stack heading, and Diferido contains "Tecnologías y versiones" with its reason and a Q-n asking for the stack
+- THEN there is no Stack heading, and Diferido contains "Tecnología (pila)" with its reason and the question asking for the stack
 
 #### Scenario: Stack named by the model is not rendered as a fact [UNIT]
 - GIVEN a stub reply whose Regla text says "Usar PostgreSQL 16" and the PRD never mentions it
 - WHEN the Architecture is drafted
-- THEN the line carries `[ASSUMPTION: A-n]` (source `assumption`) and the Índice de suposiciones lists it, or the item is an `unknown` question; it is never a plain item
+- THEN the line carries `[ASSUMPTION: A-n]` and the Índice de suposiciones lists it; it is never a plain line
 
 #### Scenario: Placeholders are rejected [UNIT]
 - GIVEN an item text "TBD: definir la base de datos"
@@ -94,7 +100,7 @@ The Architecture MUST be Markdown shaped as the BMAD 6.12.1 architecture spine, 
 #### Scenario: Identifier uniqueness [UNIT]
 - GIVEN any drafted Architecture
 - WHEN its identifiers are extracted
-- THEN each AD, A and Q number is defined once, from 1 without gaps, in document order
+- THEN each AD, A and Q number is defined once, from 1 without gaps, in document order, and the format checker reports no warning
 
 #### Scenario: Architecture golden passes the BMAD spine linter [MANUAL]
 - GIVEN the Architecture golden saved as `ARCHITECTURE-SPINE.md` in a scratch BMAD 6.12.1 install
@@ -103,25 +109,25 @@ The Architecture MUST be Markdown shaped as the BMAD 6.12.1 architecture spine, 
 
 ### Requirement: Epics and stories document layout (RF-74, RF-36, RF-44, RN-02)
 
-The Epics-and-stories document MUST be Markdown shaped as BMAD 6.12.1 `epics.md`, built from the approved PRD and the approved Architecture, with these headings in this order: 1 Resumen general, 2 Inventario de requisitos (2.1 Requisitos funcionales, 2.2 Requisitos no funcionales, 2.3 Decisiones de arquitectura), 3 Mapa de cobertura de FR, 4 Lista de épicas, then the epics, then Preguntas para desarrollo and Índice de suposiciones. Each epic MUST be `## Epic N: <title>` and each story `### Story N.M: <title>`, where the structural words `Epic`, `Story`, `As a`, `I want`, `So that`, `Given`, `When`, `Then` stay in BMAD's English form and the content is Spanish (assumption A1, checked by check 2).
+The Epics-and-stories document MUST be Markdown shaped as BMAD 6.12.1 `epics.md`, built from the approved PRD and the approved Architecture, titled `# Épicas e historias: <initiative name>`, with these `##` headings in this order: 1 Resumen, 2 Inventario de requisitos (with the `###` parts Requisitos funcionales, Requisitos no funcionales and Requisitos adicionales), 3 Mapa de cobertura de requisitos, 4 Lista de épicas, then the epics, then Preguntas para desarrollo and Índice de suposiciones. Each epic MUST be `## Epic N: <title>` and each story `### Story N.M: <title>`, where the structural words `Epic`, `Story`, `As a`, `I want`, `So that`, `Acceptance Criteria`, `Given`, `When`, `Then` stay in BMAD's English form and the content is Spanish (assumption A1, checked by check 2).
 
-- **Requirements Inventory.** Code MUST copy every `FR-n` and `NFR-n` of the PRD, with its text, hyphenated and with the SAME number (gaps left by edits are kept; nothing is renumbered), as list lines `- FR-n: <text>` and `- NFR-n: <text>`, and every `AD-n` of the Architecture with its title in 2.3. The model never writes the inventory.
-- **Epics.** Epics MUST be organized by user value, with no forward dependency (a story may rely only on earlier stories). At most 5 epics, each with at most 5 stories, each story with at most 3 acceptance criteria. Numbering `Epic N` and `Story N.M` is assigned by the composer, from 1 without gaps.
-- **Story.** Each story MUST contain, in this order: its heading; one line `**As a** <role>, **I want** <goal>, **So that** <benefit>`; a citation line `**Cubre:** FR-n, NFR-n` (at least one `FR-n`) and, when it applies, `**Decisiones:** AD-n`; and its acceptance criteria as one-line `**Given** … **When** … **Then** …` items. Citations MUST be kept only when the identifier is defined in the PRD (`FR-n`, `NFR-n`) or in the Architecture (`AD-n`) received by the drafter; others MUST be dropped, and a story left with no valid `FR-n` MUST be dropped. A criterion that goes beyond the PRD carries `[ASSUMPTION: A-n]`; a criterion may be plain only when it restates the PRD.
-- **FR Coverage Map.** Code MUST compute it from the final stories: one line `- FR-n: Epic N` (several epics comma-separated) for every covered requirement, in PRD order, and `- FR-n: sin cobertura` for every uncovered one. Every requirement with no story MUST yield a development question naming it (for example "FR-3 no tiene ninguna historia todavía: <text>").
-- **Budget.** The whole document MUST NOT exceed the content cap. When it would, code MUST apply this ladder in order until it fits, never cutting mid-structure: (1) shorten item text with an ellipsis, (2) keep at most 2 criteria per story, (3) drop the trailing stories (last epic first) and then empty epics. The coverage map and the development questions MUST be computed AFTER the ladder, so a dropped story shows up as an uncovered requirement and a question, never as silent loss. Inventory and map lines are never dropped.
+- **Requirements Inventory.** Code MUST copy every `FR-n` and `NFR-n` of the PRD, with its text, hyphenated and with the SAME number (gaps left by edits are kept; nothing is renumbered), as item lines `- **FR-n**: <text>` and `- **NFR-n**: <text>`, and every `AD-n` of the Architecture with its title under Requisitos adicionales (`- **AD-n**: <title>`; BMAD calls these the additional requirements). The model never writes the inventory. Traceability of the chain (RF-44): the Architecture decisions bind `FR-n`/`NFR-n` (Vincula), the Epics inventory lists the `AD-n` as additional requirements, and each story cites the `FR-n`/`NFR-n` it implements (Cubre). A story does not cite `AD-n` itself (a per-story citation is recorded in `docs/mejoras-posteriores.md`).
+- **Epics.** Epics MUST be organized by user value, with no forward dependency (a story may rely only on earlier stories; this is a prompt instruction to the model, and the Fake writes flat, independent stories). At most 6 epics, each with at most 5 stories, at most 20 stories in total, each story with at most 3 acceptance criteria and at most 6 cited requirements. Numbering `Epic N` and `Story N.M` is assigned by the composer, from 1 without gaps.
+- **Story.** Each story MUST contain, in this order: its heading; one line `**As a** <role>, **I want** <goal>, **So that** <benefit>`; a citation line `**Cubre:** FR-n, NFR-n` (at least one `FR-n`); and `**Acceptance Criteria:**` followed by one-line `- **Given** … **When** … **Then** …` items. Citations MUST be kept only when the identifier is defined in the approved PRD received by the drafter, de-duplicated and in PRD order; others MUST be dropped, and a story left with no valid `FR-n` MUST be dropped. A story that arrives with no criterion receives one default criterion that restates its first cited requirement. Criteria are proposals for the development team to review; they carry no per-criterion source or assumption marker.
+- **Coverage Map.** Code MUST compute it from the final stories: one line `- FR-n: Epic N (N.M, N.K)` per covered requirement, in PRD order (several epics comma-separated), and `- FR-n: sin historia todavía (ver Q-n)` for every uncovered one. Every requirement with no story MUST yield the development question "¿Qué historia cubre FR-n?" (identifier only, no requirement text).
+- **Budget.** The whole document MUST NOT exceed the content cap. When it would, code MUST apply the shared answer-budget ladder in order until it fits, never cutting mid-structure: (1) shorten item text with an ellipsis (field clip 400, 250, 160, 100, then 60 characters) and keep at most 3, 3, 2, 2, then 1 criteria per story, per rung; (2) after the last rung, drop the trailing stories (last epic first) and then empty epics. The coverage map and the development questions MUST be computed AFTER the ladder, so a dropped story shows up as an uncovered requirement and a question, never as silent loss. Inventory and map lines are never dropped (more than about 120 requirements still ends in the baseline message that the document cannot exceed the limit).
 - If the PRD defines no `FR-n`, the document MUST state in the inventory that there are none, contain no epic, and carry one development question about it.
-- Assumptions, questions, caps ("y N más." for items) and escaping follow the baseline rules.
+- Assumptions, questions, caps and escaping follow the baseline rules.
 
 #### Scenario: Sections and order [UNIT]
 - GIVEN an Approved PRD with FR-1 to FR-4 and NFR-1 and an Approved Architecture with AD-1 and AD-2
 - WHEN the Epics are drafted
-- THEN the headings appear in the order listed, with `## Epic 1: …` and `### Story 1.1: …`
+- THEN the headings appear in the order listed, with `## Epic 1: …` and `### Story 1.1: …`, and the inventory lists AD-1 and AD-2 under Requisitos adicionales
 
 #### Scenario: Inventory keeps hyphenated numbers [UNIT]
 - GIVEN a PRD defining FR-1, FR-3 (FR-2 retired) and NFR-1
 - WHEN the Epics are drafted
-- THEN the inventory contains `- FR-1:`, `- FR-3:` and `- NFR-1:` with the PRD text, no `FR1:`/`NFR1:` form, no renumbering and no FR-2
+- THEN the inventory contains `- **FR-1**:`, `- **FR-3**:` and `- **NFR-1**:` with the PRD text, no `FR1:`/`NFR1:` form, no renumbering and no FR-2
 
 #### Scenario: Stories have the BMAD shape [UNIT]
 - GIVEN any drafted Epics
@@ -131,7 +137,7 @@ The Epics-and-stories document MUST be Markdown shaped as BMAD 6.12.1 `epics.md`
 #### Scenario: Invalid citations are dropped [UNIT]
 - GIVEN a story citing FR-1, FR-9, NFR-7 and AD-5 when the PRD defines FR-1 and the Architecture defines AD-1 only
 - WHEN the Epics are drafted
-- THEN the Cubre line reads FR-1 only and no Decisiones line is written
+- THEN the Cubre line reads FR-1 only (AD-n is never written in a story)
 
 #### Scenario: A story with no valid FR is dropped [UNIT]
 - GIVEN a story that cites only FR-9
@@ -141,12 +147,12 @@ The Epics-and-stories document MUST be Markdown shaped as BMAD 6.12.1 `epics.md`
 #### Scenario: Coverage map and uncovered requirement [UNIT]
 - GIVEN stories covering FR-1 and FR-2 and a PRD that also defines FR-3
 - WHEN the Epics are drafted
-- THEN the map has `FR-1: Epic 1`, `FR-2: Epic 1` and `FR-3: sin cobertura`, and a development question names FR-3
+- THEN the map has `FR-1: Epic 1 (1.1)`, `FR-2: Epic 1 (1.2)` and `FR-3: sin historia todavía (ver Q-n)`, and the question "¿Qué historia cubre FR-3?" exists
 
 #### Scenario: Caps hold [UNIT]
 - GIVEN a stub reply with 8 epics, 9 stories in one epic and 6 criteria in one story
 - WHEN the Epics are drafted
-- THEN at most 5 epics, 5 stories per epic and 3 criteria per story are written and every requirement of the dropped stories is in the map as uncovered
+- THEN at most 6 epics, 5 stories per epic and 3 criteria per story are written and every requirement of the dropped stories is in the map as uncovered
 
 #### Scenario: Budget ladder never cuts mid-structure [UNIT]
 - GIVEN a PRD with 40 functional requirements and stub texts that would exceed 20,000 characters
@@ -159,9 +165,9 @@ The Epics-and-stories document MUST be Markdown shaped as BMAD 6.12.1 `epics.md`
 - THEN there is no epic, the inventory says there are no functional requirements and one development question exists
 
 #### Scenario: No forward dependencies [UNIT]
-- GIVEN any drafted Epics
+- GIVEN the Fake Epics
 - WHEN the stories are read in order
-- THEN no story text or criterion refers to a later story or epic number
+- THEN each story stands alone (one story per functional requirement), so none refers to a later story or epic (for the model path this is a prompt instruction; see `docs/mejoras-posteriores.md`)
 
 #### Scenario: Epics export is accepted by BMAD [MANUAL]
 - GIVEN the exported PRD, Architecture and Epics in a scratch BMAD 6.12.1 install
@@ -170,7 +176,7 @@ The Epics-and-stories document MUST be Markdown shaped as BMAD 6.12.1 `epics.md`
 
 ### Requirement: Preguntas para desarrollo (RF-39, RF-61, RF-73, RF-74, RN-02)
 
-Architecture and Epics-and-stories MUST each contain a section "Preguntas para desarrollo" that holds every open question of the document and no other section MUST hold `Q-n` lines. Each is a triage line (see "Open-question triage line") whose suffix is **pre-assigned** to the development team: `(Responsable: Equipo de desarrollo; Revisar: antes de construir)`. Because the owner and the revisit text are neither empty nor the defaults, these questions are NOT unassigned, so they do not block approval (RF-62); the person MAY still edit them with the assign command. The questions come from: `unknown` items; the stack question of Diferido (Architecture, always); every requirement left without a decision (Architecture) or without a story (Epics); and any item rewritten because of a placeholder. When there are none the section says so, as in the baseline (this cannot happen in Architecture, which always has the stack question). The section is the content that RF-39 promises to development: "lo que la persona de producto no pudo responder". The conversation answers and their "No sé" topics MUST NOT feed these two documents (they do not receive the answers).
+Architecture and Epics-and-stories MUST each contain a section "Preguntas para desarrollo" that holds every open question of the document and no other section MUST hold `Q-n` lines. Each is a triage line (see "Open-question triage line") whose suffix is **pre-assigned** to the development team: `(Responsable: Equipo de desarrollo; Revisar: antes de construir)`. Because the owner and the revisit text are neither empty nor the defaults, these questions are NOT unassigned, so they do not block approval (RF-62); the person MAY still edit them with the assign command. The questions come from: `unknown` items; the stack question of Diferido (Architecture, always); every requirement left without a decision (Architecture) or without a story (Epics); any item rewritten because of a placeholder; the decisions omitted beyond the cap (Architecture); and the model's own questions (at most 10). When there are none the section says so, as in the baseline (this cannot happen in Architecture, which always has the stack question). The section is the content that RF-39 promises to development: "lo que la persona de producto no pudo responder". The conversation answers and their "No sé" topics MUST NOT feed these two documents (they do not receive the answers).
 
 #### Scenario: Questions are pre-assigned [UNIT]
 - GIVEN a drafted Architecture and a drafted Epics
@@ -199,12 +205,12 @@ Architecture and Epics-and-stories MUST each contain a section "Preguntas para d
 
 ### Requirement: Approval copy for development review (RN-02, RF-19, RF-39)
 
-The button MUST remain "Aprobar" for every type. For Architecture and Epics-and-stories, the approval confirmation MUST state, in Spanish, that the document is a draft for the development team to review and that approving means the person reviewed it, not that it is final (for example "Este documento es un borrador para que el equipo de desarrollo lo revise. Al aprobarlo usted confirma que lo revisó; desarrollo puede cambiarlo."). The page MUST show the same reminder near the document of these two types. It MUST NOT add a second button, a role, a review state or a new status. The confirmation of the other types is unchanged.
+The button MUST remain "Aprobar" for every type. For Architecture and Epics-and-stories, the approval confirmation MUST state, in Spanish, that the document is a draft for the development team to review and that approving means the person reviewed it, not that it is final (the text of `ArtifactLabels.ApproveConfirmText`: "Aprobar lo marca como el borrador que se entrega al equipo de desarrollo. Al aprobarlo usted confirma que lo revisó; no son decisiones técnicas finales y desarrollo lo revisa antes de construir."). The page MUST show the same reminder near the document of these two types. It MUST NOT add a second button, a role, a review state or a new status. The confirmation of the other types is unchanged.
 
 #### Scenario: Confirmation copy by type [UNIT]
 - GIVEN the confirmation text provider
 - WHEN it is asked for Architecture, Epics, PRD and Brief
-- THEN the first two mention development review and the other two do not
+- THEN the first two mention that development reviews the draft and that approving means the person reviewed it, and the other two mention neither
 
 #### Scenario: Button label unchanged [UI]
 - GIVEN an Architecture Draft page
@@ -236,7 +242,7 @@ The existing Markdown exporter MUST support the two new types (it MUST no longer
 - Architecture: save as `planning-artifacts/architecture/architecture-<project>-<date>/ARCHITECTURE-SPINE.md`; next step `bmad-create-epics-and-stories`.
 - Epics: save as `planning-artifacts/epics.md`; next steps `bmad-build` or `bmad-spec`, with the PRD and the Architecture as the inputs already exported.
 
-The frontmatter of the Architecture MUST carry the keys of the BMAD spine (name, type, purpose, altitude, paradigm, scope, status, created, updated, binds, sources, companions) and that of the Epics the keys `status`, `stepsCompleted` and `inputDocuments`, each with a non-empty value derived deterministically from the stored data (never `TBD` or `TODO`); the exact values are fixed in design and confirmed by checks 1 and 3. Draft documents carry the existing "borrador" sentence.
+The frontmatter of every export carries `title`, `status`, `created` and `updated`; the Architecture adds only `type: architecture-spine`, and the Epics add `stepsCompleted: ['step-01-validate-prerequisites']` and `inputDocuments: [prd.md, ARCHITECTURE-SPINE.md]`, each with a non-empty value derived deterministically from the stored data (never `TBD` or `TODO`). The other spine keys (name, purpose, altitude, paradigm, scope, binds, sources, companions) are not written: check 1 showed that `lint_spine.py` requires no frontmatter key, and checks 1 and 3 confirmed the values above. Draft documents carry the existing "borrador" sentence.
 
 #### Scenario: File names and notes [UNIT]
 - GIVEN an Architecture and an Epics export source
@@ -251,7 +257,7 @@ The frontmatter of the Architecture MUST carry the keys of the BMAD spine (name,
 #### Scenario: Frontmatter keys present [UNIT]
 - GIVEN an exported Architecture and an exported Epics
 - WHEN the frontmatter is parsed
-- THEN every key listed above exists with a non-empty value
+- THEN every key listed above exists with a non-empty value and no other key is written
 
 #### Scenario: Note mentions development review and questions [UNIT]
 - GIVEN the usage note of both types
@@ -265,20 +271,20 @@ The frontmatter of the Architecture MUST carry the keys of the BMAD spine (name,
 
 ### Requirement: Gemini drafting of the Architecture (RF-73, RF-71, RF-70)
 
-When `Assistant:Provider` = Gemini, the Architecture MUST be drafted by the model-backed drafter through a JSON schema, and the composer MUST render the Markdown. The schema has the flat sections of the layout as arrays of `{text, source}` items (Propósito y alcance, Paradigma de diseño, Convenciones de consistencia, Diferido, Preguntas para desarrollo) and a `decisions` array of `{title, binds[], prevents, rule, source}`. The model MUST NOT write headings, `AD-n`, `A-n`, `Q-n`, the capability map, the Invariantes list or the triage suffix; code writes them. All rules of "Model-backed drafting through schema items" and "Item sources and never inventing" apply (neutralization of forged ids, one-line plain text, sources, default assumption for an empty section, Malformed on unknown section or source), and an item with source `answer` is allowed only for content stated in the approved PRD. The request MUST carry only text: type, depth, initiative name and description and the approved PRD Markdown, and MUST carry no conversation answer, id, owner, email, timestamp or attachment. It MUST be made only when the PRD is Approved (the Availability rules guarantee it; there is no answers-only fallback). One model call per document. The model MUST be told not to name technologies or versions that the PRD does not name. Failures follow "Drafter failures" and store nothing. With `Assistant:Provider` = Fake, the Fake produces the Architecture from the PRD deterministically.
+When `Assistant:Provider` = Gemini, the Architecture MUST be drafted by the model-backed drafter through a JSON schema, and the composer MUST render the Markdown. The schema has the object `{paradigm, decisions, deferred, questions}`, all four keys required: `paradigm` and `deferred` are arrays of `{text, source}` items whose source is `assumption` or `unknown` (there are no conversation answers, so a source `answer` is downgraded to an assumption), `decisions` is an array of `{title, binds[], prevents, rule}`, and `questions` is an array of strings. The model MUST NOT write headings, `AD-n`, `A-n`, `Q-n`, the capability map, the Invariantes list, the stack entry or the triage suffix; code writes them. The rules of "Model-backed drafting through schema items" and "Item sources and never inventing" apply (neutralization of forged ids, one-line plain text, default assumption for an empty section, Malformed on an unknown key, a wrong JSON type or a source outside the allowed ones); an empty `decisions` falls back to the Fake rule. The request MUST carry only text: type, depth, initiative name and description and the approved PRD Markdown, and MUST carry no conversation answer, id, owner, email, timestamp or attachment. It MUST be made only when the PRD is Approved (the Availability rules guarantee it; there is no answers-only fallback). One model call per document. The model MUST be told not to name technologies or versions that the PRD does not name. Failures follow "Drafter failures" and store nothing. With `Assistant:Provider` = Fake, the Fake produces the Architecture from the PRD deterministically.
 
 #### Scenario: Composer renders model decisions [UNIT]
 - GIVEN a stub model client returning three decisions and items for every flat section
 - WHEN the Architecture is drafted
-- THEN the Markdown has the nine headings, AD-1 to AD-3, a computed capability map and sequential A and Q numbers
+- THEN the Markdown has the seven headings, AD-1 to AD-3, a computed capability map and sequential A and Q numbers
 
 #### Scenario: Model cannot write identifiers [UNIT]
 - GIVEN an item "Q-7 ¿Qué base de datos?" and a decision titled "AD-4 Eventos"
 - WHEN the Architecture is drafted
 - THEN each AD and Q number is defined once from 1 without gaps and the forged texts are neutralized
 
-#### Scenario: Unknown section or source is malformed [UNIT]
-- GIVEN a stub reply naming a section "Stack", then another with source "guess"
+#### Scenario: Unknown key, wrong type or unknown source is malformed [UNIT]
+- GIVEN a stub reply with an unknown key "stack", another whose root is not an object or with a wrong JSON type, and another with an item source "guess"
 - WHEN the Architecture is drafted
 - THEN each fails as Malformed and nothing is stored
 
@@ -309,7 +315,7 @@ When `Assistant:Provider` = Gemini, the Architecture MUST be drafted by the mode
 
 ### Requirement: Gemini drafting of Epics and stories (RF-74, RF-71, RF-70)
 
-When `Assistant:Provider` = Gemini, Epics-and-stories MUST be drafted through a nested JSON schema: `overview` (items), `epics[]` each with `title` and `stories[]`, each story with `title`, `asA`, `iWant`, `soThat`, `covers[]` (FR/NFR ids), `decisions[]` (AD ids) and `criteria[]` of `{given, when, then, source}`, plus `questions[]` items. The model MUST NOT write `Epic N`, `Story N.M`, headings, the Requirements Inventory, the coverage map, `A-n`, `Q-n` or the triage suffix; code writes and numbers them from validated data. A response MUST be Malformed when it lacks a required member, has `source` outside `answer|assumption|unknown`, has an epic with no stories, or a story with no criteria. Citation filtering, caps, the shortening ladder, uncovered-FR questions and the 20,000-character cap are those of "Epics and stories document layout" and are applied by code on the parsed response (never trusting the model's own counts). A criterion with source `unknown` is dropped and becomes a development question; `assumption` is tagged. The request MUST carry only the approved PRD Markdown and the approved Architecture Markdown (with the initiative name and description) and no id, owner, email, timestamp, attachment or conversation answer. One model call per document; the whole request MUST stay within what the model accepts (PRD and Architecture are each at most the content cap). Failures follow "Drafter failures". With `Assistant:Provider` = Fake, the Fake produces the Epics deterministically from the PRD and the Architecture: the same observable guarantees (one story per functional requirement under epics grouped by PRD feature, within the caps, citations kept, criteria that restate the requirement, no invented figure or name).
+When `Assistant:Provider` = Gemini, Epics-and-stories MUST be drafted through a nested JSON schema: `epics[]` each with `title`, `goal` and `stories[]`, each story with `title`, `as_a`, `i_want`, `so_that`, `covers[]` (FR/NFR ids) and `criteria[]` of `{given, when, then}`, plus `questions[]` (strings); all keys are required. There is no overview, no per-criterion source and no `decisions[]`. The model MUST NOT write `Epic N`, `Story N.M`, headings, the Requirements Inventory, the coverage map, `A-n`, `Q-n` or the triage suffix; code writes and numbers them from validated data. A response MUST be Malformed when the root is not an object, a top-level key is missing or unknown, a field has the wrong JSON type, or no story survives the filtering. An epic left with no story and a story with a blank title or goal or with no valid `FR-n` are dropped (not Malformed); a story with no criteria receives a default criterion. Citation filtering, caps, the shortening ladder, uncovered-FR questions and the 20,000-character cap are those of "Epics and stories document layout" and are applied by code on the parsed response (never trusting the model's own counts). The request MUST carry only the approved PRD Markdown and the approved Architecture Markdown (with the initiative name and description) and no id, owner, email, timestamp, attachment or conversation answer. One model call per document; the whole request MUST stay within what the model accepts (PRD and Architecture are each at most the content cap). Failures follow "Drafter failures". With `Assistant:Provider` = Fake, the Fake produces the Epics deterministically from the PRD and the Architecture: the same observable guarantees (one story per functional requirement under epics grouped by PRD feature, within the caps, citations kept, criteria that restate the requirement, no invented figure or name).
 
 #### Scenario: Nested reply is rendered by the composer [UNIT]
 - GIVEN a stub reply with 2 epics, 3 stories and criteria
@@ -322,14 +328,9 @@ When `Assistant:Provider` = Gemini, Epics-and-stories MUST be drafted through a 
 - THEN the headings are numbered by the composer and the forged numbers are neutralized in the titles
 
 #### Scenario: Structurally invalid reply is malformed [UNIT]
-- GIVEN a reply with an epic without stories, then one with a story without criteria
+- GIVEN a reply whose root is not an object, one with an unknown or missing top-level key, one with a wrong JSON type, and one whose stories all lack a valid requirement
 - WHEN the Epics are drafted
-- THEN each fails as Malformed and nothing is stored
-
-#### Scenario: Unknown criterion becomes a question [UNIT]
-- GIVEN a criterion with source `unknown`
-- WHEN the Epics are drafted
-- THEN the criterion is not shown as a fact and a development question exists
+- THEN each fails as Malformed and nothing is stored, while an epic without stories or a story without a valid requirement alone is dropped and the rest is kept
 
 #### Scenario: Coverage is computed from the final document [UNIT]
 - GIVEN a reply whose stories cover FR-1 only while the PRD defines FR-1 and FR-2
@@ -388,7 +389,7 @@ Generation MUST be an explicit user action ("Generar"); nothing MUST be generate
 - Brief (Standard): available as soon as every required Aclarar topic of the level is covered (the confirmation step is not a topic), while the initiative is Clarifying or Planning.
 - Spec (Small) and PRD (Standard, Large): available only at the closing, that is, when the initiative is Planning and every required topic of the level, Aclarar and Planificar, is covered.
 - Architecture (Large): available only while the initiative is Planning and the PRD of the initiative exists and is **Approved**.
-- Epics-and-stories (Large): available only while the initiative is Planning and the Architecture exists and is **Approved** (the PRD is then Approved or was Approved when the Architecture was; only the Architecture is checked, and the PRD's state is shown by the stale-upstream hint).
+- Epics-and-stories (Large): available only while the initiative is Planning and both the PRD and the Architecture exist and are **Approved**; the upstreams are checked in order (the PRD first, then the Architecture), and the first one not approved gives the waiting text. A PRD back in Draft after the Architecture was approved therefore blocks generating or regenerating the Epics until it is approved again.
 - In Draft nothing is available. In ReadyToBuild generated documents can be read, edited and regenerated where their availability holds (see their requirements), but no new document is generated because the set was already complete.
 
 Availability MUST be a pure function of the initiative's status, depth, the conversation coverage and the statuses of the upstream documents, supplied to it by the caller. Rejections (wording is a proposal): Draft, "Termine de crear la iniciativa para generar documentos."; topics uncovered, "Aún no se puede generar este documento: termine primero las preguntas del asistente."; Architecture without an approved PRD, "Primero apruebe el PRD para generar este documento."; Epics without an approved Architecture, "Primero apruebe la arquitectura para generar las épicas e historias."; document already generated, "El documento ya existe. Use Regenerar para reemplazarlo.". The order of the assistant's script MUST NOT change because of generation. Approving, regenerating and saving a dependent document follow the same availability (see their requirements).
@@ -465,8 +466,8 @@ Approving MUST be a manual action of the owner on a Draft document with the expe
 - **Brief**: Resumen ejecutivo, El problema, La solución, Qué lo hace distinto, A quién sirve, Criterios de éxito, Alcance, Visión, Índice de suposiciones, Preguntas pendientes.
 - **PRD**: 0 Propósito del documento, 1 Visión, 2 Usuario objetivo (2.1 Trabajos por hacer, 2.2 No usuarios, 2.3 Recorridos clave), 3 Glosario, 4 Funcionalidades, 5 No objetivos, 6 Alcance del MVP (6.1 Dentro, 6.2 Fuera), 7 Métricas de éxito, 8 Preguntas abiertas, 9 Índice de suposiciones.
 - **Spec**: Por qué, Capacidades, Restricciones, No objetivos, Señal de éxito, Índice de suposiciones, Preguntas abiertas.
-- **Architecture**: 1 Propósito y alcance, 2 Paradigma de diseño, 3 Invariantes heredados, 4 Decisiones de arquitectura, 5 Convenciones de consistencia, 6 Mapa de capacidades a arquitectura, 7 Diferido, 8 Preguntas para desarrollo, 9 Índice de suposiciones (see "Architecture document layout").
-- **Epics-and-stories**: 1 Resumen general, 2 Inventario de requisitos (2.1 Requisitos funcionales, 2.2 Requisitos no funcionales, 2.3 Decisiones de arquitectura), 3 Mapa de cobertura de FR, 4 Lista de épicas, `## Epic N: …` with `### Story N.M: …`, Preguntas para desarrollo, Índice de suposiciones (see "Epics and stories document layout").
+- **Architecture**: 1 Paradigma de diseño, 2 Invariantes heredadas, 3 Invariantes y reglas, 4 Mapa de capacidades, 5 Diferido, 6 Preguntas para desarrollo, 7 Índice de suposiciones (see "Architecture document layout").
+- **Epics-and-stories**: 1 Resumen, 2 Inventario de requisitos (Requisitos funcionales, Requisitos no funcionales, Requisitos adicionales), 3 Mapa de cobertura de requisitos, 4 Lista de épicas, `## Epic N: …` with `### Story N.M: …`, Preguntas para desarrollo, Índice de suposiciones (see "Epics and stories document layout").
 
 Numbering MUST follow RF-44 with a hyphen and a number for every element, numbered in document order from 1 and without gaps within the generation: functional requirements `FR-n` (Capacidades of the Spec and Funcionalidades of the PRD, one per capability item), non-functional `NFR-n`, success metrics `SM-n` (Criterios de éxito of the Brief, Métricas de éxito of the PRD, Señal de éxito of the Spec), architecture decisions `AD-n` (one per AD block, assigned by the composer), assumptions `A-n` (inline as `[ASSUMPTION: A-n]` followed by its text), pending questions `Q-n`; epics and stories use `Epic N` and `Story N.M` (BMAD's format), assigned by the composer. In Architecture and Epics-and-stories the `FR-n`, `NFR-n` and `AD-n` that come from the upstream documents are **citations that keep the upstream number** (never renumbered, gaps included); only the elements they define themselves (`AD-n` in the Architecture, `A-n`, `Q-n`, `Epic N`, `Story N.M`) are numbered from 1. User journeys `UJ-n` are part of the scheme and valid in edited documents, but the generator MUST NOT write any. For Brief, PRD and Spec each answer MUST be split into one item per non-empty line (list markers removed); an answer on a single line yields one item. At most 20 items are written per answer (per section for the model-backed drafter), followed by one plain line "y N más." when there were more, so many tiny lines cannot exceed the content cap. A "nothing" quick reply ("Ninguno", "Ninguno que yo sepa", "Nada por ahora", "Nada especial") MUST become one explanatory sentence without an identifier (for example "No se indicaron integraciones."), never an FR or NFR; the other quick replies (for example "Ambos") keep their label as text. The Fake drafter MUST use the user's own words for the items; the model-backed drafter MAY tidy the wording into plain Spanish but each item MUST stay faithful to the answers (or, for Architecture and Epics, to the approved upstream text) and carry its `source`. Neither MUST present invented facts as certain.
 
@@ -474,8 +475,8 @@ Mapping of answers to sections (the sections not listed take an assumption):
 - Brief: idea feeds Resumen ejecutivo and La solución; problem feeds El problema; users feeds A quién sirve; success feeds Criterios de éxito (`SM-n`); out of scope feeds Alcance (outside); Qué lo hace distinto, Visión and the inside of Alcance carry `[ASSUMPTION: A-n]`.
 - PRD: idea and initiative name feed Propósito and Visión; users and problem feed Trabajos por hacer; Recorridos clave is not fed by any answer and holds the single assumption of "PRD key journeys section without markers" (no `UJ-n`, whatever the users answer); capabilities feed Funcionalidades (`FR-n`) and Alcance dentro (the line "Todas las funcionalidades de la sección 4.", annotated with the priorities answer when present); constraints and qualities feed `NFR-n` items under a "Requisitos no funcionales" feature of Funcionalidades; integrations and teams (Large) feed `FR-n` items under an "Integraciones" feature, each phrased as a requirement ("Debe integrarse con <sistema o equipo>"); out of scope feeds No objetivos and Alcance fuera; success feeds Métricas (`SM-n`). Glosario and No usuarios carry `[ASSUMPTION: A-n]` when nothing feeds them.
 - Spec: idea, users and problem feed Por qué (the users go in one bullet, "Quién lo usará", joined by semicolons); capabilities feed Capacidades (`FR-n`); out of scope feeds No objetivos (at least one item); success feeds Señal de éxito (`SM-n`); Restricciones carries `[ASSUMPTION: A-n]` because Small asks no constraints topic.
-- Architecture: the approved PRD (name, vision, purpose lines) feeds Propósito y alcance; its `NFR-n` feed Invariantes heredados; its `FR-n` and `NFR-n` are the only identifiers an AD block may bind; Paradigma de diseño, Convenciones de consistencia and the `Previene`/`Regla` text of each AD block carry `[ASSUMPTION: A-n]` unless the PRD states them; Diferido always holds the stack entry; Preguntas para desarrollo holds every `Q-n`.
-- Epics-and-stories: the approved PRD feeds Resumen general and the inventory (2.1 and 2.2); the approved Architecture feeds 2.3; the PRD's `FR-n` group by feature into epics and into stories; the map is computed.
+- Architecture: the approved PRD feeds Invariantes heredadas (its identifiers) and the capability map (its `FR-n`); its `FR-n` and `NFR-n` are the only identifiers an AD block may bind; Paradigma de diseño (when the model gives no item) and the `Previene`/`Regla` text of each AD block carry `[ASSUMPTION: A-n]`; Diferido always holds the stack entry; Preguntas para desarrollo holds every `Q-n`.
+- Epics-and-stories: the approved PRD feeds the inventory (Requisitos funcionales and no funcionales); the approved Architecture feeds Requisitos adicionales; the PRD's `FR-n` group by feature into epics and into stories (Fake) or the model groups them by user value; Resumen and the map are computed.
 
 Every section with no feeding content MUST carry at least one `[ASSUMPTION: A-n]` marker instead of being left empty (the computed sections, the inventory and the map excepted). The Índice de suposiciones MUST list every `A-n` of the document with its text, and Preguntas pendientes / Preguntas abiertas / Preguntas para desarrollo MUST list every `Q-n`, each line ending with the triage suffix of "Open-question triage line" (default `(Responsable: por asignar; Revisar: por definir)`; pre-assigned for Architecture and Epics-and-stories).
 (Previously: only Brief, PRD and Spec existed; identifiers were always defined by the document that contains them.)
@@ -523,7 +524,7 @@ Scenarios of the baseline stay unchanged; the new scenarios of the two requireme
 
 ### Requirement: Format warnings from the Markdown (RF-43, RF-44, RF-56, RF-59, RF-73, RF-74)
 
-The system MUST derive format warnings by reading the Markdown on every read and every save, returning at most 50 of them followed by one final entry "y N avisos más." when there are more; a token without a hyphen ("Q4", "A4", "SM2") followed by prose is an ordinary word and MUST NOT be reported, while "FR1", "NFR1", "UJ1", "AD1" and any hyphenated attempt ("FR -1", "FR-", "FR-01", "fr-1", "NFR-x", "AD-") are; warnings MUST never block saving or approving and MUST never alter or lose text. The parser MUST detect, per document type: a required section heading missing (for Epics-and-stories, also no `## Epic N` heading at all when the inventory lists a functional requirement); an identifier of the kinds FR, NFR, UJ, SM, AD, A or Q written without hyphen or number (for example "FR1", "FR-", "NFR-x") where a definition is expected; the same identifier defined twice; an `[ASSUMPTION: A-n]` marker whose A-n is absent from the Índice de suposiciones, or an index entry without a marker in the text; a Q-n or A-n numbered with zero; in the Architecture, an AD block whose heading is not strictly increasing in number or that lacks any of the three labels (`binds`, `prevents`, `rule`, case-insensitive). **Where definitions live.** `FR-n`, `NFR-n`, `SM-n` and `UJ-n` are definitions only in the documents that own them (Brief, PRD, Spec) and, for `FR-n`/`NFR-n`, in the Requirements Inventory of the Epics; `AD-n` is a definition only as an `### AD-n —` heading of the Architecture; in every other place (the Architecture's map and binds, the Epics' coverage map, `Cubre`/`Decisiones` lines, inventory 2.3, story text) they are citations and MUST NOT be reported as duplicates or as malformed definitions. `A-n` and `Q-n` are definitions in every type. The rule that numbers are never reused or reordered on edits (RF-44) cannot be verified without history and MUST NOT be reported as a warning. An unassigned open question, a missing or malformed `(Responsable: …; Revisar: …)` suffix and the default suffix are NOT format warnings (they are handled by the approval gate, RF-59/RF-62). Warnings MUST be in Spanish, name the kind of problem and the identifier or heading, quote a short excerpt of the offending line (about 50 characters, without markup characters) instead of a line number, and be returned in document order. The structured index (items table, states) is out of scope.
+The system MUST derive format warnings by reading the Markdown on every read and every save, returning at most 50 of them followed by one final entry "y N avisos más." when there are more; a token without a hyphen ("Q4", "A4", "SM2") followed by prose is an ordinary word and MUST NOT be reported, while "FR1", "NFR1", "UJ1", "AD1" and any hyphenated attempt ("FR -1", "FR-", "FR-01", "fr-1", "NFR-x", "AD-") are; warnings MUST never block saving or approving and MUST never alter or lose text. The parser MUST detect, per document type: a required section heading missing; an identifier of the kinds FR, NFR, UJ, SM, AD, A or Q written without hyphen or number (for example "FR1", "FR-", "NFR-x") where a definition is expected; the same identifier defined twice; an `[ASSUMPTION: A-n]` marker whose A-n is absent from the Índice de suposiciones, or an index entry without a marker in the text; a Q-n or A-n numbered with zero; in the Architecture, an `AD-n` heading defined twice, numbered zero or written without a hyphen. The following checks were descoped by design decision 7 and are NOT warnings (recorded in `docs/mejoras-posteriores.md`): an `AD-n` heading out of order, an AD block that lacks one of its three labels, and an Epics document with a functional requirement in the inventory but no `## Epic N` heading. **Where definitions live.** `FR-n`, `NFR-n`, `SM-n` and `UJ-n` are definitions only in the documents that own them (Brief, PRD, Spec) and, for `FR-n`/`NFR-n`, in the Requirements Inventory of the Epics; `AD-n` is a definition only as an `### AD-n —` heading of the Architecture; in every other place (the Architecture's map and binds, the Epics' coverage map, `Cubre`/`Decisiones` lines, inventory 2.3, story text) they are citations and MUST NOT be reported as duplicates or as malformed definitions. `A-n` and `Q-n` are definitions in every type. The rule that numbers are never reused or reordered on edits (RF-44) cannot be verified without history and MUST NOT be reported as a warning. An unassigned open question, a missing or malformed `(Responsable: …; Revisar: …)` suffix and the default suffix are NOT format warnings (they are handled by the approval gate, RF-59/RF-62). Warnings MUST be in Spanish, name the kind of problem and the identifier or heading, quote a short excerpt of the offending line (about 50 characters, without markup characters) instead of a line number, and be returned in document order. The structured index (items table, states) is out of scope.
 (Previously: `AD` was not a known kind, and every `FR-n` occurrence in a definition position was a definition.)
 
 #### Scenario: Generated Architecture and Epics have no warnings [UNIT]
@@ -541,18 +542,13 @@ The system MUST derive format warnings by reading the Markdown on every read and
 - WHEN the parser reads it
 - THEN a warning names the malformed identifier
 
-#### Scenario: Non-increasing AD numbers [UNIT]
-- GIVEN an Architecture with headings AD-1, AD-3, AD-2
+#### Scenario: Duplicate AD heading [UNIT]
+- GIVEN an Architecture with two headings `### AD-1 — …`
 - WHEN the parser reads it
-- THEN one warning names AD-2 as out of order
-
-#### Scenario: AD block without a label [UNIT]
-- GIVEN an AD block with no `Regla (rule)` line
-- WHEN the parser reads it
-- THEN a warning names the block and the missing label
+- THEN a warning names AD-1 as defined twice
 
 #### Scenario: Missing Epics section [UNIT]
-- GIVEN an Epics document from which "Mapa de cobertura de FR" was deleted
+- GIVEN an Epics document from which "Mapa de cobertura de requisitos" was deleted
 - WHEN it is saved
 - THEN the save succeeds, the warning names the section and the text is kept
 
@@ -629,9 +625,9 @@ Every identifier in every generated document MUST use the hyphenated scheme (`FR
 ## Assumptions
 
 - A1. The English structural words of BMAD (`Epic`, `Story`, `As a`, `I want`, `So that`, `Given`, `When`, `Then`) and the AD labels (Spanish word plus the lowercase English word in parentheses: `Vincula (binds)`, `Previene (prevents)`, `Regla (rule)`) are the closest form to BMAD that still reads Spanish; check 2 confirms BMAD reads them. If it does not, the labels are adjusted in design.
-- A2. The stale-upstream hint depends only on the upstream status (Draft). A PRD that is edited and approved again leaves no hint even though the content changed; automatic invalidation is out of scope.
-- A3. Architecture requirements left without an AD block yield a development question, by analogy with the epics rule (the proposal states the rule only for Epics). It adds at most 20 lines, as every section does.
-- A4. The numeric caps (12 AD blocks, 5 epics, 5 stories per epic, 3 criteria per story) are starting values; design sets the final ones inside the 20,000-character limit.
+- A2. The stale-upstream hint depends only on `UpdatedAt` timestamps (see "Stale-upstream hint"): it cannot tell a typo from a real change, and approving or editing the dependent clears it. Automatic invalidation is out of scope.
+- A3. Architecture requirements left without an AD block yield a development question, by analogy with the epics rule (the proposal states the rule only for Epics). It adds at most 9 lines (8 questions and one summary question).
+- A4. The numeric caps (10 AD blocks, 6 epics, 5 stories per epic, 20 stories, 3 criteria per story, 6 cited requirements per story, 10 model questions) are the final values fixed by design decision 11, inside the 20,000-character limit.
 - A5. The Large required set is three documents (PRD, Architecture, Epics-and-stories). The proposal's wording "five approved documents" counts the Brief and the Spec of the other levels and is not a requirement of this spec.
 - A6. The pre-assigned suffix is `Equipo de desarrollo` / `antes de construir`; the wording is a proposal.
 - A7. RESOLVED BY DESIGN (decision 7): the labels already use the lowercase English words in parentheses (`Vincula (binds)`, `Previene (prevents)`, `Regla (rule)`), so they pass a case-sensitive or case-insensitive `lint_spine.py`. To be confirmed by the `lint_spine.py` run of check 1 (task F.2). No label switch is expected.
@@ -641,10 +637,10 @@ Every identifier in every generated document MUST use the hyphenated scheme (`FR
 Apply these in the slice that closes the spec (S1 for items 4 to 7 and 2; the rest with the slice that implements the behavior; all before verify). Text is Spanish like the file.
 
 1. **RF-36**: replace the sentence "Solo el inventario de requisitos que escribe el paso de épicas (paso 6) dentro de `epics.md` usa `FR1:` y `NFR1:` sin guion y **con el mismo número** (`FR-3` pasa a `FR3:`), porque ese es el formato del paso 1 de `bmad-create-epics-and-stories`; la exportación (paso 8) copia el PRD tal cual." with "El inventario de requisitos que escribe el paso de épicas (paso 6) dentro de `epics.md` **conserva el guion y el mismo número** (`FR-3` sigue siendo `FR-3`): en la ejecución real de BMAD 6.12.1 del 2026-10-14 `bmad-create-epics-and-stories` leyó los identificadores con guion sin renumerar, y `FR3:` era una elección de la plataforma, no una exigencia de BMAD; la exportación copia el PRD tal cual." Keep the tag [VALIDADO EN BMAD 6.12.1].
-2. **RF-44**: replace "La forma sin guion (`FR3:`, `NFR3:`) solo aparece en el inventario de `epics.md` y conserva el mismo número (RF-36); `NFR-n` es una extensión..." with "El inventario de `epics.md` conserva la forma con guion y el mismo número (RF-36), y las historias citan `FR-n`, `NFR-n` y `AD-n` sin cambiarlos; `NFR-n` es una extensión..." (the rest unchanged).
+2. **RF-44**: replace "La forma sin guion (`FR3:`, `NFR3:`) solo aparece en el inventario de `epics.md` y conserva el mismo número (RF-36); `NFR-n` es una extensión..." with "El inventario de `epics.md` conserva la forma con guion y el mismo número (RF-36); las decisiones `AD-n` vinculan `FR-n`/`NFR-n`, el inventario de las épicas las lista como requisitos adicionales y las historias citan los `FR-n` y `NFR-n` que implementan, sin cambiarlos; `NFR-n` es una extensión..." (the rest unchanged).
 3. **RF-39**: append "Las preguntas para desarrollo de Arquitectura y Épicas e historias nacen **preasignadas al equipo de desarrollo** (`Responsable: Equipo de desarrollo; Revisar: antes de construir`), por lo que no bloquean la aprobación (RF-62); la persona puede reasignarlas." and replace "cuando se generan borradores de Arquitectura y Épicas, una sección" with "en Arquitectura y en Épicas e historias, la sección" (no longer conditional).
 4. **RF-52**: replace "Por eso una iniciativa *Grande* no puede terminar hasta que existan Arquitectura y Épicas e historias (paso 6)." with "Una iniciativa *Grande* termina cuando el PRD, la Arquitectura y las Épicas e historias están aprobados; la Arquitectura exige el PRD aprobado y las Épicas e historias exigen la Arquitectura aprobada (RF-73, RF-74)."
-5. **RF-54**: append "Si un documento del que depende otro (el PRD respecto de la Arquitectura; la Arquitectura o el PRD respecto de las Épicas e historias) vuelve a *Borrador* después de haber redactado el dependiente, la página del dependiente muestra un aviso para que se revise si conviene regenerarlo; el aviso no bloquea nada y no regenera nada."
+5. **RF-54**: append "Si un documento del que depende otro (el PRD respecto de la Arquitectura; la Arquitectura o el PRD respecto de las Épicas e historias) vuelve a *Borrador* después de haber redactado el dependiente, la página del dependiente muestra un aviso para que se revise si conviene regenerarlo; el aviso no bloquea nada y no regenera nada, y desaparece cuando se edita, regenera o aprueba el dependiente."
 6. **RN-02**: replace with "Arquitectura y Épicas/historias son borradores sujetos a revisión del equipo de desarrollo. El botón sigue siendo «Aprobar», pero su confirmación y la página lo dicen: aprobar significa que la persona de producto lo revisó, no que sea definitivo."
 7. **RF-73 (new, after RF-72)**: "**RF-73** La Arquitectura se redacta a partir del PRD aprobado con la forma del `ARCHITECTURE-SPINE.md` de BMAD: bloques `AD-n` con *Vincula (binds)*, *Previene (prevents)* y *Regla (rule)*, cuyos enlaces solo pueden citar `FR-n`/`NFR-n` del PRD, y un mapa de capacidades calculado por el código. No propone tecnologías ni versiones: el stack va en **Diferido**, con su motivo, y como pregunta para desarrollo. [CONFIRMADO 2026-10-14]"
 8. **RF-74 (new)**: "**RF-74** Las Épicas e historias se redactan a partir del PRD y de la Arquitectura aprobados con la forma de `epics.md` de BMAD: inventario con `FR-n`/`NFR-n` con guion y el mismo número, mapa de cobertura, épicas por valor de usuario y historias con *As a / I want / So that* y criterios *Given / When / Then*. Los números de épica e historia los asigna el código; cada `FR-n` queda cubierto por una historia o aparece como pregunta para desarrollo. Hay topes de épicas e historias y el documento respeta el límite de 20 000 caracteres. [CONFIRMADO 2026-10-14]"

@@ -134,8 +134,8 @@ No migration: the type is stored as a string. Rollback: `Assistant:Provider=Fake
 
 ## Open Questions
 
-- [ ] 1. Re-approving the PRD can complete a Large set (Ready to build) while the Architecture or Epics is stale. The staleness note only advises. Recommendation: accept, and record cascade invalidation in `docs/mejoras-posteriores.md`.
-- [ ] 2. Three formats to confirm with BMAD 6.12.1 in the S3 and S6 checks. Only the exporter and the fixed texts would change:
+- [x] 1. (Accepted by the user, 2026-10-14; cascade invalidation recorded in `docs/mejoras-posteriores.md`.) Re-approving the PRD can complete a Large set (Ready to build) while the Architecture or Epics is stale. The staleness note only advises. Recommendation: accept, and record cascade invalidation in `docs/mejoras-posteriores.md`.
+- [x] 2. (Resolved by checks 1 and 3 on 2026-10-14, `docs/bmad-referencia.md` section 7 bis.) Three formats to confirm with BMAD 6.12.1 in the S3 and S6 checks. Only the exporter and the fixed texts would change:
   - whether the `lint_spine.py` substring and TODO checks are case-sensitive (the Spanish "todo" would match a case-insensitive check);
   - the spine frontmatter keys;
   - the exact `stepsCompleted` values for epics.

@@ -80,10 +80,10 @@ Set `Assistant:Provider=Fake`, or revert the slice PRs in reverse order. No migr
 
 ## Success Criteria
 
-- [ ] A Large initiative reaches *Lista para construir* in Chrome (Fake, then Gemini).
-- [ ] BMAD 6.12.1 checks in a scratch repo: `lint_spine.py` passes on the Architecture golden; epics step 1 accepts the exported PRD plus Architecture; `bmad-build`/`bmad-spec` accept the epics frontmatter.
-- [ ] Every FR appears in a story or in a development question.
-- [ ] Lean tests and the build pass without a key. Views use CSS classes only.
+- [x] A Large initiative reaches *Lista para construir* in Chrome (Fake, then Gemini). Evidence: orchestrator walkthroughs of 2026-10-14 (tasks 4.7 and 6.10) and `docs/gemini-evaluacion.md`.
+- [x] BMAD 6.12.1 checks in a scratch repo (recorded in `docs/bmad-referencia.md` section 7 bis): `lint_spine.py` passes on the Architecture golden; epics step 1 accepts the exported PRD plus Architecture; `bmad-build`/`bmad-spec` accept the epics frontmatter.
+- [x] Every FR appears in a story or in a development question. Evidence: `EpicsLayoutTests` coverage and budget tests, goldens, live run.
+- [x] Lean tests and the build pass without a key. Views use CSS classes only. Evidence: verify build and tests green; grep of `style=` and `<script` clean in the touched views.
 
 ## Proposal question round
 
