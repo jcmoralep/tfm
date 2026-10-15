@@ -1,0 +1,151 @@
+@page "/registro"
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
+@layout AuthLayout
+@using RutaProducto.Application.Abstractions.Authentication
+@using RutaProducto.Application.Features.Authentication.Register
+@using RutaProducto.Web.Authentication
+@using FluentValidation
+@inject IMediator Mediator
+@inject NavigationManager Navigation
+
+<PageTitle>Crear cuenta · Ruta de Producto</PageTitle>
+
+<div class="grid min-h-screen lg:grid-cols-2">
+    <AuthShowcase />
+
+    <section class="flex items-center justify-center bg-surface-raised px-6 py-12 sm:px-12">
+        <div class="w-full max-w-md">
+            <h1 class="text-3xl font-semibold tracking-tight text-ink">Crea tu cuenta</h1>
+            <p class="mt-2 text-base text-ink-muted">Con tu correo electrónico y una contraseña puedes empezar a registrar tus iniciativas.</p>
+
+            @if (errors.Count > 0)
+            {
+                <div id="register-errors" role="alert" class="mt-6 rounded-control border border-danger-line bg-danger-surface p-3 text-sm text-danger">
+                    <ul class="space-y-1">
+                        @foreach (var error in errors)
+                        {
+                            <li>@error</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <EditForm Model="Input" method="post" OnSubmit="RegisterAsync" FormName="register" class="mt-8 space-y-5">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-ink">Correo electrónico<RequiredMark /></label>
+                    <InputText id="email" type="email" @bind-Value="Input.Email" autocomplete="username" required
+                               aria-describedby="@(errors.Count > 0 ? "register-errors" : null)"
+                               class="mt-2 block w-full rounded-control border border-line bg-surface px-4 py-3 text-sm text-ink" />
+                </div>
+
+                <PasswordField Id="password" Label="Contraseña" Autocomplete="new-password"
+                               DescribedBy="@("password-rules" + (errors.Count > 0 ? " register-errors" : null))"
+                               @bind-Value="Input.Password">
+                    @* The same rules Identity enforces (PasswordPolicy). Plain text without JavaScript; wwwroot/js/password-rules.js
+                       marks each one met or not while the person types. *@
+                    <ul id="password-rules" data-password-rules data-source="password" class="mt-2 space-y-1 text-sm text-ink-muted">
+                        <li data-rule="length" data-min="@PasswordPolicy.MinLength" class="@RuleClass"><span data-mark aria-hidden="true">•</span> Al menos @PasswordPolicy.MinLength caracteres</li>
+                        <li data-rule="upper" class="@RuleClass"><span data-mark aria-hidden="true">•</span> Una letra mayúscula</li>
+                        <li data-rule="lower" class="@RuleClass"><span data-mark aria-hidden="true">•</span> Una letra minúscula</li>
+                        <li data-rule="digit" class="@RuleClass"><span data-mark aria-hidden="true">•</span> Un número</li>
+                        <li data-rule="symbol" class="@RuleClass"><span data-mark aria-hidden="true">•</span> Un símbolo, por ejemplo ! o #</li>
+                    </ul>
+                </PasswordField>
+
+                <PasswordField Id="confirm-password" Label="Repite la contraseña" Autocomplete="new-password"
+                               DescribedBy="@("password-match" + (errors.Count > 0 ? " register-errors" : null))"
+                               @bind-Value="Input.ConfirmPassword">
+                    @* Filled in by wwwroot/js/password-match.js while the person types; empty (and hidden) without it. *@
+                    <p id="password-match" role="status" data-password-match data-source="password" data-target="confirm-password"
+                       data-ok-text="✓ Las contraseñas coinciden." data-bad-text="✕ Las contraseñas no coinciden." data-state="empty"
+                       class="mt-2 text-sm font-medium data-[state=empty]:hidden data-[state=ok]:text-success-ink data-[state=bad]:text-danger"></p>
+                </PasswordField>
+
+                <button type="submit"
+                        class="w-full rounded-control bg-primary px-4 py-3 text-sm font-semibold text-on-primary hover:bg-primary-hover">
+                    Crear cuenta
+                </button>
+            </EditForm>
+
+            <p class="mt-6 text-center text-sm text-ink-muted">
+                ¿Ya tienes cuenta?
+                <a href="@LoginHref" data-enhance-nav="false" class="font-semibold text-primary hover:underline">Inicia sesión</a>
+            </p>
+        </div>
+    </section>
+</div>
+
+<script type="module" src="@Assets["js/password-toggle.js"]"></script>
+<script type="module" src="@Assets["js/password-match.js"]"></script>
+<script type="module" src="@Assets["js/password-rules.js"]"></script>
+
+@code {
+    private const string RuleClass = "flex items-center gap-2 data-[met=true]:font-medium data-[met=true]:text-success-ink data-[met=false]:text-danger";
+
+    private IReadOnlyList<string> errors = [];
+
+    [SupplyParameterFromForm]
+    private RegisterInput Input { get; set; } = default!;
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
+    private string LoginHref => LocalRedirect.WithReturnUrl(AuthenticationEndpoints.LoginPath, ReturnUrl);
+
+    protected override async Task OnInitializedAsync()
+    {
+        Input ??= new RegisterInput();
+
+        if (AuthenticationStateTask is not null
+            && (await AuthenticationStateTask).User.Identity?.IsAuthenticated == true)
+        {
+            Navigation.NavigateTo(LocalRedirect.Sanitize(ReturnUrl), forceLoad: true);
+        }
+    }
+
+    private async Task RegisterAsync()
+    {
+        RegistrationResult result;
+
+        try
+        {
+            result = await Mediator.Send(new RegisterCommand(Input.Email, Input.Password, Input.ConfirmPassword));
+        }
+        catch (ValidationException exception)
+        {
+            errors = exception.Errors.Select(failure => failure.ErrorMessage).Distinct().ToList();
+            ClearPasswords();
+            return;
+        }
+
+        if (result.Status == RegistrationStatus.Succeeded)
+        {
+            Navigation.NavigateTo(LocalRedirect.Sanitize(ReturnUrl), forceLoad: true);
+            return;
+        }
+
+        errors = result.Status == RegistrationStatus.EmailTaken
+            ? ["Ya existe una cuenta con ese correo electrónico. Inicia sesión o usa otro correo."]
+            : result.PasswordErrors;
+        ClearPasswords();
+    }
+
+    private void ClearPasswords()
+    {
+        Input.Password = string.Empty;
+        Input.ConfirmPassword = string.Empty;
+    }
+
+    private sealed class RegisterInput
+    {
+        public string Email { get; set; } = string.Empty;
+
+        public string Password { get; set; } = string.Empty;
+
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}

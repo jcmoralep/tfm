@@ -20,7 +20,7 @@ La conversación con el asistente (`/iniciativas/{id}/asistente`) y la redacció
 Cómo ejecutar con Gemini (el valor de la clave es suyo; no lo escriba en archivos del repositorio):
 
 ```bash
-dotnet user-secrets set "Gemini:ApiKey" "<su clave>" --project src/BmadPlatform.Web
+dotnet user-secrets set "Gemini:ApiKey" "<su clave>" --project src/RutaProducto.Web
 # y active el proveedor, por ejemplo con una variable de entorno:
 # Assistant__Provider=Gemini
 ```
@@ -78,10 +78,10 @@ Desde el detalle de la iniciativa, la tarjeta **Artefactos** lista los documento
 
 ```
 src/
-  BmadPlatform.Domain/          Entidades y reglas; sin dependencias
-  BmadPlatform.Application/     Comandos, consultas, handlers, behaviors e interfaces
-  BmadPlatform.Infrastructure/  EF Core + MySQL (Pomelo), Identity, migraciones
-  BmadPlatform.Web/             Blazor (Interactive Server), Tailwind, Serilog
+  RutaProducto.Domain/          Entidades y reglas; sin dependencias
+  RutaProducto.Application/     Comandos, consultas, handlers, behaviors e interfaces
+  RutaProducto.Infrastructure/  EF Core + MySQL (Pomelo), Identity, migraciones
+  RutaProducto.Web/             Blazor (Interactive Server), Tailwind, Serilog
 tests/                          Pruebas por capa y reglas de dependencia
 ```
 
@@ -91,7 +91,7 @@ Ningún secreto se guarda en el repositorio. La aplicación lee estas variables:
 
 | Variable | Obligatoria | Descripción |
 |---|---|---|
-| `ConnectionStrings__DefaultConnection` | Sí | Cadena de conexión a MySQL. Ejemplo con el MySQL de Docker Compose: `Server=localhost;Port=3307;Database=bmadplatform;User=bmad;Password=<contraseña>` |
+| `ConnectionStrings__DefaultConnection` | Sí | Cadena de conexión a MySQL. Ejemplo con el MySQL de Docker Compose: `Server=localhost;Port=3307;Database=rutaproducto;User=rutaproducto;Password=<contraseña>` |
 | `Database__MySqlServerVersion` | No | Versión del servidor MySQL (por defecto `8.4.0`, la imagen de Docker Compose). Debe coincidir con el servidor al que se conecta: la imagen de Docker Compose en local o la del servicio MySQL en Railway |
 | `SeedUsers__0__Email` | Sí, para poder entrar | Correo del primer usuario inicial |
 | `SeedUsers__0__Password` | Sí, para poder entrar | Contraseña del primer usuario inicial |
@@ -105,9 +105,9 @@ Además, cualquier persona puede crear su propia cuenta en `/registro` (registro
 En desarrollo también puede usar user-secrets en lugar de variables de entorno:
 
 ```bash
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;Port=3307;Database=bmadplatform;User=bmad;Password=<contraseña>" --project src/BmadPlatform.Web
-dotnet user-secrets set "SeedUsers:0:Email" "<correo>" --project src/BmadPlatform.Web
-dotnet user-secrets set "SeedUsers:0:Password" "<contraseña>" --project src/BmadPlatform.Web
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;Port=3307;Database=rutaproducto;User=rutaproducto;Password=<contraseña>" --project src/RutaProducto.Web
+dotnet user-secrets set "SeedUsers:0:Email" "<correo>" --project src/RutaProducto.Web
+dotnet user-secrets set "SeedUsers:0:Password" "<contraseña>" --project src/RutaProducto.Web
 ```
 
 Para Docker Compose se usan además estas variables, que puede definir en un archivo `.env` en la raíz (excluido de Git):
@@ -116,7 +116,7 @@ Para Docker Compose se usan además estas variables, que puede definir en un arc
 |---|---|
 | `MYSQL_PASSWORD` | Contraseña del usuario de la aplicación (obligatoria) |
 | `MYSQL_ROOT_PASSWORD` | Contraseña del usuario `root` (obligatoria) |
-| `MYSQL_USER` | Usuario de la aplicación (por defecto `bmad`) |
+| `MYSQL_USER` | Usuario de la aplicación (por defecto `rutaproducto`) |
 | `MYSQL_PORT` | Puerto local (por defecto `3307`, para no chocar con otro MySQL en `3306`; use la misma cifra en la cadena de conexión) |
 
 ## Archivos adjuntos (contexto de la iniciativa)
@@ -148,7 +148,7 @@ Límites por iniciativa: 20 elementos y 50 MB de archivos. Se rechazan los archi
 
    ```bash
    dotnet tool restore
-   dotnet ef database update --project src/BmadPlatform.Infrastructure --startup-project src/BmadPlatform.Infrastructure
+   dotnet ef database update --project src/RutaProducto.Infrastructure --startup-project src/RutaProducto.Infrastructure
    ```
 
    En PowerShell, defina antes la variable con `$env:ConnectionStrings__DefaultConnection = "<cadena>"`; en Bash, con `export ConnectionStrings__DefaultConnection="<cadena>"`.
@@ -156,7 +156,7 @@ Límites por iniciativa: 20 elementos y 50 MB de archivos. Se rechazan los archi
 3. Para crear una migración nueva (no necesita conexión, porque la versión de MySQL es explícita):
 
    ```bash
-   dotnet ef migrations add <Nombre> --project src/BmadPlatform.Infrastructure --startup-project src/BmadPlatform.Infrastructure --output-dir Persistence/Migrations
+   dotnet ef migrations add <Nombre> --project src/RutaProducto.Infrastructure --startup-project src/RutaProducto.Infrastructure --output-dir Persistence/Migrations
    ```
 
 Para detener la base de datos: `docker compose down` (agregue `-v` para borrar también los datos).
@@ -180,7 +180,7 @@ La base de datos de producción es la plantilla MySQL de Railway. Se conecta por
 ## Ejecutar
 
 ```bash
-dotnet run --project src/BmadPlatform.Web
+dotnet run --project src/RutaProducto.Web
 ```
 
 La aplicación queda disponible en `http://localhost:5080` (perfil `http`) o `https://localhost:7080` (perfil `https`). La página de inicio requiere sesión; sin ella, redirige a `/login`.
@@ -199,7 +199,7 @@ Serilog escribe archivos de texto en `Logs/log-AAAAMMDD.log`, relativos al direc
 
 ## Estilos
 
-Tailwind CSS se compila durante el build de .NET (`src/BmadPlatform.Web/Tailwind.targets`): analiza los archivos `.razor` y genera `wwwroot/css/app.css`, que es un resultado de compilación y no se versiona. Todos los colores, tipografías, radios y sombras están en un único archivo, `src/BmadPlatform.Web/Styles/theme.css`, con una paleta neutra provisional. Cuando se agregue `DESIGN.md`, basta con ajustar ese archivo.
+Tailwind CSS se compila durante el build de .NET (`src/RutaProducto.Web/Tailwind.targets`): analiza los archivos `.razor` y genera `wwwroot/css/app.css`, que es un resultado de compilación y no se versiona. Todos los colores, tipografías, radios y sombras están en un único archivo, `src/RutaProducto.Web/Styles/theme.css`, con una paleta neutra provisional. Cuando se agregue `DESIGN.md`, basta con ajustar ese archivo.
 
 ## Versiones de dependencias relevantes
 

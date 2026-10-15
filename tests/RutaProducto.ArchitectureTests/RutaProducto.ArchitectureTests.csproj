@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\RutaProducto.Domain\RutaProducto.Domain.csproj" />
+    <ProjectReference Include="..\..\src\RutaProducto.Application\RutaProducto.Application.csproj" />
+    <ProjectReference Include="..\..\src\RutaProducto.Infrastructure\RutaProducto.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

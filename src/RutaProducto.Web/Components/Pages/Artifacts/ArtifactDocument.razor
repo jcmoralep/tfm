@@ -1,0 +1,622 @@
+@page "/iniciativas/{Id:guid}/artefactos/{Slug}"
+@attribute [Authorize]
+@using RutaProducto.Application.Common.Exceptions
+@using RutaProducto.Application.Features.Artifacts
+@using RutaProducto.Application.Features.Artifacts.ApproveArtifact
+@using RutaProducto.Application.Features.Artifacts.AssignQuestionOwners
+@using RutaProducto.Application.Features.Artifacts.GenerateArtifact
+@using RutaProducto.Application.Features.Artifacts.GetArtifact
+@using RutaProducto.Application.Features.Artifacts.RegenerateArtifact
+@using RutaProducto.Application.Features.Artifacts.SaveArtifactContent
+@using RutaProducto.Application.Features.Initiatives
+@using RutaProducto.Domain.Artifacts
+@using RutaProducto.Domain.Common
+@using RutaProducto.Domain.Initiatives
+@inject IMediator Mediator
+@inject MarkdownRenderer Renderer
+@inject ILogger<ArtifactDocument> Logger
+
+@* Container of the document page. It decides nothing about the rules: the Can* flags of the view say what is allowed
+   and the commands enforce the same rules. Reads happen in OnParametersSetAsync (safe while prerendering); every
+   write waits for a user action. The editor keeps the typed text when a save fails. *@
+
+<PageTitle>@(view is null ? "Documento" : $"{ArtifactLabels.TypeName(view.Type)} · {view.InitiativeName}") · Ruta de Producto</PageTitle>
+
+@if (loading)
+{
+    <p class="text-sm text-ink-muted" role="status">Cargando…</p>
+}
+else if (view is null)
+{
+    <InitiativeNotFound />
+}
+else
+{
+    <a href="/iniciativas/@Id" class="text-sm font-medium text-ink-muted hover:text-ink hover:underline print:hidden">← Volver a la iniciativa</a>
+
+    <section aria-labelledby="doc-title" class="mt-4 rounded-card border border-line bg-surface-raised p-4 shadow-card sm:p-8 print:mt-0 print:border-0 print:p-0 print:shadow-none">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="min-w-0">
+                <h1 id="doc-title" class="break-words text-2xl font-semibold text-ink">@ArtifactLabels.TypeName(view.Type)</h1>
+                <p class="mt-1 break-words text-sm text-ink-muted">@view.InitiativeName</p>
+                <p class="mt-2 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
+                    @if (view.Generated && view.Status is { } status)
+                    {
+                        <span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold @ToneClass(ArtifactLabels.StatusTone(status))">@ArtifactLabels.StatusName(status)</span>
+                        <span>Versión @view.Version</span>
+                        @if (view.UpdatedAt is { } updatedAt)
+                        {
+                            <span class="hidden print:inline">· Actualizado: @InitiativeLabels.Date(updatedAt)</span>
+                        }
+                    }
+                    else
+                    {
+                        <span class="inline-block rounded-full bg-bubble px-2.5 py-0.5 text-xs font-semibold text-ink-muted">@ArtifactLabels.NotGenerated</span>
+                    }
+                </p>
+            </div>
+
+            @if (!editing)
+            {
+                <div class="flex flex-wrap items-center gap-3 print:hidden">
+                    @if (!view.Generated)
+                    {
+                        @if (view.CanGenerate)
+                        {
+                            <button type="button" disabled="@busy" @onclick="GenerateAsync"
+                                    class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-60">
+                                @ArtifactLabels.GenerateAction
+                            </button>
+                        }
+                    }
+                    else
+                    {
+                        <button type="button" disabled="@(busy || !view.CanEdit)" @onclick="StartEdit"
+                                class="rounded-full border border-line bg-surface-raised px-5 py-2 text-sm font-medium text-ink hover:bg-surface disabled:opacity-60">
+                            Editar
+                        </button>
+                        <button type="button" @ref="regenerateButton" disabled="@(busy || !view.CanRegenerate)"
+                                aria-expanded="@(confirm == PanelKind.Regenerate ? "true" : "false")" aria-controls="regenerate-panel"
+                                @onclick="AskRegenerate"
+                                class="rounded-full border border-danger-line bg-surface-raised px-5 py-2 text-sm font-medium text-danger hover:bg-danger-surface disabled:opacity-60">
+                            Regenerar
+                        </button>
+                        <button type="button" @ref="approveButton" disabled="@(busy || !view.CanApprove)"
+                                aria-expanded="@(confirm == PanelKind.Approve ? "true" : "false")" aria-controls="approve-panel"
+                                aria-describedby="@(ApproveBlocked ? "approve-blocked" : null)"
+                                @onclick="AskApprove"
+                                class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-60">
+                            Aprobar
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (view.Generated && !editing)
+        {
+            <div class="mt-4">
+                <DocumentDownloads InitiativeId="Id" Type="view.Type" />
+            </div>
+        }
+
+        <div role="status" class="print:hidden">
+            @if (notice is not null)
+            {
+                <p class="mt-4 rounded-control bg-success-soft px-3 py-2 text-sm font-medium text-success-ink">@notice</p>
+            }
+        </div>
+
+        @if (busy && busyText is not null)
+        {
+            <p role="status" class="mt-4 flex items-center gap-2 text-sm text-primary-ink">
+                <span class="flex items-center gap-1" aria-hidden="true">
+                    <span class="size-1.5 rounded-full bg-primary motion-safe:animate-bounce"></span>
+                    <span class="size-1.5 rounded-full bg-primary motion-safe:animate-bounce [animation-delay:150ms]"></span>
+                    <span class="size-1.5 rounded-full bg-primary motion-safe:animate-bounce [animation-delay:300ms]"></span>
+                </span>
+                @busyText
+            </p>
+        }
+
+        @if (errors.Count > 0)
+        {
+            <div class="mt-4">
+                <ErrorAlert Id="doc-errors" Messages="errors" />
+            </div>
+        }
+
+        @if (!editing && ApproveBlocked)
+        {
+            <p id="approve-blocked" class="mt-4 rounded-control bg-warning-soft px-3 py-2 text-sm text-warning-ink">@ArtifactLabels.ApproveBlocked(view.UnassignedQuestions)</p>
+        }
+
+        @if (view.Generated && view.StaleUpstream is { } staleUpstream)
+        {
+            <p id="stale-upstream" class="mt-4 rounded-control bg-warning-soft px-3 py-2 text-sm text-warning-ink print:hidden">@ArtifactLabels.StaleUpstreamNote(staleUpstream)</p>
+        }
+
+        @if (view.Generated && ArtifactLabels.NeedsDevelopmentReview(view.Type))
+        {
+            <p class="mt-4 text-sm text-ink-muted">@ArtifactLabels.DevelopmentReviewReminder</p>
+        }
+
+        @if (!editing && confirm == PanelKind.Regenerate)
+        {
+            <ConfirmPanel Id="regenerate-panel" Title="¿Regenerar este documento?" ConfirmLabel="Sí, regenerar" Destructive="true"
+                          Busy="busy" OnConfirm="RegenerateAsync" OnCancel="CancelPanel">
+                <p>Se reemplazará todo el contenido, incluidos sus cambios manuales.</p>
+                @if (view.Questions.Count > 0 && !ArtifactLabels.NeedsDevelopmentReview(view.Type))
+                {
+                    <p class="mt-1">@ArtifactLabels.RegenerateOwnersLost</p>
+                }
+                @if (view.InitiativeStatus == InitiativeStatus.ReadyToBuild)
+                {
+                    <p class="mt-1">La iniciativa volverá a Planificando.</p>
+                }
+            </ConfirmPanel>
+        }
+
+        @if (!editing && confirm == PanelKind.Approve)
+        {
+            <ConfirmPanel Id="approve-panel" Title="¿Aprobar este documento?" ConfirmLabel="Sí, aprobar"
+                          Busy="busy" OnConfirm="ApproveAsync" OnCancel="CancelPanel">
+                <p>@ArtifactLabels.ApproveConfirmText(view.Type)</p>
+                @if (view.ApprovalCompletesSet)
+                {
+                    <p class="mt-1 font-medium">Con esta aprobación la iniciativa quedará Lista para construir.</p>
+                }
+                @if (view.Warnings.Count > 0)
+                {
+                    <p class="mt-2">El documento tiene avisos de formato. No impiden aprobarlo:</p>
+                    <ul class="mt-1 list-disc space-y-1 pl-5 text-warning-ink">
+                        @foreach (var warning in view.Warnings)
+                        {
+                            <li>@warning.Message</li>
+                        }
+                    </ul>
+                }
+            </ConfirmPanel>
+        }
+
+        @if (!view.Generated)
+        {
+            <p class="mt-6 text-sm text-ink">@(ArtifactTexts.ReasonFor(view.Availability) ?? "Todavía no se ha generado este documento.")</p>
+        }
+        else if (editing)
+        {
+            <form @onsubmit="SaveAsync" @onsubmit:preventDefault class="mt-6 space-y-2">
+                <label for="doc-editor" class="block text-sm font-medium text-ink">@ArtifactLabels.EditorLabel<RequiredMark /></label>
+                @* The value is set only when the box is built (see editRevision): re-sending it on every keystroke
+                   would overwrite what the person typed while the previous keystroke was still travelling. *@
+                <textarea @key="editRevision" id="doc-editor" @ref="editor" rows="24" maxlength="@ContentMaxLength" readonly="@busy"
+                          value="@editInitial" @oninput="OnEditInput" aria-required="true"
+                          aria-describedby="doc-editor-hint@(errors.Count > 0 ? " doc-errors" : null)"
+                          class="block w-full resize-y rounded-control border border-line bg-surface-raised px-3 py-2 font-mono text-sm text-ink read-only:opacity-60"></textarea>
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div id="doc-editor-hint" class="text-xs text-ink-muted">
+                        <p class="@(CounterTooLong ? "font-semibold text-danger" : null)">@ArtifactLabels.EditCounter(editText.Length)</p>
+                        @if (ArtifactLabels.EditHint(view.Status, view.InitiativeStatus) is { } hint)
+                        {
+                            <p class="mt-1 text-warning-ink">@hint</p>
+                        }
+                    </div>
+                    <div class="flex flex-wrap gap-3">
+                        <button type="submit" disabled="@busy"
+                                class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-60">
+                            Guardar
+                        </button>
+                        <button type="button" disabled="@busy" @onclick="CancelEdit"
+                                class="rounded-full border border-line bg-surface-raised px-5 py-2 text-sm font-medium text-ink hover:bg-surface disabled:opacity-60">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        }
+        else
+        {
+            @if (view.CompletionPending && view.Status == ArtifactStatus.Approved)
+            {
+                <div role="status" class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-control bg-warning-soft px-3 py-2 text-sm text-warning-ink print:hidden">
+                    <p>El documento está aprobado, pero la iniciativa todavía no pasó a Lista para construir.</p>
+                    <button type="button" disabled="@busy" @onclick="ApproveAsync"
+                            class="rounded-full border border-warning-ink bg-surface-raised px-4 py-1.5 text-sm font-medium text-warning-ink hover:bg-surface disabled:opacity-60">
+                        @AssistantLabels.RetryButton
+                    </button>
+                </div>
+            }
+
+            @if (view.Questions.Count > 0)
+            {
+                @* The questions are also in the document, so the paper does not repeat them as a form. *@
+                <div class="print:hidden">
+                    <OpenQuestionsPanel @key="questionsRevision" Questions="view.Questions" Version="view.Version"
+                                        Busy="busy" Enabled="view.CanEdit" HasErrors="errors.Count > 0"
+                                        Hint="@ArtifactLabels.EditHint(view.Status, view.InitiativeStatus)"
+                                        OnSave="SaveOwnersAsync" OnCancel="CancelOwners" />
+                </div>
+            }
+
+            @if (view.Warnings.Count > 0)
+            {
+                <div role="status" class="mt-6 rounded-control border border-line bg-warning-soft p-3 text-sm text-warning-ink print:hidden">
+                    <p class="font-semibold">Avisos de formato (no impiden guardar ni aprobar)</p>
+                    <ul class="mt-1 list-disc space-y-1 pl-5">
+                        @foreach (var warning in view.Warnings)
+                        {
+                            <li>@warning.Message</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <article class="doc-prose mt-6">@Rendered</article>
+        }
+    </section>
+}
+
+@code {
+    private const int ContentMaxLength = 20000;
+
+    private enum PanelKind
+    {
+        None,
+        Regenerate,
+        Approve,
+    }
+
+    private ElementReference editor;
+    private ElementReference regenerateButton;
+    private ElementReference approveButton;
+    private ArtifactView? view;
+    private ArtifactView? renderedFor;
+    private MarkupString rendered;
+    private string? loadedKey;
+    private bool loading = true;
+    private bool busy;
+    private string? busyText;
+    private bool editing;
+    private string editText = "";
+    private string editInitial = "";
+    private int editRevision;
+    private int editBaseVersion;
+    private int questionsRevision;
+    private bool focusEditor;
+    private PanelKind confirm;
+    private PanelKind restoreFocusTo;
+    private string? notice;
+    private IReadOnlyList<string> errors = [];
+
+    [Parameter]
+    public Guid Id { get; set; }
+
+    [Parameter]
+    public string Slug { get; set; } = "";
+
+    [SupplyParameterFromQuery(Name = ArtifactLabels.GeneratedFlag)]
+    public string? GeneratedFlag { get; set; }
+
+    private bool CounterTooLong => editText.Trim().Length > ContentMaxLength;
+
+    // Aprobar is disabled only because of unassigned questions on a draft; the note says which ones.
+    private bool ApproveBlocked => view is { Generated: true, Status: ArtifactStatus.Draft, UnassignedQuestions.Count: > 0 };
+
+    private MarkupString Rendered
+    {
+        get
+        {
+            if (!ReferenceEquals(renderedFor, view))
+            {
+                renderedFor = view;
+                rendered = Renderer.Render(view?.Content ?? "", skipTitle: true);
+            }
+
+            return rendered;
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var key = $"{Id}/{Slug}";
+        if (loadedKey == key)
+        {
+            return;
+        }
+
+        loadedKey = key;
+        questionsRevision++;
+        loading = true;
+        view = null;
+        editing = false;
+        confirm = PanelKind.None;
+        notice = null;
+        errors = [];
+
+        if (ArtifactLabels.TryParseSlug(Slug, out var type))
+        {
+            view = await Mediator.Send(new GetArtifactQuery(Id, type));
+
+            if (view is { Generated: true } && GeneratedFlag == "1")
+            {
+                notice = ArtifactLabels.Generated;
+            }
+        }
+
+        loading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (focusEditor && editing)
+        {
+            focusEditor = false;
+            await TryFocusAsync(editor);
+        }
+        else if (restoreFocusTo != PanelKind.None && confirm == PanelKind.None)
+        {
+            var target = restoreFocusTo == PanelKind.Regenerate ? regenerateButton : approveButton;
+            restoreFocusTo = PanelKind.None;
+            await TryFocusAsync(target);
+        }
+    }
+
+    private static async Task TryFocusAsync(ElementReference element)
+    {
+        try
+        {
+            await element.FocusAsync();
+        }
+        catch (Exception exception) when (exception is JSDisconnectedException or InvalidOperationException)
+        {
+            // The circuit ended or the element is gone: nothing to focus.
+        }
+    }
+
+    private static string ToneClass(ArtifactTone tone) => tone switch
+    {
+        ArtifactTone.Action => "bg-primary-soft text-primary-ink",
+        ArtifactTone.InProgress => "bg-warning-soft text-warning-ink",
+        ArtifactTone.Done => "bg-success-soft text-success-ink",
+        _ => "bg-bubble text-ink-muted",
+    };
+
+    private void StartEdit()
+    {
+        if (busy || view is not { CanEdit: true })
+        {
+            return;
+        }
+
+        editing = true;
+        confirm = PanelKind.None;
+        notice = null;
+        errors = [];
+        editText = view.Content;
+        editInitial = editText;
+
+        // The save is sent against the version the text came from, not the latest one the page adopted. After a
+        // conflict the page shows the newer version but the typed text still belongs to the old one, so a retry
+        // conflicts again until the person cancels and edits the current version.
+        editBaseVersion = view.Version;
+        editRevision++;
+        focusEditor = true;
+    }
+
+    private void CancelEdit()
+    {
+        if (busy)
+        {
+            return;
+        }
+
+        editing = false;
+        errors = [];
+        editText = "";
+        editInitial = "";
+    }
+
+    private void OnEditInput(ChangeEventArgs args) => editText = args.Value?.ToString() ?? "";
+
+    private void AskRegenerate()
+    {
+        notice = null;
+        errors = [];
+        confirm = PanelKind.Regenerate;
+    }
+
+    private void AskApprove()
+    {
+        notice = null;
+        errors = [];
+        confirm = PanelKind.Approve;
+    }
+
+    private void CancelPanel()
+    {
+        if (busy)
+        {
+            return;
+        }
+
+        restoreFocusTo = confirm;
+        confirm = PanelKind.None;
+    }
+
+    private async Task GenerateAsync()
+    {
+        if (view is not { CanGenerate: true } current)
+        {
+            return;
+        }
+
+        await RunAsync(ArtifactLabels.Generating, () => Mediator.Send(new GenerateArtifactCommand(Id, current.Type)), _ => ArtifactLabels.Generated);
+    }
+
+    private async Task SaveAsync()
+    {
+        if (view is not { CanEdit: true } current)
+        {
+            return;
+        }
+
+        var saved = await RunAsync(
+            ArtifactLabels.Saving,
+            () => Mediator.Send(new SaveArtifactContentCommand(Id, current.Type, editBaseVersion, editText)),
+            result => ArtifactLabels.Saved(result.Version));
+
+        // On a failure the editor stays open with the typed text.
+        if (saved)
+        {
+            editing = false;
+            editText = "";
+            editInitial = "";
+        }
+    }
+
+    private async Task SaveOwnersAsync(QuestionOwnersSubmission submission)
+    {
+        if (view is not { CanEdit: true } current)
+        {
+            return;
+        }
+
+        // Nothing was edited: no write and no version bump.
+        if (submission.Assignments.Count == 0)
+        {
+            errors = [];
+            notice = ArtifactLabels.QuestionsUnchanged;
+            return;
+        }
+
+        // The panel sends the version its rows came from; after a conflict a retry conflicts again until Cancelar.
+        await RunAsync(
+            ArtifactLabels.SavingQuestions,
+            () => Mediator.Send(new AssignQuestionOwnersCommand(Id, current.Type, submission.BaseVersion, submission.Assignments)),
+            result => result.Version == submission.BaseVersion
+                ? ArtifactLabels.QuestionsUnchanged
+                : ArtifactLabels.QuestionsSaved(result.Version));
+    }
+
+    // A fresh panel copies the current document again; the typed values are dropped on purpose.
+    private void CancelOwners()
+    {
+        if (busy)
+        {
+            return;
+        }
+
+        errors = [];
+        notice = null;
+        questionsRevision++;
+    }
+
+    private async Task RegenerateAsync()
+    {
+        if (view is not { CanRegenerate: true } current)
+        {
+            return;
+        }
+
+        await RunAsync(
+            ArtifactLabels.Regenerating,
+            () => Mediator.Send(new RegenerateArtifactCommand(Id, current.Type, current.Version, Confirmed: true)),
+            _ => ArtifactLabels.Regenerated);
+
+        CloseConfirmation();
+    }
+
+    // Also the "Reintentar" action: approving an Approved document at the same version only completes the initiative.
+    private async Task ApproveAsync()
+    {
+        if (view is not { Generated: true } current || !(current.CanApprove || current.CompletionPending))
+        {
+            return;
+        }
+
+        await RunAsync(
+            ArtifactLabels.Approving,
+            () => Mediator.Send(new ApproveArtifactCommand(Id, current.Type, current.Version)),
+            result => result.InitiativeStatus == InitiativeStatus.ReadyToBuild ? ArtifactLabels.ApprovedReady : ArtifactLabels.Approved);
+
+        CloseConfirmation();
+    }
+
+    private void CloseConfirmation()
+    {
+        if (confirm != PanelKind.None)
+        {
+            restoreFocusTo = confirm;
+            confirm = PanelKind.None;
+        }
+    }
+
+    // Runs one write at a time. Returns true when it succeeded. A business failure becomes red messages; a conflict
+    // or a rule refusal also reloads the document so the page shows the current version. Any other failure shows a
+    // generic message and keeps the editor and its text. A failing reload never hides the message already set.
+    private async Task<bool> RunAsync(string text, Func<Task<ArtifactView>> work, Func<ArtifactView, string> successNotice)
+    {
+        if (busy)
+        {
+            return false;
+        }
+
+        busy = true;
+        busyText = text;
+        errors = [];
+        notice = null;
+
+        var type = view!.Type;
+
+        try
+        {
+            view = await work();
+            notice = successNotice(view);
+            questionsRevision++;
+
+            return true;
+        }
+        catch (Exception exception) when (UserMessages.TryGet(exception, out var messages))
+        {
+            errors = messages;
+
+            // Only the missing initiative empties the page; a missing document is an ordinary refusal.
+            if (exception is NotFoundException { Message: InitiativeTexts.NotFound })
+            {
+                view = null;
+            }
+            else if (exception is NotFoundException or ConflictException or DomainException)
+            {
+                await TryReloadAsync(type);
+            }
+
+            return false;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // Type and id only: the exception message could echo document content.
+            Logger.LogError("A document action of initiative {InitiativeId} failed ({ExceptionType}).", Id, exception.GetType().Name);
+            errors = [ArtifactLabels.ActionFailed];
+            await TryReloadAsync(type);
+
+            return false;
+        }
+        finally
+        {
+            busy = false;
+            busyText = null;
+        }
+    }
+
+    private async Task TryReloadAsync(ArtifactType type)
+    {
+        try
+        {
+            view = await Mediator.Send(new GetArtifactQuery(Id, type)) ?? view;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            Logger.LogWarning("The document of initiative {InitiativeId} could not be read again ({ExceptionType}).", Id, exception.GetType().Name);
+        }
+    }
+}

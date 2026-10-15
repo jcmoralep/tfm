@@ -2,16 +2,16 @@
 # (gitignored; variables are listed in README.md). The image version must match the configuration key Database:MySqlServerVersion
 # (env var Database__MySqlServerVersion; default in MySqlDatabase.DefaultServerVersion).
 # Fixed project name so container, network and volume names do not depend on the folder name.
-name: bmadplatform
+name: rutaproducto
 
 services:
   mysql:
     image: mysql:8.4
-    container_name: bmadplatform-mysql
+    container_name: rutaproducto-mysql
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: bmadplatform
-      MYSQL_USER: ${MYSQL_USER:-bmad}
+      MYSQL_DATABASE: rutaproducto
+      MYSQL_USER: ${MYSQL_USER:-rutaproducto}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD (see README.md)}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD (see README.md)}
     ports:
