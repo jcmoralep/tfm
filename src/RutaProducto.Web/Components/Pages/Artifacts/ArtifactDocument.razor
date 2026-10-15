@@ -81,6 +81,8 @@ else
                                 class="rounded-full border border-danger-line bg-surface-raised px-5 py-2 text-sm font-medium text-danger hover:bg-danger-surface disabled:opacity-60">
                             Regenerar
                         </button>
+                        @if (view.Status != ArtifactStatus.Approved)
+                        {
                         <button type="button" @ref="approveButton" disabled="@(busy || !view.CanApprove)"
                                 aria-expanded="@(confirm == PanelKind.Approve ? "true" : "false")" aria-controls="approve-panel"
                                 aria-describedby="@(ApproveBlocked ? "approve-blocked" : null)"
@@ -88,6 +90,7 @@ else
                                 class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-60">
                             Aprobar
                         </button>
+                        }
                     }
                 </div>
             }
@@ -367,9 +370,9 @@ else
         {
             await element.FocusAsync();
         }
-        catch (Exception exception) when (exception is JSDisconnectedException or InvalidOperationException)
+        catch (Exception exception) when (exception is JSDisconnectedException or JSException or InvalidOperationException)
         {
-            // The circuit ended or the element is gone: nothing to focus.
+            // The circuit ended or the element is gone (the Approve button disappears once approved): nothing to focus.
         }
     }
 

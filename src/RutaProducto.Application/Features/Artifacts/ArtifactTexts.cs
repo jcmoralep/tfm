@@ -31,7 +31,7 @@ public static class ArtifactTexts
     // Why a model-backed draft failed. They are about the document and never say a message was saved: a failed draft stores nothing.
     public const string DraftQuota = "El asistente alcanzó su límite de uso por ahora. No se generó el documento; inténtelo de nuevo más tarde.";
 
-    public const string DraftTimeout = "El asistente tardó demasiado en responder. No se generó el documento; inténtelo de nuevo.";
+    public const string DraftTimeout = "El asistente está ocupado o tardó demasiado en responder. No se generó el documento; inténtelo de nuevo.";
 
     public const string DraftMisconfigured = "El asistente no está configurado correctamente. No se generó el documento; avise a quien mantiene la plataforma.";
 
