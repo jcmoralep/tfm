@@ -1,0 +1,55 @@
+@attribute [Route(AuthenticationEndpoints.ConfirmEmailPath)]
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
+@layout AuthLayout
+@using RutaProducto.Application.Abstractions.Email
+@using RutaProducto.Application.Features.Authentication.ConfirmEmail
+@using RutaProducto.Web.Authentication
+@using FluentValidation
+@inject IMediator Mediator
+@inject AccountEmailSettings EmailSettings
+
+<PageTitle>Confirmar correo · Ruta de Producto</PageTitle>
+
+<AuthFrame>
+    @if (confirmed)
+    {
+        <h1 class="text-3xl font-semibold tracking-tight text-ink">Correo confirmado</h1>
+        <p role="status" class="mt-6 rounded-control bg-success-soft p-4 text-sm font-medium text-success-ink">Tu correo quedó confirmado. Ya puedes iniciar sesión.</p>
+        <a href="@AuthenticationEndpoints.LoginPath" data-enhance-nav="false"
+           class="mt-6 block w-full rounded-control bg-primary px-4 py-3 text-center text-sm font-semibold text-on-primary hover:bg-primary-hover">Iniciar sesión</a>
+    }
+    else
+    {
+        <h1 class="text-3xl font-semibold tracking-tight text-ink">No pudimos confirmar tu correo</h1>
+        <p role="alert" class="mt-6 rounded-control border border-danger-line bg-danger-surface p-3 text-sm text-danger">El enlace no es válido o venció. Pide uno nuevo.</p>
+        @if (EmailSettings.EmailEnabled)
+        {
+            <a href="@AuthenticationEndpoints.ResendConfirmationPath" data-enhance-nav="false"
+               class="mt-6 block text-sm font-semibold text-primary hover:underline">Pedir un enlace nuevo</a>
+        }
+    }
+</AuthFrame>
+
+@code {
+    private bool confirmed;
+
+    [SupplyParameterFromQuery(Name = "usuario")]
+    private string? UserId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "codigo")]
+    private string? Code { get; set; }
+
+    // Runs on GET, like Identity's own confirmation page; every kind of failure shows the same text.
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            confirmed = await Mediator.Send(new ConfirmEmailCommand(UserId ?? string.Empty, Code ?? string.Empty));
+        }
+        catch (ValidationException)
+        {
+            confirmed = false;
+        }
+    }
+}
