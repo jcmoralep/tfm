@@ -1,10 +1,18 @@
 using BmadPlatform.Application.Features.Assistant.GetConversationAnswers;
+using BmadPlatform.Application.Features.Context;
+using BmadPlatform.Application.Features.Context.AddFileAttachment;
+using BmadPlatform.Application.Features.Context.AddLinkAttachment;
+using BmadPlatform.Application.Features.Context.AddNoteAttachment;
+using BmadPlatform.Application.Features.Context.DeleteAttachment;
+using BmadPlatform.Application.Features.Context.GetAttachmentDownload;
+using BmadPlatform.Application.Features.Context.GetContext;
 using BmadPlatform.Application.Features.Initiatives.GetInitiative;
 using BmadPlatform.Application.Features.Initiatives.MarkReadyToBuild;
 using BmadPlatform.Application.Features.Initiatives.ReopenPlanning;
 using BmadPlatform.Application.Features.Initiatives.SetInitiativeDepth;
 using BmadPlatform.Application.Features.Initiatives.StartPlanning;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace BmadPlatform.Application.Tests.TestDoubles;
 
@@ -16,7 +24,8 @@ public sealed class ModulesSender(
     InMemoryInitiativeRepository initiatives,
     InMemoryConversationRepository conversations,
     FakeCurrentUser currentUser,
-    TimeProvider timeProvider) : ISender
+    TimeProvider timeProvider,
+    ContextRoutes? context = null) : ISender
 {
     private readonly List<object> sent = [];
 
@@ -40,6 +49,38 @@ public sealed class ModulesSender(
                 var answers = await new GetConversationAnswersQueryHandler(this, conversations, currentUser).Handle(query, cancellationToken);
 
                 return (TResponse)(object?)answers!;
+            case GetContextQuery query when context is not null:
+                var view = await new GetContextQueryHandler(this, context.Attachments, currentUser, context.Limits).Handle(query, cancellationToken);
+
+                return (TResponse)(object?)view!;
+            case AddFileAttachmentCommand command when context is not null:
+                var file = await new AddFileAttachmentCommandHandler(
+                    this, context.Attachments, context.Storage, currentUser, timeProvider, context.Limits,
+                    context.Loggers.CreateLogger<AddFileAttachmentCommandHandler>()).Handle(command, cancellationToken);
+
+                return (TResponse)(object)file;
+            case AddLinkAttachmentCommand command when context is not null:
+                var link = await new AddLinkAttachmentCommandHandler(
+                    this, context.Attachments, currentUser, timeProvider, context.Limits).Handle(command, cancellationToken);
+
+                return (TResponse)(object)link;
+            case AddNoteAttachmentCommand command when context is not null:
+                var note = await new AddNoteAttachmentCommandHandler(
+                    this, context.Attachments, currentUser, timeProvider, context.Limits).Handle(command, cancellationToken);
+
+                return (TResponse)(object)note;
+            case DeleteAttachmentCommand command when context is not null:
+                var deleted = await new DeleteAttachmentCommandHandler(
+                    this, context.Attachments, context.Storage, currentUser, context.Limits,
+                    context.Loggers.CreateLogger<DeleteAttachmentCommandHandler>()).Handle(command, cancellationToken);
+
+                return (TResponse)(object)deleted;
+            case GetAttachmentDownloadQuery query when context is not null:
+                var download = await new GetAttachmentDownloadQueryHandler(
+                    this, context.Attachments, context.Storage, currentUser,
+                    context.Loggers.CreateLogger<GetAttachmentDownloadQueryHandler>()).Handle(query, cancellationToken);
+
+                return (TResponse)(object?)download!;
             default:
                 throw new NotSupportedException($"{request.GetType().Name} is not routed by this double.");
         }
@@ -84,3 +125,10 @@ public sealed class ModulesSender(
         sent.Add(request);
     }
 }
+
+/// <summary>What <see cref="ModulesSender"/> needs to route the Context requests that other modules send.</summary>
+public sealed record ContextRoutes(
+    InMemoryAttachmentRepository Attachments,
+    InMemoryFileStorage Storage,
+    ContextLimits Limits,
+    ILoggerFactory Loggers);
