@@ -119,6 +119,21 @@ Para Docker Compose se usan además estas variables, que puede definir en un arc
 | `MYSQL_USER` | Usuario de la aplicación (por defecto `bmad`) |
 | `MYSQL_PORT` | Puerto local (por defecto `3307`, para no chocar con otro MySQL en `3306`; use la misma cifra en la cadena de conexión) |
 
+## Archivos adjuntos (contexto de la iniciativa)
+
+Los archivos del contexto se guardan en disco, nunca en MySQL (solo los metadatos). Claves de configuración (variables de entorno con `__`, por ejemplo `Storage__MaxFileSizeMb`):
+
+| Clave | Por defecto | Descripción |
+|---|---|---|
+| `Storage:Provider` | `Local` | Solo existe `Local`. `S3` (o cualquier otro valor) hace fallar el arranque con un mensaje que nombra la clave |
+| `Storage:LocalRootPath` | `App_Data/attachments` | Carpeta raíz de los archivos, relativa al directorio de trabajo. Está en `.gitignore` (`App_Data/`) |
+| `Storage:MaxFileSizeMb` | `10` | Tamaño máximo por archivo, entero de 1 a 50 |
+
+Límites por iniciativa: 20 elementos y 50 MB de archivos. Se rechazan los archivos vacíos y los ejecutables (`.exe .dll .bat .cmd .com .msi .scr .js .vbs .ps1 .sh .jar`); la descarga siempre se fuerza como adjunto.
+
+- **En Railway el disco del contenedor es efímero:** los archivos locales se pierden en cada nuevo despliegue hasta que exista el almacenamiento S3.
+- **No hay análisis de malware.** La mitigación es la lista de bloqueo de extensiones y la descarga forzada como adjunto.
+
 ## Base de datos
 
 1. Inicie MySQL 8.4:
