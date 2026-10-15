@@ -73,3 +73,16 @@ Prueba = clase de xUnit (`Application.Tests/Context`, `Infrastructure.Tests`, `W
 ## No verificado
 
 Lo marcado «pendiente» arriba; además, el borrador de Resumen o PRD con Gemini real y con contexto, y que el ejemplo de un turno cite con claridad un dato de la nota.
+
+## Segunda pasada (2026-10-15, tras la primera verificación)
+
+Rama de cierre, proveedor falso, usuario `otro@example.com`, la misma iniciativa Estándar.
+
+- **404 por la tubería real**: un identificador al azar respondió 404 con `X-Content-Type-Options: nosniff` y `Cache-Control: no-cache, no-store, max-age=0` (la página de «no encontrado» conserva `no-store`).
+- **Más de 5 archivos**: al seleccionar 6 a la vez apareció «Seleccione como máximo 5 archivos a la vez.» y no se subió ninguno (el contador siguió en 4).
+- **Nombre con tildes, paréntesis y almohadilla** («Presentación v2 (final)#1.txt»): se guardó y se lista con ese nombre; la descarga respondió 200 con `Content-Disposition: attachment; filename="Presentaci_n v2 (final)#1.txt"; filename*=UTF-8''Presentaci%C3%B3n%20v2%20%28final%29#1.txt`.
+- **Tope de 20 elementos**: tras añadir notas hasta «20 de 20 elementos», «Añadir enlace», «Añadir nota» y la selección de archivos quedaron deshabilitados con «Se alcanzó el máximo de 20 elementos. No se pueden añadir más.»; al eliminar uno volvieron a habilitarse («19 de 20 elementos»).
+- **Estado de la iniciativa**: se mantuvo «Aclarando» durante todas las altas y bajas. No se repitió en Planificando ni en Lista para construir en esta pasada (cubierto por pruebas unitarias).
+- **Registros**: sin títulos, nombres ni textos de las notas; ningún error.
+
+Sigue sin ejercitarse en el navegador: el 404 de una iniciativa borrada o de un identificador de enlace, el estado de carga durante la subida, la tecla Escape del diálogo, la regresión con el proveedor falso de una conversación con contexto, y los borradores y documentos posteriores con contexto en vivo.
