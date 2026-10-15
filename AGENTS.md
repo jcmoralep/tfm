@@ -97,6 +97,7 @@ Reglas de dependencia: Web → Application → Domain; Infrastructure → Applic
 }
 ```
 - `UseSerilogRequestLogging()` registra peticiones HTTP, no las acciones dentro del circuito Blazor; esas las cubre el behavior.
+- La misma regla vale para el correo, el captcha y la autenticación (RF-78 a RF-82, RNF-02): ningún registro contiene direcciones de correo ni destinatarios, asuntos, cuerpos, tokens, enlaces (con o sin token), contraseñas, la respuesta del captcha ni claves secretas. Solo identificadores de usuario, el tipo de plantilla (`ConfirmEmail`, `AccountExists`, `ResetPassword`), el resultado, la duración y, en un fallo de envío, el tipo de la excepción y el `SmtpStatusCode`. Los comandos de estos flujos sobrescriben `ToString()` para no imprimir sus datos.
 
 ### 4.5 Tailwind
 - Usar el **CLI independiente** de Tailwind (ejecutable, sin Node). Integrarlo al build de .NET (target de MSBuild) para escanear los `.razor` y generar el CSS final.
@@ -107,7 +108,20 @@ Reglas de dependencia: Web → Application → Domain; Infrastructure → Applic
 - Los tokens visuales viven en un único archivo de tema de Tailwind, de modo que cualquier ajuste (acento, tipografía) sea un cambio de un solo archivo.
 
 ### 4.6 Autenticación
-- Inicio de sesión básico con ASP.NET Core Identity (correo + contraseña). **Sin roles, sin administración de usuarios, sin pantallas de configuración.** Existe registro propio abierto en `/registro` (REQUISITOS RF-67); la verificación del correo queda para después.
+- Inicio de sesión básico con ASP.NET Core Identity (correo + contraseña). **Sin roles, sin administración de usuarios, sin pantallas de configuración.** Existe registro propio abierto en `/registro` (REQUISITOS RF-67). Las protecciones del registro y del inicio de sesión (cambio `registration-hardening`) son **interruptores de configuración, todos apagados por defecto**, de modo que sin configurar nada el comportamiento es el de siempre:
+
+| Interruptor | Valor por defecto | Qué activa |
+|---|---|---|
+| `RateLimiting:Enabled` (+ `PermitLimit` 10, `WindowSeconds` 60) | `false` | Limita por IP los POST a `/login`, `/registro` y las páginas de recuperación (RF-78); responde 429 en español. Ignora una barra final y las mayúsculas. Detrás del proxy de Railway necesita cabeceras reenviadas (cambio Railway-prep); mientras tanto todos comparten un cubo |
+| `Captcha:Provider` (`None` \| `Turnstile`) | `None` | Cloudflare Turnstile en `/registro` y `/recuperar-contrasena`, verificado en el servidor y antes de cualquier consulta de cuentas; falla cerrado (RF-79). Claves: `Turnstile:SiteKey` y `Turnstile__SecretKey` |
+| `Email:Provider` (`None` \| `Smtp`) | `None` | Envío de correo por una cola en segundo plano que no retrasa la respuesta (RF-80). Con `Smtp`: `Smtp:Host`, `Smtp:From`, `Email:PublicBaseUrl` y, con usuario, `Smtp__Password`. Habilita las páginas de reenvío, recuperación y restablecimiento |
+| `Email:RequireConfirmedEmail` | `false` | Una cuenta sin confirmar no inicia sesión y el registro envía un enlace de 24 horas (RF-81); exige `Email:Provider` distinto de `None` |
+
+- **Reglas comunes.** Respuestas uniformes: el registro con confirmación, el reenvío y la solicitud de recuperación muestran el mismo texto y la misma redirección exista o no la cuenta. Los correos van siempre a la dirección **guardada** en la cuenta, nunca a la escrita en la petición (la intercalación por defecto de MySQL ignora los acentos), y los validadores de registro, recuperación y reenvío rechazan las direcciones con caracteres no ASCII. Los enlaces del correo se construyen solo con `Email:PublicBaseUrl`, nunca con la cabecera `Host`. Los tokens son de un solo uso: 24 horas para confirmar y 2 horas para restablecer (el cambio de contraseña rota el sello de seguridad).
+- **Inicio de sesión con confirmación.** Identity responde `NotAllowed` antes de revisar el bloqueo y sin contar el fallo, por eso `IdentityAuthService` decide el orden (`SignInOutcome.Resolve`): cuenta bloqueada → `LockedOut`; contraseña correcta → `NotAllowed` («Confirma tu correo antes de iniciar sesión.»); contraseña errónea → se cuenta el fallo (`AccessFailedAsync`) y se responde como credenciales incorrectas, así el aviso solo lo ve quien conoce la contraseña. Un correo desconocido verifica la contraseña contra un hash ficticio para no responder más rápido. Los usuarios sembrados se crean confirmados.
+- **Validaciones de arranque.** La aplicación no arranca, nombrando la variable y nunca su valor, si falta una clave o un ajuste de un proveedor activo (`Turnstile:SiteKey`, `Turnstile__SecretKey`, `Smtp:Host`, `Smtp:From`, `Email:PublicBaseUrl`, `Smtp__Password` con usuario), si el puerto SMTP es 465 (TLS implícito no soportado) o está fuera de rango, si un valor de proveedor es desconocido, si `RateLimiting` activo tiene números inválidos o si `Email:RequireConfirmedEmail` es `true` con `Email:Provider` en `None`.
+- **Redespliegue y Data Protection.** Los tokens de los enlaces y las cookies de sesión son cargas de Data Protection. Mientras no se persistan las claves (cambio Railway-prep, §6.9), cada redespliegue o reinicio del contenedor **invalida los enlaces ya enviados y cierra las sesiones**. El fallo es siempre el mensaje uniforme «El enlace no es válido o venció. Pide uno nuevo.»; el reenvío y la recuperación son la salida. No se esquiva en este cambio.
+- Las claves secretas (`Turnstile__SecretKey`, `Smtp__Password`) van solo en user-secrets o variables de entorno, nunca en el repositorio ni en `appsettings*.json`.
 - Usuarios iniciales se **siembran al arrancar desde variables de entorno**.
 - Dejar puntos de extensión para crecer sin reescribir: `ICurrentUser` e `IAuthService` (futuro SSO o roles).
 

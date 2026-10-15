@@ -1,5 +1,6 @@
 using RutaProducto.Application.Abstractions.Authentication;
 using RutaProducto.Application.Abstractions.Email;
+using RutaProducto.Application.Features.Authentication;
 using RutaProducto.Application.Features.Authentication.ConfirmEmail;
 using RutaProducto.Application.Features.Authentication.Register;
 using RutaProducto.Application.Features.Authentication.ResendConfirmation;
@@ -57,6 +58,33 @@ public sealed class AccountConfirmationTests
     }
 
     [Fact]
+    public async Task Resend_mails_the_stored_address_even_when_the_typed_one_only_matches_by_collation()
+    {
+        var tokens = new FakeAccountTokenService();
+        tokens.KnownEmails.Add("victim@exámple.com");
+        tokens.StoredAddresses["victim@exámple.com"] = "victim@example.com";
+        var sender = new RecordingEmailSender();
+        var handler = new ResendConfirmationCommandHandler(tokens, new FakeAccountLinks(), sender, new AccountEmailSettings(true, true, null));
+
+        await handler.Handle(new ResendConfirmationCommand("victim@exámple.com"), CancellationToken.None);
+
+        Assert.Equal("victim@example.com", Assert.Single(sender.Messages).To);
+    }
+
+    [Fact]
+    public void Every_address_validator_rejects_non_ascii_addresses_with_the_same_neutral_message()
+    {
+        var failures = new[]
+        {
+            new RegisterCommandValidator().Validate(new RegisterCommand("ana@exámple.com", "Secret-123", "Secret-123")).Errors,
+            new ResendConfirmationCommandValidator().Validate(new ResendConfirmationCommand("ana@exámple.com")).Errors,
+        };
+
+        Assert.All(failures, errors => Assert.Equal(EmailAddressRules.AsciiOnlyMessage, Assert.Single(errors).ErrorMessage));
+        Assert.DoesNotContain("cuenta", EmailAddressRules.AsciiOnlyMessage);
+    }
+
+    [Fact]
     public async Task Resend_does_nothing_when_email_is_off()
     {
         var tokens = new FakeAccountTokenService();
@@ -86,7 +114,7 @@ public sealed class AccountConfirmationTests
             new RegisterCommand("ana@example.com", "Secret-123", "Secret-123", "CAPTCHA-TOKEN"),
             new ConfirmEmailCommand("user-1", "CODE-123"),
             new ResendConfirmationCommand("ana@example.com"),
-            new AccountToken("user-1", "CODE-123"),
+            new AccountToken("user-1", "CODE-123", "ana@example.com"),
         }.Select(item => item.ToString()).ToList();
 
         foreach (var text in printed)

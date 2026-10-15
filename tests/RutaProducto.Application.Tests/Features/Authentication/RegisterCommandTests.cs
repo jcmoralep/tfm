@@ -1,6 +1,7 @@
 using RutaProducto.Application.Abstractions.Authentication;
 using RutaProducto.Application.Abstractions.Captcha;
 using RutaProducto.Application.Abstractions.Email;
+using RutaProducto.Application.Features.Authentication;
 using RutaProducto.Application.Features.Authentication.Register;
 using RutaProducto.Application.Tests.TestDoubles;
 
@@ -147,15 +148,52 @@ public sealed class RegisterCommandTests
         var authService = new RecordingAuthService(RegistrationResult.EmailTaken);
         var sender = new RecordingEmailSender();
 
-        var result = await Handler(authService, sender: sender, confirmation: true).Handle(
+        var result = await Handler(authService, sender: sender, confirmation: true, existingEmail: "ana@example.com").Handle(
             new RegisterCommand("ana@example.com", "Secret-123", "Secret-123"), CancellationToken.None);
 
         Assert.Equal(RegistrationStatus.ConfirmationPending, result.Status);
         Assert.Null(authService.SignedInEmail);
         var message = Assert.Single(sender.Messages);
         Assert.Equal(EmailKind.AccountExists, message.Kind);
+        Assert.Equal("ana@example.com", message.To);
         Assert.Contains("https://app.test/login", message.Body);
         Assert.Contains("https://app.test/recuperar-contrasena", message.Body);
+    }
+
+    [Fact]
+    public async Task With_confirmation_on_a_duplicate_matched_by_collation_the_stored_address_gets_the_mail_and_the_answer_is_unchanged()
+    {
+        var authService = new RecordingAuthService(RegistrationResult.EmailTaken);
+        var sender = new RecordingEmailSender();
+
+        var result = await Handler(
+            authService, sender: sender, confirmation: true, existingEmail: "victim@exámple.com", stored: "victim@example.com").Handle(
+            new RegisterCommand("victim@exámple.com", "Secret-123", "Secret-123"), CancellationToken.None);
+
+        Assert.Equal(RegistrationStatus.ConfirmationPending, result.Status);
+        var message = Assert.Single(sender.Messages);
+        Assert.Equal(EmailKind.AccountExists, message.Kind);
+        Assert.Equal("victim@example.com", message.To);
+    }
+
+    [Fact]
+    public async Task With_confirmation_on_a_new_account_the_confirmation_goes_to_the_stored_address()
+    {
+        var authService = new RecordingAuthService(RegistrationResult.Succeeded);
+        var sender = new RecordingEmailSender();
+
+        await Handler(authService, sender: sender, confirmation: true, pendingEmail: "ana@example.com", stored: "Ana@Example.com").Handle(
+            new RegisterCommand("ana@example.com", "Secret-123", "Secret-123"), CancellationToken.None);
+
+        Assert.Equal("Ana@Example.com", Assert.Single(sender.Messages).To);
+    }
+
+    [Fact]
+    public void A_non_ascii_address_is_rejected_with_a_message_that_does_not_mention_accounts()
+    {
+        var failure = Assert.Single(validator.Validate(new RegisterCommand("ana@exámple.com", "Secret-123", "Secret-123")).Errors);
+
+        Assert.Equal(EmailAddressRules.AsciiOnlyMessage, failure.ErrorMessage);
     }
 
     [Fact]
@@ -176,13 +214,22 @@ public sealed class RegisterCommandTests
         FakeCaptchaVerifier? captcha = null,
         RecordingEmailSender? sender = null,
         bool confirmation = false,
-        string? pendingEmail = null)
+        string? pendingEmail = null,
+        string? existingEmail = null,
+        string? stored = null)
     {
         var tokens = new FakeAccountTokenService();
 
         if (pendingEmail is not null)
         {
             tokens.KnownEmails.Add(pendingEmail);
+            if (stored is not null) tokens.StoredAddresses[pendingEmail] = stored;
+        }
+
+        if (existingEmail is not null)
+        {
+            tokens.ExistingEmails.Add(existingEmail);
+            if (stored is not null) tokens.StoredAddresses[existingEmail] = stored;
         }
 
         return new RegisterCommandHandler(

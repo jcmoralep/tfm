@@ -30,6 +30,7 @@ public sealed class ForgotPasswordCommandValidator : AbstractValidator<ForgotPas
             .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("El correo electrónico es obligatorio.")
             .MaximumLength(SignInCommandValidator.MaxEmailLength).WithMessage("El correo electrónico es demasiado largo.")
+            .MustBeAsciiAddress()
             .EmailAddress().WithMessage("El formato del correo electrónico no es válido.");
     }
 }
@@ -61,11 +62,12 @@ public sealed class ForgotPasswordCommandHandler(
         var email = request.Email.Trim();
 
         // Null only for an unknown address: nothing is sent and nothing differs for the caller.
+        // The mail goes to the STORED address (token.Email), never to the typed one.
         var token = await tokens.CreatePasswordResetAsync(email, cancellationToken);
 
         if (token is not null)
         {
-            emailSender.Enqueue(AccountEmails.ResetPassword(email, links.PasswordReset(token)));
+            emailSender.Enqueue(AccountEmails.ResetPassword(token.Email,links.PasswordReset(token)));
         }
 
         return ForgotPasswordResult.Accepted;

@@ -19,9 +19,18 @@ internal static class AuthRateLimiting
         AuthenticationEndpoints.ResetPasswordPath,
     ];
 
-    public static bool IsLimited(HttpRequest request) =>
-        HttpMethods.IsPost(request.Method)
-        && Array.Exists(LimitedPaths, path => request.Path.Equals(path, StringComparison.OrdinalIgnoreCase));
+    // Routing serves "/login/" as "/login", so one trailing slash must not slip past the limiter.
+    public static bool IsLimited(HttpRequest request)
+    {
+        if (!HttpMethods.IsPost(request.Method))
+        {
+            return false;
+        }
+
+        var path = (request.Path.Value ?? string.Empty).TrimEnd('/');
+
+        return Array.Exists(LimitedPaths, limited => string.Equals(limited, path, StringComparison.OrdinalIgnoreCase));
+    }
 
     public static string PartitionKey(HttpContext context) =>
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown";

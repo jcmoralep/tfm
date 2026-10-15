@@ -1,9 +1,13 @@
 namespace RutaProducto.Application.Abstractions.Authentication;
 
-/// <summary>A user id and an opaque, URL-safe code that proves control of the mailbox. The code never reaches a log.</summary>
-public sealed record AccountToken(string UserId, string Code)
+/// <summary>
+/// A user id, an opaque URL-safe code that proves control of the mailbox, and the address STORED on the account.
+/// Mail always goes to <paramref name="Email"/>, never to the address typed in the request: the database collation can
+/// match a typed address that differs from the stored one. Neither the code nor the address reaches a log.
+/// </summary>
+public sealed record AccountToken(string UserId, string Code, string Email)
 {
-    // Records print every property by default; a log line must never expose the code.
+    // Records print every property by default; a log line must never expose the code or the address.
     public override string ToString() => nameof(AccountToken);
 }
 
@@ -27,6 +31,9 @@ public interface IAccountTokenService
     /// Every token problem is the same <see cref="PasswordResetStatus.InvalidLink"/>.
     /// </summary>
     Task<PasswordResetResult> ResetPasswordAsync(string userId, string code, string newPassword, CancellationToken cancellationToken);
+
+    /// <summary>The address stored on the account that matches <paramref name="email"/>, or null when there is none.</summary>
+    Task<string?> FindStoredEmailAsync(string email, CancellationToken cancellationToken);
 }
 
 public enum PasswordResetStatus

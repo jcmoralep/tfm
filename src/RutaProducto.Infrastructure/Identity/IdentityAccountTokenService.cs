@@ -21,8 +21,11 @@ internal sealed class IdentityAccountTokenService(
         var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
         logger.LogInformation("Confirmation token created for user {UserId}", user.Id);
 
-        return new AccountToken(user.Id, AccountTokenCodec.Encode(token));
+        return new AccountToken(user.Id, AccountTokenCodec.Encode(token), user.Email!);
     }
+
+    public async Task<string?> FindStoredEmailAsync(string email, CancellationToken cancellationToken) =>
+        (await userManager.FindByEmailAsync(email))?.Email;
 
     public async Task<bool> ConfirmEmailAsync(string userId, string code, CancellationToken cancellationToken)
     {
@@ -52,7 +55,7 @@ internal sealed class IdentityAccountTokenService(
         var token = await userManager.GeneratePasswordResetTokenAsync(user);
         logger.LogInformation("Password reset token created for user {UserId}", user.Id);
 
-        return new AccountToken(user.Id, AccountTokenCodec.Encode(token));
+        return new AccountToken(user.Id, AccountTokenCodec.Encode(token), user.Email!);
     }
 
     public async Task<PasswordResetResult> ResetPasswordAsync(

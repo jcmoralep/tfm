@@ -74,10 +74,10 @@ Set the switches back to defaults (no redeploy of code). Code rollback: revert t
 - Owner accounts (configuration only): Cloudflare Turnstile site/secret keys; SMTP server (Brevo, Resend or Gmail app password); `Email:PublicBaseUrl`.
 
 ## Success Criteria
-- [ ] With no configuration, login/registration behave exactly as today (existing tests pass).
-- [ ] Each switch fails fast at startup with a message naming the variable, not the value.
-- [ ] No response, timing path or log reveals whether an email is registered when confirmation is on.
-- [ ] Build and tests in Release with zero warnings per slice.
+- [x] With no configuration, login/registration behave exactly as today (existing tests pass).
+- [x] Each switch fails fast at startup with a message naming the variable, not the value.
+- [x] No response, timing path or log reveals whether an email is registered when confirmation is on.
+- [x] Build and tests in Release with zero warnings per slice.
 
 ## Manual checks (Chrome)
 - S1: 11 quick POSTs to `/login` → Spanish 429; GET still works.

@@ -21,8 +21,8 @@ The system MUST throttle auth POSTs with the framework limiter `Microsoft.AspNet
 
 #### Scenario: Only auth POSTs are selected [UNIT]
 - GIVEN the pure path/method selector used by the limiter
-- WHEN it is called with POST `/login`, POST `/registro`, POST `/recuperar-contrasena`, POST `/restablecer-contrasena`, POST `/confirmar-correo/reenviar`, then GET `/login`, GET `/registro`, POST `/logout`, POST `/_blazor` and POST `/iniciativas`
-- THEN the first five are selected and the rest are not; the path comparison is case-insensitive (`OrdinalIgnoreCase`; a trailing slash is not special-cased, design D1)
+- WHEN it is called with POST `/login`, POST `/registro`, POST `/recuperar-contrasena`, POST `/restablecer-contrasena`, POST `/confirmar-correo/reenviar`, the same paths with one trailing slash (`/login/`, `/LOGIN/`, `/registro/`), then GET `/login`, GET `/registro`, POST `/logout`, POST `/logout/`, POST `/_blazor` and POST `/iniciativas`
+- THEN the first five and the trailing-slash variants are selected and the rest are not; the path comparison is case-insensitive (`OrdinalIgnoreCase`) and ignores trailing slashes, because routing serves `/login/` as `/login` (design D1; verification finding C2)
 
 #### Scenario: Invalid numbers fail at startup [UNIT]
 - GIVEN `Enabled=true` and `PermitLimit` = 0, -1 or "abc", or `WindowSeconds` = 0
@@ -141,11 +141,13 @@ With confirmation **not** required, behavior is as before (the account is create
 
 1. Registration MUST create the account with `EmailConfirmed = false`, MUST NOT sign the person in, MUST enqueue the confirmation email, and MUST show the uniform result (verbatim, design D13: `Revisa tu correo: te enviamos un enlace para confirmar tu cuenta.`, a green panel that replaces the form).
 2. A duplicate address MUST yield the same uniform result and the same redirect as a new one, MUST NOT create an account, and MUST enqueue an "ya tienes una cuenta" email (with a link to sign in and one to recover the password) to the existing owner instead of a confirmation email. Password-policy errors are shown as today (they do not depend on the address).
-3. The confirm page MUST accept the user id and token, call the token confirmation, and run on GET (as Identity's default UI) and show either success (verbatim: `Tu correo quedó confirmado. Ya puedes iniciar sesión.`, with a link to sign in) or the uniform failure (verbatim: `El enlace no es válido o venció. Pide uno nuevo.`) for an invalid, expired, reused-after-change or malformed link and for an unknown user id, all alike. Confirming an already confirmed account MAY show success.
+3. The confirm page MUST accept the user id and token, call the token confirmation, and run on GET (as Identity's default UI) and show either success (verbatim: `Tu correo quedó confirmado. Ya puedes iniciar sesión.`, with a link to sign in) or the uniform failure (verbatim: `El enlace no es válido o venció. Pide uno nuevo.`) for an altered, expired, foreign-key-ring or malformed link and for an unknown user id, all alike. Re-opening a link after the account was confirmed shows success (the confirmation is idempotent: Identity accepts the token again while the security stamp is unchanged; note R24).
 4. An unconfirmed account MUST NOT sign in. `NotAllowed` is returned by Identity before the password is checked (it would also appear for a wrong password), and it is also returned before the lockout check, so on `NotAllowed` the auth service MUST, in this order (design D14, pure `SignInOutcome.Resolve(SignInResult, lockedOut, passwordMatches)`): (a) if the account is locked out, report `LockedOut`; (b) if `UserManager.CheckPasswordAsync` matches, report `NotAllowed` (shown as `Confirma tu correo antes de iniciar sesión.` with a link to `/confirmar-correo/reenviar`); (c) otherwise call `UserManager.AccessFailedAsync` (because `CheckPasswordAsync` does not count failures, so unconfirmed accounts cannot be brute-forced without lockout) and report `InvalidCredentials`, so the message never reveals an unconfirmed account to someone without the password. Hardening that is not a spec rule elsewhere (design D15): a sign-in for an unknown email MUST verify the password against a fixed dummy hash (computed once, lazily) before returning `InvalidCredentials`, so the unknown-user path pays the hashing cost.
-5. The resend page MUST take an email, validate the captcha-free form, and always show the uniform result (verbatim: `Si hay una cuenta pendiente de confirmar con ese correo, te enviamos un enlace nuevo.`); it MUST send a new confirmation email only when the account exists and is unconfirmed, and nothing otherwise. The resend page is an auth POST (throttled by the limiter). When confirmation is not required but `Email:Provider` is `Smtp`, the confirm and resend pages MUST still work, harmlessly. When `Email:Provider` is `None` the resend page (and the forgot and reset pages) answer as not found (`Navigation.NotFound()`, design D17); the confirm page is not gated.
+5. The resend page MUST take an email, validate the captcha-free form, and always show the uniform result (verbatim: `Si hay una cuenta pendiente de confirmar con ese correo, te enviamos un enlace nuevo.`); it MUST send a new confirmation email only when the account exists and is unconfirmed, and nothing otherwise. The resend page is an auth POST (throttled by the limiter). When confirmation is not required but `Email:Provider` is `Smtp`, the confirm and resend pages MUST still work, harmlessly. When `Email:Provider` is `None` the resend page (and the forgot and reset pages) answer as not found (a redirect to `/not-found?codigo=404`, which the page answers with status 404; design D17 and reconciliation note R25); the confirm page is not gated.
 
 An old, unconfirmed account created before confirmation was turned on MUST be able to confirm by the resend page. Tokens and links MUST NOT be logged; the logs carry the user id and the outcome only.
+
+**Recipient rule (verification finding C1).** Every email of the confirmation, resend, duplicate-registration and password-recovery flows MUST be sent to the address STORED on the account (`AccountToken.Email`, or `IAccountTokenService.FindStoredEmailAsync` for the duplicate path), never to the address typed in the request. MySQL's default collation (`utf8mb4_0900_ai_ci`) is accent-insensitive, so `FindByEmailAsync("a@exámple.com")` matches the account of `a@example.com`; mailing the typed value would hand the victim's reset link to whoever owns the accent-variant mailbox. As defence in depth, the register, forgot and resend validators MUST reject any non-ASCII address with a Spanish message that does not mention accounts (`El correo electrónico solo puede llevar letras sin acentos, números y los símbolos habituales.`), so a variant never reaches the lookup, the duplicate check or account creation. The rejection depends only on the typed text, never on whether an account exists, so uniform responses are preserved. Seeded and existing ASCII addresses are unaffected.
 
 #### Scenario: Startup guard [UNIT]
 - GIVEN `Email:RequireConfirmedEmail=true` with `Email:Provider` empty or `None`, and then with `Smtp` and a valid configuration
@@ -167,6 +169,11 @@ An old, unconfirmed account created before confirmation was turned on MUST be ab
 - WHEN the same address registers again
 - THEN the result and redirect equal those of a new address, no second account exists, and the queued message is the "ya tienes una cuenta" kind addressed to the existing owner
 
+#### Scenario: Mail goes to the stored address [UNIT]
+- GIVEN an account stored as `victim@example.com` that the typed `victim@exámple.com` matches by collation (a fake whose stored address differs from the typed one)
+- WHEN the register (duplicate path), resend and forgot handlers run with the typed address
+- THEN the single queued message is addressed to `victim@example.com`; and the three validators reject any non-ASCII address with the neutral message above
+
 #### Scenario: Confirmation succeeds and fails uniformly [UNIT]
 - GIVEN a valid token, then an expired token (the provider lifespan elapsed: `DataProtectorTokenProvider` reads the system clock, so the test configures a lifespan of a few milliseconds and waits; separately the registered lifespans are asserted to be 24 h and 2 h), a token altered by one character, a non-Base64Url token and an unknown user id, run against `UserManager` over a hand-written in-memory user store (no new package)
 - WHEN each is confirmed
@@ -175,12 +182,12 @@ An old, unconfirmed account created before confirmation was turned on MUST be ab
 #### Scenario: NotAllowed is gated by the password [UNIT]
 - GIVEN an unconfirmed account and confirmation required
 - WHEN sign-in is attempted with the right password, then with a wrong password, and then (locked-out account) with either
-- THEN the first reports `NotAllowed` with the confirm-your-email message and the resend link; the second reports `InvalidCredentials` with the usual message and records one access failure; the locked-out case reports `LockedOut`; and an unknown email reports `InvalidCredentials` (verified through the pure `SignInOutcome.Resolve` Theory; the UserManager calls are checked in the S4 walkthrough: five wrong passwords on an unconfirmed account lock it)
+- THEN the first reports `NotAllowed` with the confirm-your-email message and the resend link; the second reports `InvalidCredentials` with the usual message and records one access failure; the locked-out case reports `LockedOut`; and an unknown email reports `InvalidCredentials` (verified through the pure `SignInOutcome.Resolve` Theory and, for the `UserManager` calls in `IdentityAuthService`, through `SignInWiringTests` over the in-memory store: five wrong passwords on an unconfirmed account lock it, a locked account shows the lock with the right password, and the right password reports `NotAllowed` without counting)
 
 #### Scenario: Unknown email pays the hash cost [UNIT]
-- GIVEN the dummy-hash helper
-- WHEN the hash is requested twice
-- THEN it is computed once (same instance) and a verification of any password against it reports failure
+- GIVEN the dummy-hash helper, and `IdentityAuthService` over a counting password hasher
+- WHEN the hash is requested twice, and a sign-in runs for an unknown email
+- THEN it is computed once (same instance) and a verification of any password against it reports failure; the unknown-email sign-in performs exactly one hash verification (`SignInWiringTests`)
 
 #### Scenario: Resend is uniform [UNIT]
 - GIVEN an unconfirmed account, a confirmed account and an unknown address
@@ -195,11 +202,11 @@ An old, unconfirmed account created before confirmation was turned on MUST be ab
 #### Scenario: Full flow [UI]
 - GIVEN a local SMTP catcher, `Email__Provider=Smtp`, `Email__RequireConfirmedEmail=true`
 - WHEN a person registers, tries to sign in before confirming, opens the emailed link, signs in, then re-opens the same link and an altered link
-- THEN registration shows the uniform text without signing in, the early sign-in shows the confirm message, the link confirms, sign-in works, and the reused and altered links show `El enlace no es válido o venció. Pide uno nuevo.`; registering the same address again shows the same text and delivers the "ya tienes una cuenta" email
+- THEN registration shows the uniform text without signing in, the early sign-in shows the confirm message, the link confirms, sign-in works, the altered link shows `El enlace no es válido o venció. Pide uno nuevo.`, and the re-opened link still reports success (accepted idempotent confirmation, note R24); registering the same address again shows the same text and delivers the "ya tienes una cuenta" email
 
 ### Requirement: Password recovery (RF-82, RNF-02)
 
-The system MUST offer a forgot-password page and a reset page, both static SSR like the login, linked from the login page ("¿Olvidaste tu contraseña?"). The forgot page MUST take an email, apply the captcha when the provider is `Turnstile` (before any lookup), and ALWAYS show the same result (verbatim: `Si el correo corresponde a una cuenta, te enviamos un enlace para restablecer la contraseña. Vence en 2 horas.`) with the same redirect and a response time that differs only by a data-protection protect and a queue write (microseconds, accepted), whether the address is unknown, unconfirmed, confirmed or locked out. A reset email MUST be queued for **any existing account**, confirmed or not (design D16: the mailbox is the proof), and for no unknown address; no confirmation email is sent from this page. The reset token MUST come from a dedicated token provider with a lifespan of 2 hours (distinct from the 24 h of confirmation), MUST be Base64Url-encoded, and is effectively single-use because changing the password rotates the security stamp. When `Email:Provider` is `None` the forgot and reset pages answer as not found (`Navigation.NotFound()`, design D17) and the login page MUST hide the link ("¿Olvidaste tu contraseña?" shows only when email is enabled); the discarding sender logs `Email {Kind} not sent: Email:Provider is None` and sends nothing.
+The system MUST offer a forgot-password page and a reset page, both static SSR like the login, linked from the login page ("¿Olvidaste tu contraseña?"). The forgot page MUST take an email, apply the captcha when the provider is `Turnstile` (before any lookup), and ALWAYS show the same result (verbatim: `Si el correo corresponde a una cuenta, te enviamos un enlace para restablecer la contraseña. Vence en 2 horas.`) with the same redirect and a response time that differs only by a data-protection protect and a queue write (microseconds, accepted), whether the address is unknown, unconfirmed, confirmed or locked out. A reset email MUST be queued for **any existing account**, confirmed or not (design D16: the mailbox is the proof), and for no unknown address; no confirmation email is sent from this page. The reset token MUST come from a dedicated token provider with a lifespan of 2 hours (distinct from the 24 h of confirmation), MUST be Base64Url-encoded, and is effectively single-use because changing the password rotates the security stamp. When `Email:Provider` is `None` the forgot and reset pages answer as not found (a redirect to `/not-found?codigo=404`, answered as 404; design D17, note R25) and the login page MUST hide the link ("¿Olvidaste tu contraseña?" shows only when email is enabled); the discarding sender logs `Email {Kind} not sent: Email:Provider is None` and sends nothing.
 
 The reset page MUST take the user id and token from the link plus the new password and its confirmation, validate against the same `PasswordPolicy` as registration (same Spanish messages and the live checklist), and on success MUST set the new password, show success with a link to sign in, and not sign the person in. Resetting also confirms the email address of an unconfirmed account (the link proved ownership). An invalid, expired, already used or malformed token and an unknown user id MUST all show the same failure (`El enlace no es válido o venció. Pide uno nuevo.`) with a link to the forgot page. A successful reset does not change lockout state (the design does not clear it; recorded as a follow-up in `docs/mejoras-posteriores.md`). Both pages are auth POSTs for the limiter. Password, token and link MUST NOT be logged.
 
@@ -225,8 +232,8 @@ The reset page MUST take the user id and token from the link plus the new passwo
 
 #### Scenario: Reset enforces the password policy [UNIT]
 - GIVEN a valid token and the password "abc"
-- WHEN the reset command is validated
-- THEN it fails with the same Spanish rule messages as registration and the token is not consumed
+- WHEN the reset command runs
+- THEN the command validator only checks shape (required, length, confirmation match); the strength rules are enforced by Identity after the token check, which reports the same Spanish rule messages as registration (`PasswordResetResult.InvalidPassword`) and leaves the token and the security stamp intact, so the link stays usable (note R26)
 
 #### Scenario: Reset confirms the email [UNIT]
 - GIVEN an unconfirmed account that resets its password with a valid token
@@ -236,7 +243,7 @@ The reset page MUST take the user id and token from the link plus the new passwo
 #### Scenario: Link hidden without email [UI]
 - GIVEN `Email:Provider=None` (Razor has no unit seam; no bUnit)
 - WHEN `/login` is opened, and `/recuperar-contrasena`, `/restablecer-contrasena` and `/confirmar-correo/reenviar` are requested
-- THEN the forgot-password link is not offered and the three pages answer as not found; the `AccountEmailSettings(EmailEnabled: false)` value that drives both is asserted in the S3 options tests [UNIT]
+- THEN the forgot-password link is not offered and the three pages answer as not found (a 302 to `/not-found?codigo=404`, then 404); the `AccountEmailSettings(EmailEnabled: false)` value that drives both is asserted in the S3 options tests [UNIT]
 
 #### Scenario: Full flow [UI]
 - GIVEN a local SMTP catcher
@@ -269,7 +276,7 @@ Confirmation and reset tokens, and authentication cookies, are ASP.NET Data Prot
 #### Scenario: No content in logs [UNIT]
 - GIVEN a logger double and each new command run with a recognisable email, token and password
 - WHEN the entries are collected
-- THEN none contains the email, token, link or password
+- THEN none contains the email, token, link or password (the command and token types through `ToString()` Theories; the token service through a captured logger in `AccountTokenLogTests`; the dispatcher and the Turnstile verifier through their own log tests; the application handlers have no logger)
 
 #### Scenario: Defaults change nothing [UNIT]
 - GIVEN no configuration for any of the four switches

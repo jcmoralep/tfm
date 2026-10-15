@@ -15,7 +15,7 @@ public sealed class AccountLinksTests
     {
         var links = new AccountLinks(new AccountEmailSettings(true, true, new Uri(baseUrl)));
 
-        Assert.Equal(expected, links.EmailConfirmation(new AccountToken("u 1", "a-b_c")).AbsoluteUri);
+        Assert.Equal(expected, links.EmailConfirmation(new AccountToken("u 1", "a-b_c", "ana@example.com")).AbsoluteUri);
     }
 
     [Fact]
@@ -25,7 +25,7 @@ public sealed class AccountLinksTests
 
         Assert.Equal(
             "https://app.example.com/ruta/restablecer-contrasena?usuario=u%201&codigo=a-b_c",
-            links.PasswordReset(new AccountToken("u 1", "a-b_c")).AbsoluteUri);
+            links.PasswordReset(new AccountToken("u 1", "a-b_c", "ana@example.com")).AbsoluteUri);
     }
 
     [Fact]

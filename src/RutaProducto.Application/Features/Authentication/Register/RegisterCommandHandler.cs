@@ -58,13 +58,20 @@ public sealed class RegisterCommandHandler(
 
                 if (token is not null)
                 {
-                    emailSender.Enqueue(AccountEmails.ConfirmEmail(email, links.EmailConfirmation(token)));
+                    emailSender.Enqueue(AccountEmails.ConfirmEmail(token.Email,links.EmailConfirmation(token)));
                 }
 
                 return RegistrationResult.ConfirmationPending;
 
             case RegistrationStatus.EmailTaken:
-                emailSender.Enqueue(AccountEmails.AccountExists(email, links.Login(), links.ForgotPassword()));
+                // Mail the address stored on the existing account, never the typed one.
+                var stored = await tokens.FindStoredEmailAsync(email, cancellationToken);
+
+                if (stored is not null)
+                {
+                    emailSender.Enqueue(AccountEmails.AccountExists(stored, links.Login(), links.ForgotPassword()));
+                }
+
                 return RegistrationResult.ConfirmationPending;
 
             default:
