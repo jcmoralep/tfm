@@ -26,7 +26,7 @@ public sealed class ArtifactTestContext
 {
     public ArtifactTestContext()
     {
-        Sender = new ModulesSender(Initiatives.Repository, Assistant.Conversations, User, Clock);
+        Sender = new ModulesSender(Initiatives.Repository, Assistant.Conversations, User, Clock, Assistant.ContextRoutes);
     }
 
     public AssistantTestContext Assistant { get; } = new();

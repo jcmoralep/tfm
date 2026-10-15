@@ -1,4 +1,5 @@
 using BmadPlatform.Application.Features.Assistant.Script;
+using BmadPlatform.Application.Features.Context;
 using BmadPlatform.Domain.Assistant;
 using BmadPlatform.Domain.Initiatives;
 
@@ -10,13 +11,16 @@ namespace BmadPlatform.Application.Features.Assistant;
 /// user asked to pick another level, so the three levels are offered instead of a suggestion.
 /// <paramref name="FollowUpFor"/> is the topic of the last answer when code allows one follow-up on it (null when the
 /// answer is not eligible): only then may the service return <see cref="ReplyVerdict.NeedsMore"/>.
+/// <paramref name="Context"/> holds the text-like attached context (notes and text files) as reference data, never
+/// instructions; null or empty when there is none. The fake service ignores it.
 /// </summary>
 public sealed record AssistantRequest(
     InitiativeSnapshot Initiative,
     AssistantTopic NextTopic,
     IReadOnlyList<ConversationTurn> History,
     bool OffersLevelChoice = false,
-    AssistantTopic? FollowUpFor = null);
+    AssistantTopic? FollowUpFor = null,
+    IReadOnlyList<ContextExcerpt>? Context = null);
 
 public sealed record InitiativeSnapshot(string Name, string? Description, DepthMode? Mode, InitiativeDepth? Depth);
 

@@ -5,6 +5,7 @@ using BmadPlatform.Application.Features.Context.AddNoteAttachment;
 using BmadPlatform.Application.Features.Context.DeleteAttachment;
 using BmadPlatform.Application.Features.Context.GetAttachmentDownload;
 using BmadPlatform.Application.Features.Context.GetContext;
+using BmadPlatform.Application.Features.Context.GetContextForAssistant;
 using BmadPlatform.Application.Tests.Features.Initiatives;
 using BmadPlatform.Application.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
@@ -76,6 +77,10 @@ public sealed class ContextTestContext
     public Task<AttachmentDownload?> Download(Guid initiativeId, Guid attachmentId) =>
         new GetAttachmentDownloadQueryHandler(Sender, Attachments, Storage, User, Loggers.CreateLogger<GetAttachmentDownloadQueryHandler>())
             .Handle(new GetAttachmentDownloadQuery(initiativeId, attachmentId), default);
+
+    public Task<IReadOnlyList<ContextExcerpt>> Excerpts(Guid initiativeId) =>
+        new GetContextForAssistantQueryHandler(Sender, Attachments, Storage, User, Loggers.CreateLogger<GetContextForAssistantQueryHandler>())
+            .Handle(new GetContextForAssistantQuery(initiativeId), default);
 
     public Task<ContextView> AddNote(Guid initiativeId, string title, string text) =>
         new AddNoteAttachmentCommandHandler(Sender, Attachments, User, Clock, Limits)

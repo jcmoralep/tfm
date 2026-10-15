@@ -1,6 +1,7 @@
 using BmadPlatform.Application.Common.Exceptions;
 using BmadPlatform.Application.Features.Assistant;
 using BmadPlatform.Application.Features.Assistant.GetConversationAnswers;
+using BmadPlatform.Application.Features.Context.GetContextForAssistant;
 using BmadPlatform.Application.Features.Initiatives;
 using BmadPlatform.Application.Features.Initiatives.GetInitiative;
 using BmadPlatform.Application.Features.Initiatives.ReopenPlanning;
@@ -89,9 +90,11 @@ internal static class ArtifactGuards
     /// Builds the whole drafting request, so Generate and Regenerate read the same inputs. The Brief goes into a Standard
     /// PRD, the PRD into the Architecture and the Epics, and the Architecture into the Epics, each only while that document
     /// is Approved at this moment (a Draft or missing one, or another user's, is null). The Architecture and the Epics
-    /// carry no conversation answers: the approved text is their source.
+    /// carry no conversation answers: the approved text is their source, and no attached context either. The Spec, the
+    /// Brief and the PRD carry the text-like context of the initiative.
     /// </summary>
     public static async Task<DraftRequest> DraftRequestAsync(
+        ISender sender,
         IArtifactRepository repository,
         InitiativeDetails initiative,
         string ownerId,
@@ -110,6 +113,9 @@ internal static class ArtifactGuards
         var architecture = type == ArtifactType.EpicsAndStories
             ? await ApprovedTextAsync(repository, initiative.Id, ownerId, ArtifactType.Architecture, cancellationToken)
             : null;
+        var context = chained
+            ? null
+            : await sender.Send(new GetContextForAssistantQuery(initiative.Id), cancellationToken);
 
         return new DraftRequest(
             type,
@@ -119,7 +125,8 @@ internal static class ArtifactGuards
             chained ? [] : answers.Answers,
             brief,
             prd,
-            architecture);
+            architecture,
+            context);
     }
 
     private static async Task<string?> ApprovedTextAsync(

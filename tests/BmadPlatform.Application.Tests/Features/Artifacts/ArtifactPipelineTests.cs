@@ -1,4 +1,5 @@
 using BmadPlatform.Application.Abstractions.Authentication;
+using BmadPlatform.Application.Abstractions.Storage;
 using BmadPlatform.Application.Common.Exceptions;
 using BmadPlatform.Application.Features.Artifacts;
 using BmadPlatform.Application.Features.Artifacts.ApproveArtifact;
@@ -10,6 +11,7 @@ using BmadPlatform.Application.Features.Artifacts.Markdown;
 using BmadPlatform.Application.Features.Artifacts.RegenerateArtifact;
 using BmadPlatform.Application.Features.Artifacts.SaveArtifactContent;
 using BmadPlatform.Application.Features.Assistant;
+using BmadPlatform.Application.Features.Context;
 using BmadPlatform.Application.Features.Initiatives;
 using BmadPlatform.Application.Tests.TestDoubles;
 using BmadPlatform.Domain.Artifacts;
@@ -39,6 +41,8 @@ public sealed class ArtifactPipelineTests : IDisposable
         services.AddSingleton<IConversationRepository>(context.Assistant.Conversations);
         services.AddSingleton<IArtifactRepository>(context.Artifacts);
         services.AddSingleton<IArtifactDrafter>(context.Drafter);
+        services.AddSingleton<IAttachmentRepository>(context.Assistant.Attachments);
+        services.AddSingleton<IFileStorage>(context.Assistant.Storage);
         services.AddSingleton<ICurrentUser>(context.User);
         services.AddSingleton<TimeProvider>(context.Clock);
         provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = false });

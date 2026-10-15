@@ -6,6 +6,7 @@ using BmadPlatform.Application.Features.Context.AddNoteAttachment;
 using BmadPlatform.Application.Features.Context.DeleteAttachment;
 using BmadPlatform.Application.Features.Context.GetAttachmentDownload;
 using BmadPlatform.Application.Features.Context.GetContext;
+using BmadPlatform.Application.Features.Context.GetContextForAssistant;
 using BmadPlatform.Application.Features.Initiatives.GetInitiative;
 using BmadPlatform.Application.Features.Initiatives.MarkReadyToBuild;
 using BmadPlatform.Application.Features.Initiatives.ReopenPlanning;
@@ -53,6 +54,15 @@ public sealed class ModulesSender(
                 var view = await new GetContextQueryHandler(this, context.Attachments, currentUser, context.Limits).Handle(query, cancellationToken);
 
                 return (TResponse)(object?)view!;
+            case GetContextForAssistantQuery query:
+                // Without context routes the initiative simply has no attachments.
+                IReadOnlyList<ContextExcerpt> excerpts = context is null
+                    ? []
+                    : await new GetContextForAssistantQueryHandler(
+                        this, context.Attachments, context.Storage, currentUser,
+                        context.Loggers.CreateLogger<GetContextForAssistantQueryHandler>()).Handle(query, cancellationToken);
+
+                return (TResponse)excerpts;
             case AddFileAttachmentCommand command when context is not null:
                 var file = await new AddFileAttachmentCommandHandler(
                     this, context.Attachments, context.Storage, currentUser, timeProvider, context.Limits,

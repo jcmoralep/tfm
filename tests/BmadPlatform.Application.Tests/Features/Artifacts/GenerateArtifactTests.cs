@@ -255,6 +255,7 @@ public sealed class GenerateArtifactTests
         await Store(id, ArtifactType.Architecture, "# Arquitectura", architectureApproved);
 
         var request = await ArtifactGuards.DraftRequestAsync(
+            context.Sender,
             context.Artifacts,
             await context.Assistant.Details(id),
             AssistantTestContext.UserA,

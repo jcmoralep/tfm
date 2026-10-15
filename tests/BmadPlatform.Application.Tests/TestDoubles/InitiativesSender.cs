@@ -1,7 +1,10 @@
+using BmadPlatform.Application.Features.Context;
+using BmadPlatform.Application.Features.Context.GetContextForAssistant;
 using BmadPlatform.Application.Features.Initiatives.GetInitiative;
 using BmadPlatform.Application.Features.Initiatives.SetInitiativeDepth;
 using BmadPlatform.Application.Features.Initiatives.StartPlanning;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace BmadPlatform.Application.Tests.TestDoubles;
 
@@ -12,7 +15,8 @@ namespace BmadPlatform.Application.Tests.TestDoubles;
 public sealed class InitiativesSender(
     InMemoryInitiativeRepository repository,
     FakeCurrentUser currentUser,
-    TimeProvider timeProvider) : ISender
+    TimeProvider timeProvider,
+    ContextRoutes? context = null) : ISender
 {
     private readonly List<object> sent = [];
 
@@ -31,6 +35,18 @@ public sealed class InitiativesSender(
             var details = await new GetInitiativeQueryHandler(repository, currentUser).Handle(query, cancellationToken);
 
             return (TResponse)(object?)details!;
+        }
+
+        if (request is GetContextForAssistantQuery contextQuery)
+        {
+            // Without context routes the initiative simply has no attachments.
+            IReadOnlyList<ContextExcerpt> excerpts = context is null
+                ? []
+                : await new GetContextForAssistantQueryHandler(
+                    this, context.Attachments, context.Storage, currentUser,
+                    context.Loggers.CreateLogger<GetContextForAssistantQueryHandler>()).Handle(contextQuery, cancellationToken);
+
+            return (TResponse)excerpts;
         }
 
         throw new NotSupportedException($"{request.GetType().Name} is not routed by this double.");

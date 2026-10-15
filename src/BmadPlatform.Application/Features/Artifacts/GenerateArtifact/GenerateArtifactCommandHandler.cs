@@ -31,7 +31,7 @@ public sealed class GenerateArtifactCommandHandler(
             throw new DomainException(ArtifactTexts.AlreadyExists);
         }
 
-        var draftRequest = await ArtifactGuards.DraftRequestAsync(repository, initiative, ownerId, request.Type, answers, cancellationToken);
+        var draftRequest = await ArtifactGuards.DraftRequestAsync(sender, repository, initiative, ownerId, request.Type, answers, cancellationToken);
         var markdown = await drafter.DraftAsync(draftRequest, cancellationToken);
 
         var artifact = Artifact.Create(initiative.Id, ownerId, request.Type, markdown, timeProvider.GetUtcNow());

@@ -1,5 +1,7 @@
 using BmadPlatform.Application.Abstractions.Authentication;
+using BmadPlatform.Application.Abstractions.Storage;
 using BmadPlatform.Application.Common.Exceptions;
+using BmadPlatform.Application.Features.Context;
 using BmadPlatform.Application.Features.Assistant;
 using BmadPlatform.Application.Features.Assistant.SendMessage;
 using BmadPlatform.Application.Features.Assistant.StartConversation;
@@ -31,6 +33,8 @@ public sealed class AssistantPipelineTests : IDisposable
         services.AddSingleton<IInitiativeRepository>(initiatives.Repository);
         services.AddSingleton<IConversationRepository>(conversations);
         services.AddSingleton<IAssistantService, ScriptedAssistantService>();
+        services.AddSingleton<IAttachmentRepository>(new InMemoryAttachmentRepository());
+        services.AddSingleton<IFileStorage>(new InMemoryFileStorage());
         services.AddSingleton<ICurrentUser>(initiatives.User);
         services.AddSingleton<TimeProvider>(initiatives.Clock);
         provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = false });
