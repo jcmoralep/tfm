@@ -156,6 +156,56 @@ namespace BmadPlatform.Infrastructure.Persistence.Migrations
                     b.ToTable("asi_messages", (string)null);
                 });
 
+            modelBuilder.Entity("BmadPlatform.Domain.Context.Attachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("ContentType")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("InitiativeId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<long?>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StorageKey")
+                        .HasMaxLength(65)
+                        .HasColumnType("varchar(65)");
+
+                    b.Property<string>("Text")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Url")
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InitiativeId", "CreatedAt");
+
+                    b.ToTable("ctx_attachments", (string)null);
+                });
+
             modelBuilder.Entity("BmadPlatform.Domain.Initiatives.Initiative", b =>
                 {
                     b.Property<Guid>("Id")

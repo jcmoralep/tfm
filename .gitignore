@@ -36,3 +36,6 @@ src/BmadPlatform.Web/wwwroot/css/app.css
 
 # Local agent tooling
 .atl/
+
+# Local attachment files (Storage:LocalRootPath)
+App_Data/

@@ -1,16 +1,20 @@
 using BmadPlatform.Application.Abstractions.Authentication;
 using BmadPlatform.Application.Features.Artifacts;
+using BmadPlatform.Application.Abstractions.Storage;
 using BmadPlatform.Application.Features.Artifacts.ExportArtifact;
 using BmadPlatform.Application.Features.Assistant;
+using BmadPlatform.Application.Features.Context;
 using BmadPlatform.Application.Features.Initiatives;
 using BmadPlatform.Infrastructure.Artifacts;
 using BmadPlatform.Infrastructure.Assistant;
+using BmadPlatform.Infrastructure.Context;
 using BmadPlatform.Infrastructure.Export;
 using BmadPlatform.Infrastructure.Gemini;
 using BmadPlatform.Infrastructure.Identity;
 using BmadPlatform.Infrastructure.Identity.Seeding;
 using BmadPlatform.Infrastructure.Initiatives;
 using BmadPlatform.Infrastructure.Persistence;
+using BmadPlatform.Infrastructure.Storage;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -64,6 +68,13 @@ public static class DependencyInjection
         services.AddScoped<IInitiativeRepository, InitiativeRepository>();
         services.AddScoped<IConversationRepository, ConversationRepository>();
         services.AddScoped<IArtifactRepository, ArtifactRepository>();
+        services.AddScoped<IAttachmentRepository, AttachmentRepository>();
+
+        // Checked eagerly, like the connection string: S3 or a bad size stops the app at startup. Only local disk
+        // exists for now; the per-file cap travels to the UI inside ContextLimits.
+        var storage = StorageOptions.BindAndValidate(configuration);
+        services.AddSingleton<IFileStorage>(_ => new LocalFileStorage(storage.LocalRootPath));
+        services.AddSingleton(new ContextLimits(storage.MaxFileBytes));
 
         // One switch (Assistant:Provider) selects both the assistant and the drafter. Checked eagerly, like the
         // connection string, so a bad configuration stops the app at startup instead of on the first request.

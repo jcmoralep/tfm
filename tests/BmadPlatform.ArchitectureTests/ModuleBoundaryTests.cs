@@ -15,6 +15,9 @@ public sealed class ModuleBoundaryTests
     // The entity type, not a member that merely carries the name ("Artifact," in a parameter list or "Artifact)" in a cast).
     private const string ArtifactEntityToken = @"(?<!\.)\bArtifact\b(?!\s*[,;)])";
 
+    // The entity type, not a member or a list item named after it ("Attachment," or "Attachment)" in a signature).
+    private const string AttachmentEntityToken = @"(?<!\.)\bAttachment\b(?!\s*[,;)])";
+
     private static readonly Module[] Modules =
     [
         new(
@@ -29,6 +32,10 @@ public sealed class ModuleBoundaryTests
             "Artifacts",
             ["Domain/Artifacts", "Application/Features/Artifacts", "Infrastructure/Artifacts"],
             [ArtifactEntityToken, @"\bIArtifactRepository\b", @"Infrastructure\.Artifacts", @"\bart_"]),
+        new(
+            "Context",
+            ["Domain/Context", "Application/Features/Context", "Infrastructure/Context"],
+            [AttachmentEntityToken, @"\bIAttachmentRepository\b", @"Infrastructure\.Context", @"\bctx_"]),
     ];
 
     public static TheoryData<string, string> ModulePairs()
@@ -62,6 +69,7 @@ public sealed class ModuleBoundaryTests
     [InlineData("Initiatives")]
     [InlineData("Assistant")]
     [InlineData("Artifacts")]
+    [InlineData("Context")]
     public void Every_module_has_sources_in_each_layer_so_the_scan_cannot_pass_vacuously(string moduleName)
     {
         var module = Modules.Single(candidate => candidate.Name == moduleName);
