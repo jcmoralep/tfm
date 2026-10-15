@@ -8,7 +8,7 @@ namespace BmadPlatform.Infrastructure.Export;
 
 /// <summary>
 /// Delivers the stored Markdown as a <c>.md</c> file for developers (RF-21, RF-39). The document body is copied as it
-/// is; the exporter only adds the BMAD frontmatter (title, status, created, updated; RF-36) and a short usage note
+/// is; the exporter only adds the BMAD frontmatter (title, status, created, updated, plus the type for the Architecture and stepsCompleted/inputDocuments for the Epics; RF-36) and a short usage note
 /// that says where the file goes and which BMAD skill picks it up. Dates are the server's local ones, like the rest
 /// of the platform.
 /// </summary>
