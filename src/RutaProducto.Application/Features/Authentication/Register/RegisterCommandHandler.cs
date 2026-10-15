@@ -1,6 +1,7 @@
 using RutaProducto.Application.Abstractions.Authentication;
 using RutaProducto.Application.Abstractions.Captcha;
 using RutaProducto.Application.Abstractions.Email;
+using RutaProducto.Application.Abstractions.Registration;
 using MediatR;
 
 namespace RutaProducto.Application.Features.Authentication.Register;
@@ -8,6 +9,7 @@ namespace RutaProducto.Application.Features.Authentication.Register;
 public sealed class RegisterCommandHandler(
     IAuthService authService,
     ICaptchaVerifier captchaVerifier,
+    IInviteCodePolicy invitePolicy,
     IAccountTokenService tokens,
     IAccountLinks links,
     IEmailSender emailSender,
@@ -24,6 +26,12 @@ public sealed class RegisterCommandHandler(
             return captcha == CaptchaOutcome.Rejected
                 ? RegistrationResult.CaptchaRejected
                 : RegistrationResult.CaptchaUnavailable;
+        }
+
+        // Then the invite code, still before any account lookup, so a wrong code reveals nothing about existing accounts.
+        if (!invitePolicy.Matches(request.InviteCode))
+        {
+            return RegistrationResult.InviteCodeRejected;
         }
 
         var email = request.Email.Trim();

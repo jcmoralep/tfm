@@ -8,6 +8,7 @@ using RutaProducto.Application.Features.Initiatives;
 using RutaProducto.Infrastructure.Artifacts;
 using RutaProducto.Infrastructure.Assistant;
 using RutaProducto.Infrastructure.Captcha;
+using RutaProducto.Infrastructure.Registration;
 using RutaProducto.Infrastructure.Context;
 using RutaProducto.Infrastructure.Email;
 using RutaProducto.Infrastructure.Export;
@@ -88,6 +89,9 @@ public static class DependencyInjection
 
         // Captcha:Provider (None by default) selects the verifier; Turnstile without its keys stops the app at startup.
         services.AddCaptcha(CaptchaOptions.BindAndValidate(configuration));
+
+        // Registration:InviteCode (empty = off) gates /registro with a shared code; a code under 12 characters stops the app at startup.
+        services.AddInviteCode(InviteCodeOptions.BindAndValidate(configuration));
 
         // Email:Provider (None by default) selects the sender; Smtp without its settings, or a confirmation switch without
         // Smtp, stops the app at startup. Nothing is sent until the account flows use IEmailSender.
