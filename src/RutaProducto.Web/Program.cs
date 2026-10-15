@@ -67,6 +67,7 @@ try
     builder.Services.AddScoped<CircuitHandler, CorrelationIdCircuitHandler>();
 
     builder.Services.AddSingleton<MarkdownRenderer>();
+    builder.Services.AddSingleton<IAccountLinks, AccountLinks>();
 
     // Off by default: with the switch off neither AddRateLimiter nor UseRateLimiter is called.
     var rateLimit = RateLimitOptions.BindAndValidate(builder.Configuration);

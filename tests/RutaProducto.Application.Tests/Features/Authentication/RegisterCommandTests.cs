@@ -1,5 +1,6 @@
 using RutaProducto.Application.Abstractions.Authentication;
 using RutaProducto.Application.Abstractions.Captcha;
+using RutaProducto.Application.Abstractions.Email;
 using RutaProducto.Application.Features.Authentication.Register;
 using RutaProducto.Application.Tests.TestDoubles;
 
@@ -59,46 +60,54 @@ public sealed class RegisterCommandTests
     }
 
     [Fact]
-    public async Task A_new_account_is_created_with_the_trimmed_email_and_signed_in()
+    public async Task With_confirmation_off_a_new_account_is_created_with_the_trimmed_email_signed_in_and_nothing_is_emailed()
     {
         var authService = new RecordingAuthService(RegistrationResult.Succeeded);
+        var sender = new RecordingEmailSender();
 
-        var result = await new RegisterCommandHandler(authService, new FakeCaptchaVerifier()).Handle(
+        var result = await Handler(authService, sender: sender).Handle(
             new RegisterCommand("  ana@example.com ", "Secret-123", "Secret-123"), CancellationToken.None);
 
         Assert.Equal(RegistrationStatus.Succeeded, result.Status);
         Assert.Equal("ana@example.com", authService.RegisteredEmail);
         Assert.Equal("ana@example.com", authService.SignedInEmail);
+        Assert.Empty(sender.Messages);
     }
 
     [Theory]
     [InlineData(RegistrationStatus.EmailTaken)]
     [InlineData(RegistrationStatus.InvalidPassword)]
-    public async Task A_rejected_registration_does_not_sign_anyone_in(RegistrationStatus status)
+    public async Task With_confirmation_off_a_rejected_registration_does_not_sign_anyone_in(RegistrationStatus status)
     {
         var authService = new RecordingAuthService(new RegistrationResult(status, []));
+        var sender = new RecordingEmailSender();
 
-        var result = await new RegisterCommandHandler(authService, new FakeCaptchaVerifier()).Handle(
+        var result = await Handler(authService, sender: sender).Handle(
             new RegisterCommand("ana@example.com", "Secret-123", "Secret-123"), CancellationToken.None);
 
         Assert.Equal(status, result.Status);
         Assert.Null(authService.SignedInEmail);
+        Assert.Empty(sender.Messages);
     }
 
     [Theory]
-    [InlineData(CaptchaOutcome.Rejected, RegistrationStatus.CaptchaRejected)]
-    [InlineData(CaptchaOutcome.Unavailable, RegistrationStatus.CaptchaUnavailable)]
-    public async Task A_captcha_that_did_not_pass_creates_no_account_and_signs_no_one_in(
-        CaptchaOutcome outcome, RegistrationStatus expected)
+    [InlineData(CaptchaOutcome.Rejected, RegistrationStatus.CaptchaRejected, false)]
+    [InlineData(CaptchaOutcome.Unavailable, RegistrationStatus.CaptchaUnavailable, false)]
+    [InlineData(CaptchaOutcome.Rejected, RegistrationStatus.CaptchaRejected, true)]
+    [InlineData(CaptchaOutcome.Unavailable, RegistrationStatus.CaptchaUnavailable, true)]
+    public async Task A_captcha_that_did_not_pass_creates_no_account_signs_no_one_in_and_emails_nobody(
+        CaptchaOutcome outcome, RegistrationStatus expected, bool confirmation)
     {
         var authService = new RecordingAuthService(RegistrationResult.Succeeded);
+        var sender = new RecordingEmailSender();
 
-        var result = await new RegisterCommandHandler(authService, new FakeCaptchaVerifier(outcome)).Handle(
+        var result = await Handler(authService, new FakeCaptchaVerifier(outcome), sender, confirmation).Handle(
             new RegisterCommand("ana@example.com", "Secret-123", "Secret-123", "tok"), CancellationToken.None);
 
         Assert.Equal(expected, result.Status);
         Assert.Null(authService.RegisteredEmail);
         Assert.Null(authService.SignedInEmail);
+        Assert.Empty(sender.Messages);
     }
 
     [Fact]
@@ -107,12 +116,82 @@ public sealed class RegisterCommandTests
         var authService = new RecordingAuthService(RegistrationResult.Succeeded);
         var captcha = new FakeCaptchaVerifier(CaptchaOutcome.Passed);
 
-        var result = await new RegisterCommandHandler(authService, captcha).Handle(
+        var result = await Handler(authService, captcha).Handle(
             new RegisterCommand("ana@example.com", "Secret-123", "Secret-123", "tok"), CancellationToken.None);
 
         Assert.Equal(RegistrationStatus.Succeeded, result.Status);
         Assert.Equal("tok", captcha.LastToken);
         Assert.Equal("ana@example.com", authService.SignedInEmail);
+    }
+
+    [Fact]
+    public async Task With_confirmation_on_a_new_account_gets_a_confirmation_email_and_is_not_signed_in()
+    {
+        var authService = new RecordingAuthService(RegistrationResult.Succeeded);
+        var sender = new RecordingEmailSender();
+
+        var result = await Handler(authService, sender: sender, confirmation: true, pendingEmail: "ana@example.com").Handle(
+            new RegisterCommand("ana@example.com", "Secret-123", "Secret-123"), CancellationToken.None);
+
+        Assert.Equal(RegistrationStatus.ConfirmationPending, result.Status);
+        Assert.Null(authService.SignedInEmail);
+        var message = Assert.Single(sender.Messages);
+        Assert.Equal(EmailKind.ConfirmEmail, message.Kind);
+        Assert.Equal("ana@example.com", message.To);
+        Assert.Contains("https://app.test/confirmar-correo?usuario=user-1&codigo=code-1", message.Body);
+    }
+
+    [Fact]
+    public async Task With_confirmation_on_a_duplicate_address_gets_the_same_result_and_an_account_exists_email()
+    {
+        var authService = new RecordingAuthService(RegistrationResult.EmailTaken);
+        var sender = new RecordingEmailSender();
+
+        var result = await Handler(authService, sender: sender, confirmation: true).Handle(
+            new RegisterCommand("ana@example.com", "Secret-123", "Secret-123"), CancellationToken.None);
+
+        Assert.Equal(RegistrationStatus.ConfirmationPending, result.Status);
+        Assert.Null(authService.SignedInEmail);
+        var message = Assert.Single(sender.Messages);
+        Assert.Equal(EmailKind.AccountExists, message.Kind);
+        Assert.Contains("https://app.test/login", message.Body);
+        Assert.Contains("https://app.test/recuperar-contrasena", message.Body);
+    }
+
+    [Fact]
+    public async Task With_confirmation_on_a_weak_password_is_reported_as_before_and_nothing_is_emailed()
+    {
+        var authService = new RecordingAuthService(RegistrationResult.InvalidPassword(["weak"]));
+        var sender = new RecordingEmailSender();
+
+        var result = await Handler(authService, sender: sender, confirmation: true).Handle(
+            new RegisterCommand("ana@example.com", "abc", "abc"), CancellationToken.None);
+
+        Assert.Equal(RegistrationStatus.InvalidPassword, result.Status);
+        Assert.Empty(sender.Messages);
+    }
+
+    private static RegisterCommandHandler Handler(
+        RecordingAuthService authService,
+        FakeCaptchaVerifier? captcha = null,
+        RecordingEmailSender? sender = null,
+        bool confirmation = false,
+        string? pendingEmail = null)
+    {
+        var tokens = new FakeAccountTokenService();
+
+        if (pendingEmail is not null)
+        {
+            tokens.KnownEmails.Add(pendingEmail);
+        }
+
+        return new RegisterCommandHandler(
+            authService,
+            captcha ?? new FakeCaptchaVerifier(),
+            tokens,
+            new FakeAccountLinks(),
+            sender ?? new RecordingEmailSender(),
+            new AccountEmailSettings(confirmation, confirmation, null));
     }
 
     private sealed class RecordingAuthService(RegistrationResult registration) : IAuthService
