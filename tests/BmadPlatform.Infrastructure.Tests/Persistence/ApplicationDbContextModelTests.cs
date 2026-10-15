@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using BmadPlatform.Domain.Artifacts;
 using BmadPlatform.Domain.Assistant;
+using BmadPlatform.Domain.Context;
 using BmadPlatform.Domain.Initiatives;
 using BmadPlatform.Infrastructure.Artifacts;
 using BmadPlatform.Infrastructure.Assistant;
@@ -67,7 +68,7 @@ public sealed class ApplicationDbContextModelTests : IDisposable
             .ToArray();
 
         Assert.Equal<string>(
-            ["AspNetUserClaims", "AspNetUserLogins", "AspNetUserTokens", "AspNetUsers", "art_artifacts", "asi_conversations", "asi_messages", "ini_initiatives"],
+            ["AspNetUserClaims", "AspNetUserLogins", "AspNetUserTokens", "AspNetUsers", "art_artifacts", "asi_conversations", "asi_messages", "ctx_attachments", "ini_initiatives"],
             tables);
     }
 
@@ -364,6 +365,47 @@ public sealed class ApplicationDbContextModelTests : IDisposable
         var repository = scope.ServiceProvider.GetRequiredService<BmadPlatform.Application.Features.Artifacts.IArtifactRepository>();
 
         Assert.IsType<ArtifactRepository>(repository);
+    }
+
+    [Fact]
+    public void Attachment_has_no_foreign_key_a_string_kind_microsecond_dates_and_one_list_index()
+    {
+        using var context = CreateContext();
+        var entityType = context.Model.FindEntityType(typeof(Attachment))!;
+
+        Assert.Empty(entityType.GetForeignKeys());
+        Assert.Empty(entityType.GetNavigations());
+        Assert.Equal(255, entityType.FindProperty(nameof(Attachment.OwnerId))!.GetMaxLength());
+
+        var kind = entityType.FindProperty(nameof(Attachment.Kind))!;
+        Assert.Equal(typeof(string), kind.GetProviderClrType());
+        Assert.Equal(20, kind.GetMaxLength());
+
+        Assert.Equal("datetime(6)", entityType.FindProperty(nameof(Attachment.CreatedAt))!.GetRelationalTypeMapping().StoreType);
+
+        var index = Assert.Single(entityType.GetIndexes());
+        Assert.False(index.IsUnique);
+        Assert.Equal(
+            [nameof(Attachment.InitiativeId), nameof(Attachment.CreatedAt)],
+            index.Properties.Select(property => property.Name));
+    }
+
+    [Fact]
+    public void Context_attachments_migration_is_present()
+    {
+        using var context = new DesignTimeDbContextFactory().CreateDbContext([]);
+
+        Assert.Contains(context.Database.GetMigrations(), migration => migration.EndsWith("_AddContextAttachments", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Attachment_repository_is_registered_per_scope_for_the_application_port()
+    {
+        using var scope = provider.CreateScope();
+
+        var repository = scope.ServiceProvider.GetRequiredService<BmadPlatform.Application.Features.Context.IAttachmentRepository>();
+
+        Assert.IsType<BmadPlatform.Infrastructure.Context.AttachmentRepository>(repository);
     }
 
     [Fact]
