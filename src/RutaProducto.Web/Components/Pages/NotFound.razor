@@ -26,4 +26,16 @@ else
     /// <summary>HTTP status that triggered the status-code re-execute (<c>?codigo=</c>); only 429 changes the page.</summary>
     [SupplyParameterFromQuery(Name = "codigo")]
     public int? Code { get; set; }
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    protected override void OnInitialized()
+    {
+        // A direct visit (or a redirect from a page that does not exist) must answer 404, not 200.
+        if (Code == 404 && HttpContext is { Response.HasStarted: false })
+        {
+            HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
+        }
+    }
 }

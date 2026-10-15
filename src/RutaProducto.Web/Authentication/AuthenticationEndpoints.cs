@@ -14,6 +14,8 @@ internal static class AuthenticationEndpoints
     public const string ConfirmEmailPath = "/confirmar-correo";
     public const string ResendConfirmationPath = "/confirmar-correo/reenviar";
     public const string ForgotPasswordPath = "/recuperar-contrasena";
+    /// <summary>Where the email-dependent pages send the visitor when email is not configured; the page answers 404.</summary>
+    public const string NotFoundRedirect = "/not-found?codigo=404";
     public const string ResetPasswordPath = "/restablecer-contrasena";
 
     /// <summary>

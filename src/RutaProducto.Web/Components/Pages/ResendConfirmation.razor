@@ -67,7 +67,7 @@
         // Without email there is nothing to resend: the page does not exist.
         if (!EmailSettings.EmailEnabled)
         {
-            Navigation.NotFound();
+            Navigation.NavigateTo(AuthenticationEndpoints.NotFoundRedirect, replace: true);
         }
     }
 
