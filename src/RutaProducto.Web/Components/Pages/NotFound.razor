@@ -1,10 +1,29 @@
 @page "/not-found"
 @attribute [AllowAnonymous]
 
-<PageTitle>Página no encontrada · Ruta de Producto</PageTitle>
+@if (Code == 429)
+{
+    <PageTitle>Demasiados intentos · Ruta de Producto</PageTitle>
 
-<section class="rounded-card border border-line bg-surface-raised p-8 shadow-card">
-    <h1 class="text-2xl font-semibold text-ink">Página no encontrada</h1>
-    <p class="mt-3 text-ink-muted">La página solicitada no existe.</p>
-    <a href="" class="mt-6 inline-block text-sm font-semibold text-ink underline">Volver al inicio</a>
-</section>
+    <section class="rounded-card border border-line bg-surface-raised p-8 shadow-card">
+        <h1 class="text-2xl font-semibold text-ink">Demasiados intentos</h1>
+        <p class="mt-3 text-ink-muted">Hiciste demasiados intentos en poco tiempo. Espera un minuto y vuelve a intentarlo.</p>
+        <a href="/login" class="mt-6 inline-block text-sm font-semibold text-ink underline">Ir a iniciar sesión</a>
+    </section>
+}
+else
+{
+    <PageTitle>Página no encontrada · Ruta de Producto</PageTitle>
+
+    <section class="rounded-card border border-line bg-surface-raised p-8 shadow-card">
+        <h1 class="text-2xl font-semibold text-ink">Página no encontrada</h1>
+        <p class="mt-3 text-ink-muted">La página solicitada no existe.</p>
+        <a href="" class="mt-6 inline-block text-sm font-semibold text-ink underline">Volver al inicio</a>
+    </section>
+}
+
+@code {
+    /// <summary>HTTP status that triggered the status-code re-execute (<c>?codigo=</c>); only 429 changes the page.</summary>
+    [SupplyParameterFromQuery(Name = "codigo")]
+    public int? Code { get; set; }
+}

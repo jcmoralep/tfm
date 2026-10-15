@@ -10,6 +10,12 @@ internal static class AuthenticationEndpoints
     public const string RegisterPath = "/registro";
     public const string LogoutPath = "/logout";
 
+    // Paths of the pages added by later registration-hardening slices; the limiter already covers their POSTs.
+    public const string ConfirmEmailPath = "/confirmar-correo";
+    public const string ResendConfirmationPath = "/confirmar-correo/reenviar";
+    public const string ForgotPasswordPath = "/recuperar-contrasena";
+    public const string ResetPasswordPath = "/restablecer-contrasena";
+
     /// <summary>
     /// Sign-out runs as a plain POST endpoint because removing the auth cookie needs an HTTP response,
     /// which interactive components do not have.
