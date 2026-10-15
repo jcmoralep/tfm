@@ -5,8 +5,8 @@ using BmadPlatform.Domain.Initiatives;
 namespace BmadPlatform.Application.Features.Artifacts;
 
 /// <summary>
-/// One document of a level's required set. <paramref name="Type"/> is null for documents that arrive in a later
-/// step (Epics and stories), which is listed but can never be generated or approved yet.
+/// One document of a level's required set. <paramref name="Type"/> is null only for a document that has no generator
+/// yet; every type of every level can be generated today.
 /// </summary>
 public sealed record ArtifactSlot(string Label, ArtifactType? Type);
 

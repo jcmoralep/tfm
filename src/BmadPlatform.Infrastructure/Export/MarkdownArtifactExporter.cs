@@ -8,7 +8,7 @@ namespace BmadPlatform.Infrastructure.Export;
 
 /// <summary>
 /// Delivers the stored Markdown as a <c>.md</c> file for developers (RF-21, RF-39). The document body is copied as it
-/// is; the exporter only adds the BMAD frontmatter (title, status, created, updated; RF-36) and a short usage note
+/// is; the exporter only adds the BMAD frontmatter (title, status, created, updated, plus the type for the Architecture and stepsCompleted/inputDocuments for the Epics; RF-36) and a short usage note
 /// that says where the file goes and which BMAD skill picks it up. Dates are the server's local ones, like the rest
 /// of the platform.
 /// </summary>
@@ -67,7 +67,7 @@ internal sealed partial class MarkdownArtifactExporter : IArtifactExporter
             ArtifactType.Brief =>
                 "Este es el Brief de la iniciativa, el punto de partida del PRD en BMAD. Para usarlo, guárdelo en su repositorio de desarrollo como `planning-artifacts/briefs/brief-<proyecto>-<fecha>/brief.md` y pida a `bmad-prd` que lo tome como entrada.",
             ArtifactType.Prd =>
-                "Este es el PRD de la iniciativa. Para usarlo, guárdelo en su repositorio de desarrollo como `planning-artifacts/prds/prd-<proyecto>-<fecha>/prd.md`; los pasos siguientes de BMAD son la arquitectura (`bmad-architecture`) y las épicas e historias (`bmad-create-epics-and-stories`).",
+                "Este es el PRD de la iniciativa. Para usarlo, guárdelo en su repositorio de desarrollo como `planning-artifacts/prds/prd-<proyecto>-<fecha>/prd.md`; los pasos siguientes de BMAD son la arquitectura (`bmad-architecture`) y las épicas e historias (`bmad-create-epics-and-stories`); este último solo busca archivos sueltos en `planning-artifacts/`, así que copie allí el PRD como `prd-<proyecto>.md` o indíquele su ruta.",
             ArtifactType.Architecture =>
                 "Este es un borrador de la arquitectura de la iniciativa, para revisión del equipo de desarrollo: no son decisiones técnicas finales. Para usarlo, guárdelo en su repositorio de desarrollo como `planning-artifacts/architecture/architecture-<proyecto>-<fecha>/ARCHITECTURE-SPINE.md` y úselo, junto con el PRD, como entrada de `bmad-create-epics-and-stories`; ese paso solo busca archivos sueltos en `planning-artifacts/`, así que copie allí el PRD y la arquitectura como `prd-<proyecto>.md` y `architecture-<proyecto>.md`, o indíquele sus rutas. Antes de construir, el equipo debe responder la sección «Preguntas para desarrollo».",
             ArtifactType.EpicsAndStories =>

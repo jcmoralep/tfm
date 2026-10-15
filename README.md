@@ -4,7 +4,7 @@ Plataforma interna para que personas de producto lleven una iniciativa desde la 
 
 > **Nota de marcas.** BMad y BMAD-METHOD son marcas de BMad Code, LLC. Este proyecto no está afiliado ni avalado por ellos: usa el método BMAD (licencia MIT del código) y solo lo menciona para describir con qué es compatible. Por eso el producto no lleva «BMAD» en su nombre.
 
-Estado actual: **paso 5 (Gemini real detrás de un interruptor)** de `PROPUESTA-MVP.md` §7, **entregado** (cambio `gemini-assistant`, siete PR fusionados el 2026-10-13). Incluye la solución por capas, MySQL, Serilog, el inicio de sesión, el estilo visual base, las iniciativas, la conversación guiada, la generación, edición y aprobación del Brief, el PRD y la especificación, y la opción de que Gemini redacte las preguntas y los documentos (`Assistant:Provider=Gemini`; por defecto sigue el asistente de demostración). Siguen pendientes Arquitectura y Épicas (paso 6), contexto adjunto (paso 7) y exportación (paso 8).
+Estado actual: **paso 6 (Arquitectura y Épicas e historias)** de `PROPUESTA-MVP.md` §7, **entregado** (cambio `architecture-epics`, 2026-10-14). Incluye la solución por capas, MySQL, Serilog, el inicio de sesión, el estilo visual base, las iniciativas, la conversación guiada, la generación, edición y aprobación del Brief, el PRD, la especificación, la Arquitectura y las Épicas e historias, y la opción de que Gemini redacte las preguntas y los documentos (`Assistant:Provider=Gemini`; por defecto sigue el asistente de demostración). Siguen pendientes el contexto adjunto (paso 7) y la exportación completa (paso 8).
 
 ## Advertencia sobre Gemini (capa gratuita)
 
@@ -52,7 +52,7 @@ Privacidad: los registros (`Logs/`) no guardan el texto de mensajes ni de docume
 
 Desde el detalle de la iniciativa, la tarjeta **Artefactos** lista los documentos que su nivel necesita y los abre en `/iniciativas/{id}/artefactos/{tipo}`. Nada se genera solo: cada documento se crea con el botón **Generar**, a partir de las respuestas de la conversación.
 
-- **Pequeña:** Especificación. **Estándar:** Brief y PRD. **Grande:** PRD; Arquitectura y Épicas e historias aparecen como "disponible en un paso posterior".
+- **Pequeña:** Especificación. **Estándar:** Brief y PRD. **Grande:** PRD, Arquitectura y Épicas e historias; la Arquitectura se puede generar cuando el PRD está aprobado, y las Épicas e historias cuando lo están el PRD y la Arquitectura.
 - Cada documento se guarda como **Markdown** con un número de versión y tiene un estado: **Borrador** o **Aprobado**. Solo se puede aprobar un borrador, y solo la persona dueña de la iniciativa.
 - **Editar** abre el Markdown en un editor (máximo 20.000 caracteres). Cada cambio guardado sube la versión y devuelve el documento a Borrador; si la iniciativa estaba Lista para construir, vuelve a Planificando. Guardar el mismo texto no cambia nada.
 - **Regenerar** reemplaza todo el contenido, incluidos los cambios manuales, y pide confirmación antes de hacerlo.

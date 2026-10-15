@@ -90,6 +90,22 @@ public sealed class ArtifactTestContext
         return id;
     }
 
+    private static readonly ArtifactType[] LargeChain = [ArtifactType.Prd, ArtifactType.Architecture, ArtifactType.EpicsAndStories];
+
+    /// <summary>A Large initiative at the closing whose documents of the chain are generated and approved in order, up to and including <paramref name="last"/>.</summary>
+    public async Task<Guid> LargeApprovedThrough(ArtifactType last)
+    {
+        var id = await AtClosing(InitiativeDepth.Large);
+
+        foreach (var type in LargeChain.Take(Array.IndexOf(LargeChain, last) + 1))
+        {
+            await Generate(id, type);
+            await Approve(id, type, 1);
+        }
+
+        return id;
+    }
+
     public async Task<InitiativeStatus> StatusOf(Guid id) => (await Assistant.Details(id)).Status;
 
     public Artifact StoredArtifact(Guid id, ArtifactType type) => Artifacts.Stored.Single(a => a.InitiativeId == id && a.Type == type);

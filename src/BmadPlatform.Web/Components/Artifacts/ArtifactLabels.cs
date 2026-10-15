@@ -132,7 +132,7 @@ public static class ArtifactLabels
 
     /// <summary>The body of the approval confirmation; the button stays "Aprobar" for every type.</summary>
     public static string ApproveConfirmText(ArtifactType type) => NeedsDevelopmentReview(type)
-        ? "Aprobar lo marca como el borrador que se entrega al equipo de desarrollo. No son decisiones técnicas finales: desarrollo lo revisa antes de construir."
+        ? "Aprobar lo marca como el borrador que se entrega al equipo de desarrollo. Al aprobarlo usted confirma que lo revisó; no son decisiones técnicas finales y desarrollo lo revisa antes de construir."
         : "Aprobar lo marca como versión final para desarrollo.";
 
     /// <summary>The amber advice shown when the document this one depends on changed after it was drafted.</summary>

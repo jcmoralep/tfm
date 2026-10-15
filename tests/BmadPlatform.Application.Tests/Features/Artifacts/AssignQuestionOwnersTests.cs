@@ -53,6 +53,21 @@ public sealed class AssignQuestionOwnersTests
     }
 
     [Fact]
+    public async Task Pre_assigned_development_questions_of_an_architecture_can_be_reassigned()
+    {
+        var id = await context.LargeApprovedThrough(ArtifactType.Prd);
+        context.Drafter.Output = "# Arquitectura\n\n## Preguntas para desarrollo\n\n- **Q-1**: ¿Qué tecnología usará la solución?" + OpenQuestions.DevelopmentSuffix;
+        await context.Generate(id, ArtifactType.Architecture);
+
+        var view = await context.Assign(id, ArtifactType.Architecture, 1, new QuestionAssignment("Q-1", "TI", "esta semana"));
+
+        var stored = context.StoredArtifact(id, ArtifactType.Architecture);
+        Assert.EndsWith("(Responsable: TI; Revisar: esta semana)", stored.Content, StringComparison.Ordinal);
+        Assert.Equal((2, ArtifactStatus.Draft), (stored.Version, stored.Status));
+        Assert.Empty(view.UnassignedQuestions);
+    }
+
+    [Fact]
     public async Task Several_questions_are_stored_in_one_save()
     {
         var id = await WithDocument(InitiativeDepth.Small, ArtifactType.Spec);

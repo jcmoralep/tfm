@@ -155,6 +155,61 @@ public sealed class RegenerateArtifactTests
         Assert.Equal(ArtifactTexts.UnassignedQuestions(["Q-1"]), error.Message);
     }
 
+    // Proves the handler passes the stored documents to the availability rule: without them the regeneration would go through.
+    [Theory]
+    [InlineData(ArtifactType.Architecture, ArtifactType.Prd, ArtifactTexts.WaitingForPrd)]
+    [InlineData(ArtifactType.EpicsAndStories, ArtifactType.Prd, ArtifactTexts.WaitingForPrd)]
+    [InlineData(ArtifactType.EpicsAndStories, ArtifactType.Architecture, ArtifactTexts.WaitingForArchitecture)]
+    public async Task Regenerating_a_dependent_needs_its_upstream_approved(ArtifactType dependent, ArtifactType upstream, string message)
+    {
+        var id = await context.LargeApprovedThrough(ArtifactType.EpicsAndStories);
+        await context.Save(id, upstream, 1, "# Editado\n\n- **FR-1**: cambiado");
+        var before = context.StoredArtifact(id, dependent).Content;
+        var requests = context.Drafter.Requests.Count;
+
+        var error = await Assert.ThrowsAsync<DomainException>(() => context.Regenerate(id, dependent, 1));
+
+        var stored = context.StoredArtifact(id, dependent);
+        Assert.Equal(message, error.Message);
+        Assert.Equal((1, ArtifactStatus.Approved, before), (stored.Version, stored.Status, stored.Content));
+        Assert.Equal(requests, context.Drafter.Requests.Count);
+    }
+
+    private const string ArchitectureWithQuestion =
+        "# Arquitectura\n\n## Preguntas para desarrollo\n\n- **Q-1**: ¿Qué tecnología usará la solución? (Responsable: Equipo de desarrollo; Revisar: antes de construir)";
+
+    [Fact]
+    public async Task Regenerating_the_architecture_returns_its_questions_to_the_pre_assigned_suffix()
+    {
+        var id = await context.LargeApprovedThrough(ArtifactType.Prd);
+        context.Drafter.Output = ArchitectureWithQuestion;
+        await context.Generate(id, ArtifactType.Architecture);
+        await context.Assign(id, ArtifactType.Architecture, 1, new QuestionAssignment("Q-1", "TI", "esta semana"));
+        Assert.Contains("Responsable: TI", context.StoredArtifact(id, ArtifactType.Architecture).Content, StringComparison.Ordinal);
+
+        var view = await context.Regenerate(id, ArtifactType.Architecture, 2);
+
+        Assert.EndsWith(OpenQuestions.DevelopmentSuffix, view.Content, StringComparison.Ordinal);
+        Assert.Empty(view.UnassignedQuestions);
+        Assert.Equal(3, view.Version);
+    }
+
+    [Fact]
+    public async Task Regenerating_the_architecture_does_not_touch_the_epics()
+    {
+        var id = await context.LargeApprovedThrough(ArtifactType.Architecture);
+        await context.Generate(id, ArtifactType.EpicsAndStories);
+        var epics = context.StoredArtifact(id, ArtifactType.EpicsAndStories);
+        var (version, status, content, updatedAt) = (epics.Version, epics.Status, epics.Content, epics.UpdatedAt);
+        context.Clock.Advance(TimeSpan.FromMinutes(5));
+
+        await context.Regenerate(id, ArtifactType.Architecture, 1);
+
+        Assert.Equal((2, ArtifactStatus.Draft), (context.StoredArtifact(id, ArtifactType.Architecture).Version, context.StoredArtifact(id, ArtifactType.Architecture).Status));
+        epics = context.StoredArtifact(id, ArtifactType.EpicsAndStories);
+        Assert.Equal((version, status, content, updatedAt), (epics.Version, epics.Status, epics.Content, epics.UpdatedAt));
+    }
+
     [Fact]
     public async Task A_stale_version_is_rejected_before_the_drafter_runs()
     {
