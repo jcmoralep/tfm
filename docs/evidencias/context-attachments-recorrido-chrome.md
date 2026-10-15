@@ -1,0 +1,10 @@
+# Recorrido en Chrome de `context-attachments` (2026-10-15)
+
+Observaciones de las comprobaciones manuales (aplicación con MySQL local, proveedor falso, usuarios temporales). Sin capturas en el repositorio, por decisión del usuario.
+
+| Rebanada | Observado |
+|---|---|
+| S3 | Tarjeta Contexto vacía: «0 de 20 elementos · 0 KB de 50 MB usados», sin «Disponible próximamente». Subida de un PDF de 2 MB: fila «Archivo · 2 MB» con «Descargar» y línea verde «añadido». Selección de cuatro archivos a la vez: el de 11 MB dio «El archivo supera el máximo de 10 MB.», el vacío «El archivo está vacío.», el `.exe` «Este tipo de archivo no se puede adjuntar por seguridad.» y el `.md` se añadió. Descarga: 200, 2.097.152 bytes, `application/octet-stream`, `Content-Disposition: attachment` con `filename*`, `X-Content-Type-Options: nosniff`, `Cache-Control: no-store`; un identificador al azar y la URL de otra persona respondieron 404. `Logs/` sin nombres de archivo ni errores; el disco usa claves generadas por el servidor. |
+| S4 | Enlaces: `javascript:`, `data:`, `ftp://`, `example.com` y `https://` se rechazan con «Escriba un enlace completo que empiece por http:// o https://.»; `HTTP://Example.com` y `https://example.com/a?b=1` se añaden con aviso verde y muestran el dominio en un enlace con `target="_blank"` y `rel="noopener noreferrer"`. Notas: título y texto con asterisco rojo; título vacío, texto en blanco, título de 121 caracteres y texto de 5.001 se rechazan con su mensaje; una nota con `<b>hola</b> <script>x</script>` se guarda y se muestra literal, sin elementos creados. Borrado: el diálogo «¿Eliminar este elemento del contexto?» con «Cancelar» conserva el elemento y «Sí, eliminar» lo quita (archivo, nota y enlace) con el aviso verde «Elemento eliminado del contexto.»; la carpeta de almacenamiento quedó sin archivos. `Logs/`: solo avisos de validación, sin contenido. |
+
+No se ejercitaron en estas rebanadas: el aviso de más de 5 archivos, el tope de 20 elementos y de 50 MB en la interfaz, la tecla Escape del diálogo y la etiqueta de estado por estado de la iniciativa.

@@ -113,8 +113,11 @@ Reglas de dependencia: Web → Application → Domain; Infrastructure → Applic
 ### 4.7 Adjuntos (`IFileStorage`)
 - Interfaz en Application; implementaciones `LocalFileStorage` y `S3FileStorage` en Infrastructure; selección con `Storage:Provider` en configuración.
 - **Nunca guardar archivos en MySQL**; solo metadatos y la clave de almacenamiento.
-- Implementar primero el almacenamiento local. (Decisión pendiente: cuál se usará en producción.)
-- Adjuntos opcionales y de cualquier tipo de contenido (archivos, enlaces, notas).
+- **Solo existe el almacenamiento local** (`Storage:Provider=Local`, raíz `Storage:LocalRootPath`, por defecto `App_Data/attachments`, ignorada por Git). `S3FileStorage` aún no existe: configurar `S3` u otro valor hace fallar el arranque con un mensaje que nombra la clave, sin repetir el valor. En Railway el disco es efímero, así que los archivos locales se pierden en cada despliegue hasta que exista S3 (decisión pendiente: producción, ver §6.4).
+- Adjuntos opcionales y de cualquier tipo de contenido (archivos, enlaces, notas), con estos límites: 10 MB por archivo (`Storage:MaxFileSizeMb`, entero de 1 a 50), 20 elementos y 50 MB de archivos por iniciativa.
+- Lista de bloqueo (última extensión, sin distinguir mayúsculas): `.exe .dll .bat .cmd .com .msi .scr .js .vbs .ps1 .sh .jar`. No hay análisis de malware; la mitigación es esa lista y la descarga forzada.
+- La descarga se sirve siempre como `application/octet-stream` con `Content-Disposition: attachment`, `nosniff` y `no-store`; solo el dueño de la iniciativa puede descargar, y cualquier otro caso responde 404 sin cuerpo.
+- Solo se añaden y se eliminan elementos (no hay edición); eliminar pide confirmación y funciona en cualquier estado de la iniciativa.
 
 ### 4.8 Asistente (`IAssistantService`)
 - Interfaz en Application; implementación Gemini en Infrastructure. Primero una **implementación falsa** para desarrollar el flujo y la persistencia.

@@ -85,10 +85,13 @@ Cada requisito es verificable. Etiquetas: **[CONFIRMADO]** decidido por el equip
 - **RF-64** **Recorridos clave sin marcadores.** En el PRD la sección 2.3 *Recorridos clave* se conserva, pero mientras el guion no pregunte por un recorrido real (paso 5) contiene **una sola suposición honesta** y ninguna línea `UJ-n`, por ejemplo: `[ASSUMPTION: A-n] Aún no se describió un recorrido concreto de uso; se completa con un caso real (una persona con nombre) al revisar el documento.` Quien edite el documento puede escribir recorridos `UJ-n` (RF-44). Fuente: plantilla del PRD de BMAD, "Scope dial — Lighter: a single sentence works", y `bmad-prd`: "User Journeys are captured, not authored". [CONFIRMADO]
 
 ### Contexto adjunto
-- **RF-22** El adjunto es opcional y admite cualquier tipo de contenido (archivos, enlaces, notas); los tipos que proponga el usuario son prioritarios. [CONFIRMADO]
-- **RF-23** Los archivos se guardan mediante `IFileStorage` (local o S3, por configuración), nunca en MySQL. [CONFIRMADO]
+- **RF-22** El adjunto es opcional y admite cualquier tipo de contenido (archivos, enlaces, notas), salvo archivos ejecutables (.exe .dll .bat .cmd .com .msi .scr .js .vbs .ps1 .sh .jar), con un máximo de 10 MB por archivo, 20 elementos y 50 MB de archivos por iniciativa; los tipos que proponga el usuario son prioritarios. [CONFIRMADO]
+- **RF-23** Los archivos se guardan mediante `IFileStorage`, nunca en MySQL. Por ahora solo existe el almacenamiento local (`Storage:Provider=Local`, carpeta `Storage:LocalRootPath`); configurar S3 hace fallar el arranque hasta que exista esa implementación. El disco de Railway es efímero. [CONFIRMADO]
 - **RF-24** Solo los tipos que el modelo interpreta se envían al asistente; el resto se conserva como referencia. [SUPUESTO]
-- **RF-25** Videos y prototipos se almacenan como evidencia; su análisis con IA queda para una segunda versión. [SUPUESTO]
+- **RF-25** Videos, imágenes, PDF y prototipos se almacenan como evidencia; su análisis con IA queda para una segunda versión. [SUPUESTO]
+- **RF-75** El dueño de la iniciativa agrega y elimina archivos, enlaces y notas en cualquier estado; no hay edición y la eliminación pide confirmación. [CONFIRMADO]
+- **RF-76** Cada archivo pesa como máximo 10 MB y no puede estar vacío ni ser de un tipo bloqueado; una iniciativa admite hasta 20 elementos y 50 MB de archivos; los enlaces son http o https de hasta 2.000 caracteres; las notas llevan título de hasta 120 caracteres y texto de hasta 5.000. [CONFIRMADO]
+- **RF-77** La descarga de un archivo siempre se fuerza como adjunto, con nombre saneado y sin interpretar su contenido; para cualquier otro usuario, o un identificador inexistente o eliminado, la respuesta es la misma (no encontrado). [CONFIRMADO]
 
 ## 3. Reglas de negocio
 
