@@ -3,11 +3,13 @@
 @attribute [ExcludeFromInteractiveRouting]
 @layout AuthLayout
 @using RutaProducto.Application.Abstractions.Authentication
+@using RutaProducto.Application.Abstractions.Email
 @using RutaProducto.Application.Features.Authentication.SignIn
 @using RutaProducto.Web.Authentication
 @using FluentValidation
 @inject IMediator Mediator
 @inject NavigationManager Navigation
+@inject AccountEmailSettings EmailSettings
 
 <PageTitle>Iniciar sesión · Ruta de Producto</PageTitle>
 
@@ -28,6 +30,11 @@
                             <li>@error</li>
                         }
                     </ul>
+                    @if (showResendLink)
+                    {
+                        <a href="@AuthenticationEndpoints.ResendConfirmationPath" data-enhance-nav="false"
+                           class="mt-2 inline-block font-semibold underline">Pedir un enlace nuevo</a>
+                    }
                 </div>
             }
 
@@ -68,6 +75,8 @@
 
 @code {
     private IReadOnlyList<string> errors = [];
+
+    private bool showResendLink;
 
     [SupplyParameterFromForm]
     private LoginInput Input { get; set; } = default!;
@@ -113,6 +122,7 @@
         }
 
         errors = [ToMessage(result)];
+        showResendLink = result == AuthenticationResult.NotAllowed && EmailSettings.EmailEnabled;
         Input.Password = string.Empty;
     }
 
@@ -121,7 +131,7 @@
         AuthenticationResult.LockedOut =>
             "La cuenta está bloqueada temporalmente por varios intentos fallidos. Vuelva a intentarlo más tarde.",
         AuthenticationResult.NotAllowed =>
-            "Esta cuenta no tiene permitido iniciar sesión.",
+            "Confirma tu correo antes de iniciar sesión.",
         _ => "El correo electrónico o la contraseña no son correctos.",
     };
 

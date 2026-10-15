@@ -21,7 +21,7 @@ public static class AccountEmails
 
             Creaste una cuenta en Ruta de Producto. Para confirmar tu correo abre este enlace (vale 24 horas):
 
-            {confirmationLink}
+            {confirmationLink.AbsoluteUri}
 
             Si no fuiste tú, ignora este correo.
             """);
@@ -36,9 +36,9 @@ public static class AccountEmails
 
             Alguien intentó crear una cuenta en Ruta de Producto con este correo, pero ya tienes una.
 
-            Para entrar: {loginLink}
+            Para entrar: {loginLink.AbsoluteUri}
 
-            Si olvidaste tu contraseña: {forgotPasswordLink}
+            Si olvidaste tu contraseña: {forgotPasswordLink.AbsoluteUri}
 
             Si no fuiste tú, ignora este correo.
             """);
@@ -53,7 +53,7 @@ public static class AccountEmails
 
             Recibimos una solicitud para restablecer tu contraseña de Ruta de Producto. Abre este enlace para elegir una nueva (vale 2 horas):
 
-            {resetLink}
+            {resetLink.AbsoluteUri}
 
             Si no fuiste tú, ignora este correo.
             """);

@@ -29,6 +29,9 @@ public enum RegistrationStatus
     InvalidPassword,
     CaptchaRejected,
     CaptchaUnavailable,
+
+    /// <summary>Confirmation is required: the person must open the emailed link. Returned for new and for existing addresses alike.</summary>
+    ConfirmationPending,
 }
 
 /// <param name="Status">Outcome of the registration.</param>
@@ -38,6 +41,8 @@ public sealed record RegistrationResult(RegistrationStatus Status, IReadOnlyList
     public static RegistrationResult Succeeded { get; } = new(RegistrationStatus.Succeeded, []);
 
     public static RegistrationResult EmailTaken { get; } = new(RegistrationStatus.EmailTaken, []);
+
+    public static RegistrationResult ConfirmationPending { get; } = new(RegistrationStatus.ConfirmationPending, []);
 
     public static RegistrationResult CaptchaRejected { get; } = new(RegistrationStatus.CaptchaRejected, []);
 

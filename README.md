@@ -164,12 +164,12 @@ El formulario de `/registro` puede exigir Cloudflare Turnstile. Está **apagado 
 
 ## Correo electrónico (RF-80)
 
-La infraestructura para enviar correo (cola en segundo plano y cliente SMTP) existe, pero **todavía no se envía ningún correo**: lo usarán la confirmación del correo y la recuperación de contraseña en cambios posteriores. Está **apagada por defecto** (`Email:Provider=None`: no hay cola ni proceso en segundo plano). Claves (variables de entorno con `__`):
+El correo de la cuenta se envía con una cola en segundo plano y un cliente SMTP. Hoy lo usa la confirmación del correo (RF-81); la recuperación de contraseña llegará después. Está **apagado por defecto** (`Email:Provider=None`: no hay cola ni proceso en segundo plano). Claves (variables de entorno con `__`):
 
 | Clave | Por defecto | Descripción |
 |---|---|---|
 | `Email:Provider` | `None` | `None` o `Smtp` (sin distinguir mayúsculas); otro valor impide arrancar |
-| `Email:RequireConfirmedEmail` | `false` | Reservada para la confirmación del correo; `true` exige `Email:Provider=Smtp` o el arranque falla |
+| `Email:RequireConfirmedEmail` | `false` | `true` activa la confirmación del correo (RF-81); exige `Email:Provider=Smtp` o el arranque falla |
 | `Email:PublicBaseUrl` | (vacía) | Origen público para los enlaces de los correos (por ejemplo `https://ruta.example.com`); obligatorio con `Smtp`, `https` salvo `localhost` |
 | `Smtp:Host` | (vacía) | Servidor SMTP; obligatorio con `Smtp` |
 | `Smtp:Port` | `587` | 1 a 65535; el **465 (TLS implícito) no se admite** porque `System.Net.Mail` solo habla STARTTLS: use el 587 |
@@ -183,6 +183,15 @@ La infraestructura para enviar correo (cola en segundo plano y cliente SMTP) exi
 - **Proveedores gratuitos para probar o desplegar:** Brevo (plan gratuito con SMTP), Resend (SMTP con clave de API como contraseña) o una cuenta de Gmail con contraseña de aplicación (`smtp.gmail.com`, puerto 587). Compruebe en el plan del despliegue que el puerto 587 de salida está permitido.
 - Los enlaces de los correos se construyen **solo** con `Email:PublicBaseUrl`, nunca con la cabecera `Host`.
 - La cola es en memoria (100 mensajes): un envío fallido se registra y no se reintenta, y lo que esté en cola se pierde al reiniciar. Los registros guardan solo el tipo de correo, el tipo de excepción y el código de estado SMTP, nunca la dirección, el asunto, el cuerpo ni un enlace.
+
+## Confirmación del correo (RF-81)
+
+Con `Email__Provider=Smtp` y `Email__RequireConfirmedEmail=true`, el registro en `/registro` no inicia sesión: envía un enlace a `/confirmar-correo` (válido 24 horas) y la persona entra después de abrirlo. Un correo ya registrado recibe la misma pantalla y su dueña, un aviso «Ya tienes una cuenta». Los enlaces vencidos o usados se piden de nuevo en `/confirmar-correo/reenviar` (la página no existe con `Email:Provider=None`).
+
+- **Cuentas anteriores:** las cuentas abiertas con el registro propio antes de activar esto quedan **sin confirmar**; al activarlo, esas personas piden su enlace en la página de reenvío. Los usuarios sembrados (`SeedUsers__*`) nacen confirmados y siguen entrando.
+- **Redespliegue:** los enlaces se protegen con Data Protection; mientras sus claves no se persistan (preparación para Railway), un reinicio invalida los enlaces pendientes y la persona pide uno nuevo.
+- **Probar en local:** `docker run --rm -d --name mailpit -p 1025:1025 -p 8025:8025 axllent/mailpit`, con `Email__Provider=Smtp`, `Email__RequireConfirmedEmail=true`, `Email__PublicBaseUrl=https://localhost:<puerto>`, `Smtp__Host=localhost`, `Smtp__Port=1025`, `Smtp__EnableSsl=false` y `Smtp__From=no-reply@ruta.local`; el correo se lee en `http://localhost:8025`.
+- Si la confirmación estorba durante una caída del correo, `Email__RequireConfirmedEmail=false` y reiniciar la deja como antes.
 
 ## Base de datos
 

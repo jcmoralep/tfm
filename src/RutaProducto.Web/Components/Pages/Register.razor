@@ -32,6 +32,12 @@
                 </div>
             }
 
+            @if (confirmationPending)
+            {
+                <p role="status" class="mt-8 rounded-control bg-success-soft p-4 text-sm font-medium text-success-ink">Revisa tu correo: te enviamos un enlace para confirmar tu cuenta.</p>
+            }
+            else
+            {
             <EditForm Model="Input" method="post" OnSubmit="RegisterAsync" FormName="register" class="mt-8 space-y-5">
                 <div>
                     <label for="email" class="block text-sm font-medium text-ink">Correo electrónico<RequiredMark /></label>
@@ -70,6 +76,7 @@
                     Crear cuenta
                 </button>
             </EditForm>
+            }
 
             <p class="mt-6 text-center text-sm text-ink-muted">
                 ¿Ya tienes cuenta?
@@ -89,6 +96,8 @@
     private const string RuleClass = "flex items-center gap-2 data-[met=true]:font-medium data-[met=true]:text-success-ink data-[met=false]:text-danger";
 
     private IReadOnlyList<string> errors = [];
+
+    private bool confirmationPending;
 
     [SupplyParameterFromForm]
     private RegisterInput Input { get; set; } = default!;
@@ -138,6 +147,13 @@
         if (result.Status == RegistrationStatus.Succeeded)
         {
             Navigation.NavigateTo(LocalRedirect.Sanitize(ReturnUrl), forceLoad: true);
+            return;
+        }
+
+        if (result.Status == RegistrationStatus.ConfirmationPending)
+        {
+            // The same panel for a new and for an existing address; only the email tells them apart.
+            confirmationPending = true;
             return;
         }
 

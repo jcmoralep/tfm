@@ -9,7 +9,8 @@ namespace RutaProducto.Infrastructure.Identity;
 /// </summary>
 internal sealed class IdentityAuthService(
     SignInManager<ApplicationUser> signInManager,
-    UserManager<ApplicationUser> userManager) : IAuthService
+    UserManager<ApplicationUser> userManager,
+    IPasswordHasher<ApplicationUser> passwordHasher) : IAuthService
 {
     public async Task<AuthenticationResult> SignInAsync(
         string email,
@@ -26,12 +27,47 @@ internal sealed class IdentityAuthService(
             return AuthenticationResult.Succeeded;
         }
 
-        if (result.IsLockedOut)
+        if (result.IsNotAllowed)
         {
-            return AuthenticationResult.LockedOut;
+            return await ResolveNotAllowedAsync(email, password);
         }
 
-        return result.IsNotAllowed ? AuthenticationResult.NotAllowed : AuthenticationResult.InvalidCredentials;
+        if (!result.IsLockedOut && await userManager.FindByNameAsync(email) is null)
+        {
+            // An unknown email would otherwise answer faster than a known one; pay the same hash cost.
+            DummyPasswordHash.Verify(passwordHasher, password);
+        }
+
+        return SignInOutcome.Resolve(result, lockedOut: false, passwordMatches: false).Result;
+    }
+
+    // With confirmation required Identity answers NotAllowed before the lockout check and without counting a wrong
+    // password, so the order is decided here (see SignInOutcome).
+    private async Task<AuthenticationResult> ResolveNotAllowedAsync(string email, string password)
+    {
+        var user = await userManager.FindByNameAsync(email);
+
+        if (user is null)
+        {
+            return AuthenticationResult.InvalidCredentials;
+        }
+
+        var lockedOut = await userManager.IsLockedOutAsync(user);
+        var passwordMatches = !lockedOut && await userManager.CheckPasswordAsync(user, password);
+        var decision = SignInOutcome.Resolve(SignInResult.NotAllowed, lockedOut, passwordMatches);
+
+        if (decision.CountFailure)
+        {
+            await userManager.AccessFailedAsync(user);
+
+            // The failure that reaches the limit locks the account, as it does in the normal sign-in.
+            if (await userManager.IsLockedOutAsync(user))
+            {
+                return AuthenticationResult.LockedOut;
+            }
+        }
+
+        return decision.Result;
     }
 
     public async Task<RegistrationResult> RegisterAsync(
@@ -39,8 +75,8 @@ internal sealed class IdentityAuthService(
         string password,
         CancellationToken cancellationToken = default)
     {
-        // Open registration without email verification (for now), so the address is not marked as confirmed:
-        // a later verification step can tell these accounts apart from the seeded ones.
+        // The address starts unconfirmed (only seeded users are confirmed); the confirmation email flips it when
+        // Email:RequireConfirmedEmail is on.
         var user = new ApplicationUser { UserName = email, Email = email, EmailConfirmed = false };
         var result = await userManager.CreateAsync(user, password);
 
