@@ -114,6 +114,7 @@ Reglas de dependencia: Web → Application → Domain; Infrastructure → Applic
 |---|---|---|
 | `RateLimiting:Enabled` (+ `PermitLimit` 10, `WindowSeconds` 60) | `false` | Limita por IP los POST a `/login`, `/registro` y las páginas de recuperación (RF-78); responde 429 en español. Ignora una barra final y las mayúsculas. Detrás del proxy de Railway necesita cabeceras reenviadas (cambio Railway-prep); mientras tanto todos comparten un cubo |
 | `Captcha:Provider` (`None` \| `Turnstile`) | `None` | Cloudflare Turnstile en `/registro` y `/recuperar-contrasena`, verificado en el servidor y antes de cualquier consulta de cuentas; falla cerrado (RF-79). Claves: `Turnstile:SiteKey` y `Turnstile__SecretKey` |
+| `Registration:InviteCode` | vacío (apagado) | Código de invitación compartido en `/registro`: con valor, el campo es obligatorio y se comprueba tras el captcha y antes de cualquier consulta de cuentas (RF-83). Mínimo 12 caracteres tras recortar o la app no arranca (el mensaje nombra la clave, nunca el valor). Solo user-secrets o `Registration__InviteCode`, nunca `appsettings*.json` |
 | `Email:Provider` (`None` \| `Smtp`) | `None` | Envío de correo por una cola en segundo plano que no retrasa la respuesta (RF-80). Con `Smtp`: `Smtp:Host`, `Smtp:From`, `Email:PublicBaseUrl` y, con usuario, `Smtp__Password`. Habilita las páginas de reenvío, recuperación y restablecimiento |
 | `Email:RequireConfirmedEmail` | `false` | Una cuenta sin confirmar no inicia sesión y el registro envía un enlace de 24 horas (RF-81); exige `Email:Provider` distinto de `None` |
 

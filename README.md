@@ -100,7 +100,7 @@ Ningún secreto se guarda en el repositorio. La aplicación lee estas variables:
 
 Los usuarios iniciales se crean al arrancar la aplicación si todavía no existen. Si un usuario ya existe, no se modifica (su contraseña no se sobrescribe). La contraseña debe cumplir la política de ASP.NET Core Identity: al menos 6 caracteres, con una mayúscula, una minúscula, un dígito y un carácter no alfanumérico. Si no la cumple, el usuario no se crea y el motivo queda en el registro.
 
-Además, cualquier persona puede crear su propia cuenta en `/registro` (registro abierto, sin verificación de correo por ahora; ver RF-67). Antes de exponer la aplicación en un entorno público conviene agregar la verificación del correo o un código de invitación, y un captcha (pendiente).
+Además, cualquier persona puede crear su propia cuenta en `/registro` (registro abierto, sin verificación de correo por ahora; ver RF-67). Antes de exponer la aplicación en un entorno público conviene activar las protecciones opcionales: captcha, verificación del correo y código de invitación (secciones siguientes).
 
 En desarrollo también puede usar user-secrets en lugar de variables de entorno:
 
@@ -161,6 +161,18 @@ El formulario de `/registro` puede exigir Cloudflare Turnstile. Está **apagado 
 - **Cómo obtener las claves:** cuenta gratuita de Cloudflare, sección Turnstile, widget gestionado para el dominio de la aplicación. Para probar sin cuenta hay claves de prueba: sitio `1x00000000000000000000AA` con secreto `1x0000000000000000000000000000000AA` (siempre pasa), secreto `2x0000000000000000000000000000000AA` (siempre falla) y sitio `2x00000000000000000000AB` (siempre bloquea). Úselas solo en su entorno local.
 - La verificación **falla cerrado**: si Cloudflare no responde (10 s) o contesta un error, el formulario no se procesa. Para recuperar el registro durante una caída de Turnstile, use `Captcha__Provider=None` y reinicie.
 - El script de Cloudflare es la única excepción a «vistas solo con clases CSS» (AGENTS.md §2). Los registros no contienen el token, la clave ni respuestas de Cloudflare: solo el resultado, la duración y códigos de error cortos.
+
+## Código de invitación en el registro (RF-83)
+
+`/registro` puede exigir un código de invitación compartido. Está **apagado por defecto** (`Registration:InviteCode` vacío: el formulario no cambia). Con un valor, aparece el campo obligatorio «Código de invitación» y la cuenta solo se crea si coincide (sin espacios laterales, distingue mayúsculas).
+
+| Clave | Por defecto | Descripción |
+|---|---|---|
+| `Registration__InviteCode` | (sin valor) | Código compartido de al menos 12 caracteres; menos impide arrancar. Solo user-secrets (`Registration:InviteCode`) o variable de entorno, nunca en el repositorio |
+
+- Se comprueba después del captcha y antes de cualquier consulta de cuentas; un código erróneo responde «El código de invitación no es correcto.» sin revelar si un correo existe. No se registra el código.
+- Un valor vacío o solo con espacios deja la función **apagada**, sin error: al arrancar, el registro informa `Registration invite code: on/off` (nunca el valor). Actívalo junto con `RateLimiting:Enabled=true`; sin limitador, el código se puede adivinar con intentos ilimitados.
+- Es un solo código para todas las personas: para revocarlo hay que cambiarlo y reiniciar. Las invitaciones por persona quedan en `docs/mejoras-posteriores.md`.
 
 ## Correo electrónico (RF-80)
 

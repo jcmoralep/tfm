@@ -29,6 +29,7 @@ public enum RegistrationStatus
     InvalidPassword,
     CaptchaRejected,
     CaptchaUnavailable,
+    InviteCodeRejected,
 
     /// <summary>Confirmation is required: the person must open the emailed link. Returned for new and for existing addresses alike.</summary>
     ConfirmationPending,
@@ -47,6 +48,8 @@ public sealed record RegistrationResult(RegistrationStatus Status, IReadOnlyList
     public static RegistrationResult CaptchaRejected { get; } = new(RegistrationStatus.CaptchaRejected, []);
 
     public static RegistrationResult CaptchaUnavailable { get; } = new(RegistrationStatus.CaptchaUnavailable, []);
+
+    public static RegistrationResult InviteCodeRejected { get; } = new(RegistrationStatus.InviteCodeRejected, []);
 
     public static RegistrationResult InvalidPassword(IReadOnlyList<string> errors) => new(RegistrationStatus.InvalidPassword, errors);
 }

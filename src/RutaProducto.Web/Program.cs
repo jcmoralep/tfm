@@ -1,5 +1,6 @@
 using RutaProducto.Application;
 using RutaProducto.Application.Abstractions.Authentication;
+using RutaProducto.Application.Abstractions.Registration;
 using RutaProducto.Infrastructure;
 using RutaProducto.Infrastructure.Identity.Seeding;
 using RutaProducto.Web.Artifacts;
@@ -110,6 +111,9 @@ try
     app.MapContextEndpoints();
 
     await app.Services.SeedInitialUsersAsync();
+
+    // A blank Registration:InviteCode means off; say so at startup (never the value) so a blank variable is not mistaken for protection.
+    app.Logger.LogInformation("Registration invite code: {State}", app.Services.GetRequiredService<IInviteCodePolicy>().Required ? "on" : "off");
 
     await app.RunAsync();
 }

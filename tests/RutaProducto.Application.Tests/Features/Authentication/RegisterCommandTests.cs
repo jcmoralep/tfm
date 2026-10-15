@@ -111,6 +111,59 @@ public sealed class RegisterCommandTests
         Assert.Empty(sender.Messages);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("wrong-code")]
+    public async Task A_wrong_or_missing_invite_code_creates_no_account_and_looks_up_nothing(string? typed)
+    {
+        var authService = new RecordingAuthService(RegistrationResult.Succeeded);
+        var sender = new RecordingEmailSender();
+        var tokens = new FakeAccountTokenService();
+
+        var result = await Handler(authService, sender: sender, confirmation: true, invite: new FakeInviteCodePolicy("right-code"), tokens: tokens).Handle(
+            new RegisterCommand("ana@example.com", "Secret-123", "Secret-123", null, typed), CancellationToken.None);
+
+        Assert.Equal(RegistrationStatus.InviteCodeRejected, result.Status);
+        Assert.Null(authService.RegisteredEmail);
+        Assert.Null(authService.SignedInEmail);
+        Assert.Empty(sender.Messages);
+        Assert.Empty(tokens.Calls);
+    }
+
+    [Fact]
+    public async Task The_captcha_is_still_checked_before_the_invite_code()
+    {
+        var invite = new FakeInviteCodePolicy("right-code");
+
+        var result = await Handler(
+            new RecordingAuthService(RegistrationResult.Succeeded), new FakeCaptchaVerifier(CaptchaOutcome.Rejected), invite: invite).Handle(
+            new RegisterCommand("ana@example.com", "Secret-123", "Secret-123", "tok", "right-code"), CancellationToken.None);
+
+        Assert.Equal(RegistrationStatus.CaptchaRejected, result.Status);
+        Assert.Equal(0, invite.Calls);
+    }
+
+    [Fact]
+    public async Task A_correct_invite_code_lets_registration_go_on()
+    {
+        var authService = new RecordingAuthService(RegistrationResult.Succeeded);
+
+        var result = await Handler(authService, invite: new FakeInviteCodePolicy("right-code")).Handle(
+            new RegisterCommand("ana@example.com", "Secret-123", "Secret-123", null, "right-code"), CancellationToken.None);
+
+        Assert.Equal(RegistrationStatus.Succeeded, result.Status);
+        Assert.Equal("ana@example.com", authService.SignedInEmail);
+    }
+
+    [Fact]
+    public void ToString_does_not_expose_the_invite_code()
+    {
+        var text = new RegisterCommand("ana@example.com", "Secret-123", "Secret-123", null, "INVITE-xyz-123").ToString();
+
+        Assert.DoesNotContain("INVITE-xyz-123", text);
+    }
+
     [Fact]
     public async Task A_passed_captcha_receives_the_token_and_registration_goes_on_as_before()
     {
@@ -216,9 +269,11 @@ public sealed class RegisterCommandTests
         bool confirmation = false,
         string? pendingEmail = null,
         string? existingEmail = null,
-        string? stored = null)
+        string? stored = null,
+        FakeInviteCodePolicy? invite = null,
+        FakeAccountTokenService? tokens = null)
     {
-        var tokens = new FakeAccountTokenService();
+        tokens ??= new FakeAccountTokenService();
 
         if (pendingEmail is not null)
         {
@@ -235,6 +290,7 @@ public sealed class RegisterCommandTests
         return new RegisterCommandHandler(
             authService,
             captcha ?? new FakeCaptchaVerifier(),
+            invite ?? new FakeInviteCodePolicy(),
             tokens,
             new FakeAccountLinks(),
             sender ?? new RecordingEmailSender(),
