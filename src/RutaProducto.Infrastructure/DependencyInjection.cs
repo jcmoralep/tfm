@@ -9,6 +9,7 @@ using RutaProducto.Infrastructure.Artifacts;
 using RutaProducto.Infrastructure.Assistant;
 using RutaProducto.Infrastructure.Captcha;
 using RutaProducto.Infrastructure.Context;
+using RutaProducto.Infrastructure.Email;
 using RutaProducto.Infrastructure.Export;
 using RutaProducto.Infrastructure.Gemini;
 using RutaProducto.Infrastructure.Identity;
@@ -79,6 +80,10 @@ public static class DependencyInjection
 
         // Captcha:Provider (None by default) selects the verifier; Turnstile without its keys stops the app at startup.
         services.AddCaptcha(CaptchaOptions.BindAndValidate(configuration));
+
+        // Email:Provider (None by default) selects the sender; Smtp without its settings, or a confirmation switch without
+        // Smtp, stops the app at startup. Nothing is sent until the account flows use IEmailSender.
+        services.AddEmail(EmailOptions.BindAndValidate(configuration));
 
         // One switch (Assistant:Provider) selects both the assistant and the drafter. Checked eagerly, like the
         // connection string, so a bad configuration stops the app at startup instead of on the first request.
