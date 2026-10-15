@@ -1,0 +1,15 @@
+@using RutaProducto.Application.Abstractions.Captcha
+@inject CaptchaWidgetSettings Settings
+
+@* Renders nothing unless Captcha:Provider=Turnstile. Place it inside the EditForm: the Turnstile script (implicit
+   rendering) injects the hidden field "cf-turnstile-response" into the form that holds the div. The script is the
+   single documented third-party exception to "views use CSS classes only" (AGENTS section 2). Cloudflare forbids
+   self-hosting or proxying it, so it loads straight from challenges.cloudflare.com. *@
+@if (!string.IsNullOrWhiteSpace(Settings.SiteKey))
+{
+    <div>
+        <div class="cf-turnstile" data-sitekey="@Settings.SiteKey" data-language="es" data-size="flexible"></div>
+        <noscript><p class="text-sm text-danger">Activa JavaScript para completar la verificación.</p></noscript>
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    </div>
+}

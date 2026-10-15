@@ -3,6 +3,7 @@
 @attribute [ExcludeFromInteractiveRouting]
 @layout AuthLayout
 @using RutaProducto.Application.Abstractions.Authentication
+@using RutaProducto.Application.Features.Authentication
 @using RutaProducto.Application.Features.Authentication.Register
 @using RutaProducto.Web.Authentication
 @using FluentValidation
@@ -62,6 +63,8 @@
                        class="mt-2 text-sm font-medium data-[state=empty]:hidden data-[state=ok]:text-success-ink data-[state=bad]:text-danger"></p>
                 </PasswordField>
 
+                <CaptchaWidget />
+
                 <button type="submit"
                         class="w-full rounded-control bg-primary px-4 py-3 text-sm font-semibold text-on-primary hover:bg-primary-hover">
                     Crear cuenta
@@ -81,12 +84,22 @@
 <script type="module" src="@Assets["js/password-rules.js"]"></script>
 
 @code {
+    private const string CaptchaFieldName = "cf-turnstile-response";
+
     private const string RuleClass = "flex items-center gap-2 data-[met=true]:font-medium data-[met=true]:text-success-ink data-[met=false]:text-danger";
 
     private IReadOnlyList<string> errors = [];
 
     [SupplyParameterFromForm]
     private RegisterInput Input { get; set; } = default!;
+
+    // Turnstile's script adds this hidden field to the form. If the hyphenated name does not bind, the posted form
+    // is read directly (see PostedCaptchaToken), so the token arrives either way.
+    [SupplyParameterFromForm(FormName = "register", Name = CaptchaFieldName)]
+    private string? CaptchaToken { get; set; }
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
 
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
@@ -113,7 +126,7 @@
 
         try
         {
-            result = await Mediator.Send(new RegisterCommand(Input.Email, Input.Password, Input.ConfirmPassword));
+            result = await Mediator.Send(new RegisterCommand(Input.Email, Input.Password, Input.ConfirmPassword, PostedCaptchaToken()));
         }
         catch (ValidationException exception)
         {
@@ -128,10 +141,26 @@
             return;
         }
 
-        errors = result.Status == RegistrationStatus.EmailTaken
-            ? ["Ya existe una cuenta con ese correo electrónico. Inicia sesión o usa otro correo."]
-            : result.PasswordErrors;
+        errors = result.Status switch
+        {
+            RegistrationStatus.EmailTaken => ["Ya existe una cuenta con ese correo electrónico. Inicia sesión o usa otro correo."],
+            RegistrationStatus.CaptchaRejected => [CaptchaTexts.Rejected],
+            RegistrationStatus.CaptchaUnavailable => [CaptchaTexts.Unavailable],
+            _ => result.PasswordErrors,
+        };
         ClearPasswords();
+    }
+
+    private string? PostedCaptchaToken()
+    {
+        if (!string.IsNullOrEmpty(CaptchaToken))
+        {
+            return CaptchaToken;
+        }
+
+        return HttpContext?.Request.HasFormContentType == true
+            ? HttpContext.Request.Form[CaptchaFieldName].ToString()
+            : null;
     }
 
     private void ClearPasswords()
