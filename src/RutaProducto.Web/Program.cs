@@ -8,6 +8,7 @@ using RutaProducto.Web.Components;
 using RutaProducto.Web.Components.Artifacts;
 using RutaProducto.Web.Context;
 using RutaProducto.Web.Logging;
+using RutaProducto.Web.Security;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.Identity;
 using Serilog;
@@ -67,6 +68,14 @@ try
 
     builder.Services.AddSingleton<MarkdownRenderer>();
 
+    // Off by default: with the switch off neither AddRateLimiter nor UseRateLimiter is called.
+    var rateLimit = RateLimitOptions.BindAndValidate(builder.Configuration);
+
+    if (rateLimit.Enabled)
+    {
+        builder.Services.AddRateLimiter(limiter => AuthRateLimiting.Configure(limiter, rateLimit));
+    }
+
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -80,8 +89,13 @@ try
 
     app.UseMiddleware<CorrelationIdMiddleware>();
     app.UseSerilogRequestLogging();
-    app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+    app.UseStatusCodePagesWithReExecute("/not-found", "?codigo={0}", createScopeForStatusCodePages: true);
     app.UseHttpsRedirection();
+
+    if (rateLimit.Enabled)
+    {
+        app.UseRateLimiter();
+    }
 
     app.UseAuthentication();
     app.UseAuthorization();

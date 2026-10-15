@@ -136,6 +136,18 @@ Límites por iniciativa: 20 elementos y 50 MB de archivos. Se rechazan los archi
 - **Contexto de texto y Gemini.** Con `Assistant:Provider=Gemini`, las notas y los archivos de texto (`.txt`, `.md`, `.markdown`, `.csv`) se envían a Gemini como datos de referencia, igual que el resto de la conversación, y por tanto a la capa gratuita descrita en la advertencia de arriba (la interfaz no avisa, RN-05). Con `Fake` no sale nada. Los enlaces, PDF, imágenes y demás archivos solo se guardan.
 - **No hay análisis de malware.** La mitigación es la lista de bloqueo de extensiones y la descarga forzada como adjunto.
 
+## Límite de intentos de acceso (RF-78)
+
+Los POST de `/login`, `/registro`, `/confirmar-correo/reenviar`, `/recuperar-contrasena` y `/restablecer-contrasena` pueden limitarse por IP. Está **apagado por defecto**. Claves (variables de entorno con `__`, por ejemplo `RateLimiting__Enabled`):
+
+| Clave | Por defecto | Descripción |
+|---|---|---|
+| `RateLimiting:Enabled` | `false` | `true` activa el límite; otro valor que no sea booleano impide arrancar |
+| `RateLimiting:PermitLimit` | `10` | Intentos por ventana y por IP, entero de 1 a 1000 (solo se valida si está activo) |
+| `RateLimiting:WindowSeconds` | `60` | Duración de la ventana en segundos, entero de 1 a 3600 (solo se valida si está activo) |
+
+- El cupo es **uno por IP**, compartido por todos esos formularios. Detrás de un proxy (Railway) la IP que ve la aplicación es la del proxy hasta que se configuren las cabeceras reenviadas (cambio de preparación para Railway): sin ellas todas las personas compartirían un solo cupo, así que no active el límite en ese entorno antes.
+
 ## Base de datos
 
 1. Inicie MySQL 8.4:
