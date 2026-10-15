@@ -6,6 +6,7 @@ using BmadPlatform.Web.Artifacts;
 using BmadPlatform.Web.Authentication;
 using BmadPlatform.Web.Components;
 using BmadPlatform.Web.Components.Artifacts;
+using BmadPlatform.Web.Context;
 using BmadPlatform.Web.Logging;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.Identity;
@@ -91,6 +92,7 @@ try
         .AddInteractiveServerRenderMode();
     app.MapAuthenticationEndpoints();
     app.MapArtifactEndpoints();
+    app.MapContextEndpoints();
 
     await app.Services.SeedInitialUsersAsync();
 
