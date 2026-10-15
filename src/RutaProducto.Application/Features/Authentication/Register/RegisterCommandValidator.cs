@@ -13,6 +13,7 @@ public sealed class RegisterCommandValidator : AbstractValidator<RegisterCommand
             .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("El correo electrónico es obligatorio.")
             .MaximumLength(SignInCommandValidator.MaxEmailLength).WithMessage("El correo electrónico es demasiado largo.")
+            .MustBeAsciiAddress()
             .EmailAddress().WithMessage("El formato del correo electrónico no es válido.");
 
         RuleFor(command => command.Password)

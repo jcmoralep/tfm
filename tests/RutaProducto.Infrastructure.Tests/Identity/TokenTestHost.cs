@@ -3,16 +3,24 @@ using RutaProducto.Infrastructure.Identity;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace RutaProducto.Infrastructure.Tests.Identity;
 
 /// <summary>The real UserManager and token providers over an in-memory store. Each host has its own (ephemeral) key ring.</summary>
 internal static class TokenTestHost
 {
-    public static ServiceProvider Build(InMemoryUserStore store, TimeSpan? confirmationLifespan = null, TimeSpan? resetLifespan = null)
+    public static ServiceProvider Build(
+        InMemoryUserStore store, TimeSpan? confirmationLifespan = null, TimeSpan? resetLifespan = null, ILoggerProvider? logs = null)
     {
         var services = new ServiceCollection();
-        services.AddLogging();
+        services.AddLogging(builder =>
+        {
+            if (logs is not null)
+            {
+                builder.AddProvider(logs);
+            }
+        });
         services.AddDataProtection().UseEphemeralDataProtectionProvider();
         services.AddSingleton<IUserStore<ApplicationUser>>(store);
         services.AddIdentityCore<ApplicationUser>(options => options.User.RequireUniqueEmail = true).AddAccountTokenProviders();

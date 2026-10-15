@@ -20,11 +20,28 @@ public sealed class FakeAccountTokenService : IAccountTokenService
 
     public List<string> Calls { get; } = [];
 
+    /// <summary>
+    /// Typed address to the address stored on the account, for when the database collation matches them despite a
+    /// difference (an accent). Addresses not listed here are stored exactly as typed.
+    /// </summary>
+    public Dictionary<string, string> StoredAddresses { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    private string Stored(string typed) => StoredAddresses.TryGetValue(typed, out var stored) ? stored : typed;
+
     public Task<AccountToken?> CreateEmailConfirmationAsync(string email, CancellationToken cancellationToken)
     {
         Calls.Add(nameof(CreateEmailConfirmationAsync));
 
-        return Task.FromResult(KnownEmails.Contains(email) ? new AccountToken("user-1", "code-1") : null);
+        return Task.FromResult(KnownEmails.Contains(email) ? new AccountToken("user-1", "code-1", Stored(email)) : null);
+    }
+
+    public Task<string?> FindStoredEmailAsync(string email, CancellationToken cancellationToken)
+    {
+        Calls.Add(nameof(FindStoredEmailAsync));
+
+        var exists = KnownEmails.Contains(email) || ExistingEmails.Contains(email);
+
+        return Task.FromResult(exists ? Stored(email) : null);
     }
 
     public Task<bool> ConfirmEmailAsync(string userId, string code, CancellationToken cancellationToken)
@@ -43,7 +60,7 @@ public sealed class FakeAccountTokenService : IAccountTokenService
     {
         Calls.Add(nameof(CreatePasswordResetAsync));
 
-        return Task.FromResult(ExistingEmails.Contains(email) ? new AccountToken("user-1", "reset-code-1") : null);
+        return Task.FromResult(ExistingEmails.Contains(email) ? new AccountToken("user-1", "reset-code-1", Stored(email)) : null);
     }
 
     public Task<PasswordResetResult> ResetPasswordAsync(string userId, string code, string newPassword, CancellationToken cancellationToken)

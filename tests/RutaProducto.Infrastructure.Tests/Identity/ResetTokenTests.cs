@@ -50,6 +50,23 @@ public sealed class ResetTokenTests
         Assert.Null(await tokens.CreatePasswordResetAsync("nobody@example.com", CancellationToken.None));
     }
 
+    [Fact]
+    public async Task Tokens_and_lookups_carry_the_stored_address_not_the_typed_one()
+    {
+        using var provider = TokenTestHost.Build(new InMemoryUserStore());
+        using var scope = provider.CreateScope();
+        await TokenTestHost.AddUserAsync(scope.ServiceProvider, Email);
+        var tokens = scope.ServiceProvider.GetRequiredService<IAccountTokenService>();
+
+        var reset = await tokens.CreatePasswordResetAsync("ANA@Example.COM", CancellationToken.None);
+        var confirmation = await tokens.CreateEmailConfirmationAsync("ANA@Example.COM", CancellationToken.None);
+
+        Assert.Equal(Email, reset?.Email);
+        Assert.Equal(Email, confirmation?.Email);
+        Assert.Equal(Email, await tokens.FindStoredEmailAsync("ANA@Example.COM", CancellationToken.None));
+        Assert.Null(await tokens.FindStoredEmailAsync("nobody@example.com", CancellationToken.None));
+    }
+
     [Theory]
     [InlineData("altered")]
     [InlineData("not-base64url")]

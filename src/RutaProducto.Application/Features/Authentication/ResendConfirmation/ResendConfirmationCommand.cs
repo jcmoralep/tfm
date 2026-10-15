@@ -20,6 +20,7 @@ public sealed class ResendConfirmationCommandValidator : AbstractValidator<Resen
             .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("El correo electrónico es obligatorio.")
             .MaximumLength(SignInCommandValidator.MaxEmailLength).WithMessage("El correo electrónico es demasiado largo.")
+            .MustBeAsciiAddress()
             .EmailAddress().WithMessage("El formato del correo electrónico no es válido.");
     }
 }
@@ -44,7 +45,7 @@ public sealed class ResendConfirmationCommandHandler(
 
         if (token is not null)
         {
-            emailSender.Enqueue(AccountEmails.ConfirmEmail(email, links.EmailConfirmation(token)));
+            emailSender.Enqueue(AccountEmails.ConfirmEmail(token.Email,links.EmailConfirmation(token)));
         }
 
         return Unit.Value;

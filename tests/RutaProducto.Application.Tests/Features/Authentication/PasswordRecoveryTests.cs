@@ -1,6 +1,7 @@
 using RutaProducto.Application.Abstractions.Authentication;
 using RutaProducto.Application.Abstractions.Captcha;
 using RutaProducto.Application.Abstractions.Email;
+using RutaProducto.Application.Features.Authentication;
 using RutaProducto.Application.Features.Authentication.ForgotPassword;
 using RutaProducto.Application.Features.Authentication.ResetPassword;
 using RutaProducto.Application.Tests.TestDoubles;
@@ -43,6 +44,31 @@ public sealed class PasswordRecoveryTests
             Assert.Equal(email, message.To);
             Assert.Contains("restablecer-contrasena?usuario=user-1&codigo=reset-code-1", message.Body);
         });
+    }
+
+    [Fact]
+    public async Task The_reset_mail_goes_to_the_stored_address_even_when_the_typed_one_only_matches_by_collation()
+    {
+        var (handler, tokens, sender, _) = Forgot();
+        tokens.ExistingEmails.Add("victim@exámple.com");
+        tokens.StoredAddresses["victim@exámple.com"] = "victim@example.com";
+
+        var result = await handler.Handle(new ForgotPasswordCommand("victim@exámple.com", "token"), CancellationToken.None);
+
+        Assert.Equal(ForgotPasswordResult.Accepted, result);
+        var message = Assert.Single(sender.Messages);
+        Assert.Equal("victim@example.com", message.To);
+    }
+
+    [Theory]
+    [InlineData("exámple.com")]
+    [InlineData("münchen.de")]
+    public void The_forgot_validator_rejects_non_ascii_addresses_without_mentioning_accounts(string domain)
+    {
+        var failure = Assert.Single(new ForgotPasswordCommandValidator().Validate(new ForgotPasswordCommand($"ana@{domain}")).Errors);
+
+        Assert.Equal(EmailAddressRules.AsciiOnlyMessage, failure.ErrorMessage);
+        Assert.DoesNotContain("cuenta", failure.ErrorMessage);
     }
 
     [Theory]
