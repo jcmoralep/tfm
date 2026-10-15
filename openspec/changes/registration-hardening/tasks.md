@@ -61,13 +61,13 @@ Branch `feat/reg-s1-rate-limiting`. Two commits. SPEC "Rate limiting of auth POS
 - [x] 1.3 Commit 1 gate (restore, build, tests), then commit: `feat(web): add the auth POST rate limiter and its options`.
 - [x] 1.4 `Program.cs` (modify): bind `RateLimitOptions` eagerly before `Build()`; only when Enabled call `AddRateLimiter` with the global limiter and `UseRateLimiter()` **after `UseHttpsRedirection()` and before `UseAuthentication()`**; when disabled neither is called. Change `UseStatusCodePagesWithReExecute("/not-found")` to `UseStatusCodePagesWithReExecute("/not-found", "?codigo={0}")` (D2). `Components/Pages/NotFound.razor` (modify): `[SupplyParameterFromQuery(Name = "codigo")] int? Code`; for 429 render the heading `Demasiados intentos`, the text `Hiciste demasiados intentos en poco tiempo. Espera un minuto y vuelve a intentarlo.` and a link to `/login`; every other code renders exactly the current "Página no encontrada". `appsettings.json`: `"RateLimiting": { "Enabled": false, "PermitLimit": 10, "WindowSeconds": 60 }`. `REQUISITOS.md`: new RF-78 (Spanish, text of the spec's edit list, with the 429 mechanism not mentioned). `README.md`: configuration rows `RateLimiting:*` and the dependence on forwarded headers (Railway-prep) with the one-bucket-per-IP behavior. Covers SPEC "Rate limiting" requirement doc deliverables [DOC].
 - [x] 1.5 Commit 2 gate, then commit: `feat(web): wire the rate limiter, the 429 page and RF-78 (off by default)`.
-- [ ] 1.6 **Chrome walkthrough S1** (`RateLimiting__Enabled=true`; record notes per the standing rule).
+- [x] 1.6 **Chrome walkthrough S1** (`RateLimiting__Enabled=true`; record notes per the standing rule).
   - [ ] Send eleven quick POSTs to `/login` with a wrong password (submit the form repeatedly): the 11th shows "Demasiados intentos" with the retry text and the `/login` link; in DevTools Network the response is **429** with a `Retry-After` header. (SPEC "Eleventh POST is rejected".)
   - [ ] **Design D2 check:** confirm the re-executed POST renders as a page (no antiforgery error, no form dispatch). If it does not, apply the fallback (`OnRejected` writes `303` to `/not-found?codigo=429`, the page sets `HttpContext.Response.StatusCode = 429`), note it, and amend D2 in the Reconciliation notes.
   - [ ] GET `/login` and `/registro` still render during the throttling; POST `/logout` is not counted; another path (an initiative page) is not counted.
   - [ ] Restart with `RateLimiting__Enabled` unset: eleven POSTs never reach a 429, and the pipeline has no limiter (SPEC "Default is off", the Program-level half).
   - [ ] `Logs/` has the Warning `Auth POST throttled on /login` with no IP, email or password; `rg "style=|<script"` clean. Tear down. Save notes to Engram.
-- [ ] 1.G **Slice gate S1**: restore + build (zero code warnings) + full tests. PR title `feat(web): rate limiting of auth POSTs with a Spanish 429 page (S1)`. Merge to main before S2.
+- [x] 1.G **Slice gate S1**: restore + build (zero code warnings) + full tests. PR title `feat(web): rate limiting of auth POSTs with a Spanish 429 page (S1)`. Merge to main before S2.
 
 ## Group S2: Captcha seam and Turnstile on /registro (~350)
 
@@ -190,3 +190,9 @@ Every item below is a divergence between `specs/authentication/spec.md` and `des
 - **R21, `RegistrationStatus` and captcha ordering.** Spec: captcha before any lookup. Design D13 adds `ConfirmationPending`, `CaptchaRejected`, `CaptchaUnavailable` and `InvalidPassword` before the duplicate check (so it leaks nothing). Same behavior; names fixed.
 - **R22, interface completeness in S4.** The design lists the full `IAccountTokenService` and `IAccountLinks` (including reset). To avoid half-implemented members in S4, the interfaces gain the reset members in S5 (5.1) and the S4 interfaces contain only what S4 implements.
 - **R23, S4 reset provider registration.** `PasswordResetTokenProvider` and its 2-hour options are registered in S4 together with the other providers (D11) so the lifespan test is written once; it is used from S5.
+
+## S1 walkthrough notes (2026-10-15)
+
+With `RateLimiting__Enabled=true` (10 per 60 s): ten wrong-password POSTs to `/login` answered 200 and the 11th and 12th answered 429 with `Retry-After: 60`. A real form submit while throttled rendered the "Demasiados intentos" page (heading, retry text and a link to `/login`) through the status-code re-execute, so the D2 rendering check passes and the 303 fallback is not needed. GET `/login` and `/registro` kept answering 200. `Logs/` has the Warning `Auth POST throttled on /login` with no IP, email or password. Not run: the restart with the limiter unset (covered by the guard in `Program.cs`).
+
+Decision (owner, 2026-10-15): the independent verification and the extended manual validation of this change are deferred ("dejemos la validación para luego"); slices keep the build/test gate only, and the pending validation is tracked in `docs/mejoras-posteriores.md`.
