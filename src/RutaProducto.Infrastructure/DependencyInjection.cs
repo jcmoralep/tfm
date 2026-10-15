@@ -7,6 +7,7 @@ using RutaProducto.Application.Features.Context;
 using RutaProducto.Application.Features.Initiatives;
 using RutaProducto.Infrastructure.Artifacts;
 using RutaProducto.Infrastructure.Assistant;
+using RutaProducto.Infrastructure.Captcha;
 using RutaProducto.Infrastructure.Context;
 using RutaProducto.Infrastructure.Export;
 using RutaProducto.Infrastructure.Gemini;
@@ -75,6 +76,9 @@ public static class DependencyInjection
         var storage = StorageOptions.BindAndValidate(configuration);
         services.AddSingleton<IFileStorage>(_ => new LocalFileStorage(storage.LocalRootPath));
         services.AddSingleton(new ContextLimits(storage.MaxFileBytes));
+
+        // Captcha:Provider (None by default) selects the verifier; Turnstile without its keys stops the app at startup.
+        services.AddCaptcha(CaptchaOptions.BindAndValidate(configuration));
 
         // One switch (Assistant:Provider) selects both the assistant and the drafter. Checked eagerly, like the
         // connection string, so a bad configuration stops the app at startup instead of on the first request.
