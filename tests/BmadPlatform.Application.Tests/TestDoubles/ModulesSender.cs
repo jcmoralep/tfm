@@ -1,4 +1,6 @@
 using BmadPlatform.Application.Features.Assistant.GetConversationAnswers;
+using BmadPlatform.Application.Features.Context;
+using BmadPlatform.Application.Features.Context.GetContext;
 using BmadPlatform.Application.Features.Initiatives.GetInitiative;
 using BmadPlatform.Application.Features.Initiatives.MarkReadyToBuild;
 using BmadPlatform.Application.Features.Initiatives.ReopenPlanning;
@@ -16,7 +18,8 @@ public sealed class ModulesSender(
     InMemoryInitiativeRepository initiatives,
     InMemoryConversationRepository conversations,
     FakeCurrentUser currentUser,
-    TimeProvider timeProvider) : ISender
+    TimeProvider timeProvider,
+    ContextRoutes? context = null) : ISender
 {
     private readonly List<object> sent = [];
 
@@ -40,6 +43,10 @@ public sealed class ModulesSender(
                 var answers = await new GetConversationAnswersQueryHandler(this, conversations, currentUser).Handle(query, cancellationToken);
 
                 return (TResponse)(object?)answers!;
+            case GetContextQuery query when context is not null:
+                var view = await new GetContextQueryHandler(this, context.Attachments, currentUser, context.Limits).Handle(query, cancellationToken);
+
+                return (TResponse)(object?)view!;
             default:
                 throw new NotSupportedException($"{request.GetType().Name} is not routed by this double.");
         }
@@ -84,3 +91,10 @@ public sealed class ModulesSender(
         sent.Add(request);
     }
 }
+
+/// <summary>What <see cref="ModulesSender"/> needs to route the Context requests that other modules send.</summary>
+public sealed record ContextRoutes(
+    InMemoryAttachmentRepository Attachments,
+    InMemoryFileStorage Storage,
+    ContextLimits Limits,
+    Microsoft.Extensions.Logging.ILoggerFactory Loggers);
