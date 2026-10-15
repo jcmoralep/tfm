@@ -83,9 +83,9 @@ Revert the slice PRs in reverse order (S5 first, so the prompt goes back to text
 
 ## Success Criteria
 
-- [ ] In Chrome (`docker compose` MySQL, seed user): upload a file and download it with its original name. A file over 10 MB, a zero-byte file and a `.exe` are rejected with Spanish messages. A link and a note are added. Deleting each kind shows the dialog and removes the item. A foreign or unknown download URL returns 404. `Logs/` has ids only, with no names or content.
-- [ ] The Fake assistant runs unchanged. In the live Gemini check (manual, `docs/gemini-evaluacion.md`), a note and a `.md` file are used, and an embedded instruction is ignored.
-- [ ] Lean xUnit tests and the build pass with no key and no network. The new module passes the boundary and model tests. A grep for `style=` and `<script` in the touched views is clean.
+- [ ] In Chrome (`docker compose` MySQL, seed user): upload a file and download it with its original name. A file over 10 MB, a zero-byte file and a `.exe` are rejected with Spanish messages. A link and a note are added. Deleting each kind shows the dialog and removes the item. A foreign or unknown download URL returns 404. `Logs/` has ids only, with no names or content. _Partly evidenced: rejections, link, note and delete were seen in Chrome; the saved file name was not recorded (pendiente)._
+- [ ] The Fake assistant runs unchanged. In the live Gemini check (manual, `docs/gemini-evaluacion.md`), a note and a `.md` file are used, and an embedded instruction is ignored. _Not yet: the Fake regression with context was not walked in Chrome, and the live check ran two turns and no draft (see the Chrome evidence doc)._
+- [x] Lean xUnit tests and the build pass with no key and no network. The new module passes the boundary and model tests. A grep for `style=` and `<script` in the touched views is clean.
 
 ## Proposal question round
 

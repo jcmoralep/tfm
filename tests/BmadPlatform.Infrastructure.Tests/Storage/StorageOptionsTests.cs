@@ -38,7 +38,6 @@ public sealed class StorageOptionsTests
     [InlineData("-1")]
     [InlineData("51")]
     [InlineData("abc")]
-    [InlineData("")]
     public void An_invalid_max_size_fails_naming_the_setting(string size)
     {
         var error = Assert.Throws<InvalidOperationException>(
@@ -54,6 +53,14 @@ public sealed class StorageOptionsTests
     public void A_size_from_1_to_50_is_accepted(string size, int expected)
     {
         Assert.Equal(expected, StorageOptions.BindAndValidate(Config(("Storage:MaxFileSizeMb", size))).MaxFileSizeMb);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("  ")]
+    public void A_blank_max_size_falls_back_to_the_default_like_a_blank_provider(string size)
+    {
+        Assert.Equal(10, StorageOptions.BindAndValidate(Config(("Storage:MaxFileSizeMb", size))).MaxFileSizeMb);
     }
 
     [Fact]

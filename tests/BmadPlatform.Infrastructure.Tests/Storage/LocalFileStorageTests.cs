@@ -46,6 +46,23 @@ public sealed class LocalFileStorageTests : IDisposable
         Assert.False(Directory.Exists(root));
     }
 
+    [Fact]
+    public async Task A_root_with_a_trailing_separator_works_like_one_without()
+    {
+        var trailing = new LocalFileStorage(root + Path.DirectorySeparatorChar);
+
+        await trailing.SaveAsync(ValidKey, new MemoryStream([7]), 10, CancellationToken.None);
+
+        await using (var stream = await trailing.OpenReadAsync(ValidKey, CancellationToken.None))
+        {
+            Assert.NotNull(stream);
+        }
+
+        await trailing.DeleteAsync(ValidKey, CancellationToken.None);
+
+        Assert.Null(await trailing.OpenReadAsync(ValidKey, CancellationToken.None));
+    }
+
     [Theory]
     [InlineData("../x")]
     [InlineData("a/../../x")]

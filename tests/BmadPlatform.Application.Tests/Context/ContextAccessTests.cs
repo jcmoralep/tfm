@@ -1,6 +1,7 @@
 using BmadPlatform.Application.Common.Exceptions;
 using BmadPlatform.Application.Features.Context.GetAttachmentDownload;
 using BmadPlatform.Domain.Context;
+using BmadPlatform.Domain.Initiatives;
 using Microsoft.Extensions.Logging;
 
 namespace BmadPlatform.Application.Tests.Context;
@@ -29,6 +30,26 @@ public sealed class ContextAccessTests
         Assert.Empty(context.Storage.Files);
         Assert.Empty(context.Attachments.Stored);
         Assert.Equal(["file:delete", "row:delete"], context.Journal);
+    }
+
+    [Theory]
+    [InlineData(InitiativeStatus.Draft)]
+    [InlineData(InitiativeStatus.Planning)]
+    [InlineData(InitiativeStatus.ReadyToBuild)]
+    public async Task Context_can_be_deleted_in_any_status_without_changing_it(InitiativeStatus status)
+    {
+        var (id, _) = await InitiativeWithAFile();
+        await context.AddLink(id, "https://example.com");
+        await context.AddNote(id, "Nota", "texto");
+        context.Initiatives.ForceStatus(id, status);
+
+        foreach (var row in context.Attachments.Stored.ToList())
+        {
+            await context.Delete(id, row.Id);
+        }
+
+        Assert.Empty(context.Attachments.Stored);
+        Assert.Equal(status, (await context.Initiatives.Get(id))!.Status);
     }
 
     [Fact]

@@ -16,10 +16,15 @@ internal sealed partial class LocalFileStorage : IFileStorage
         OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
     private readonly string root;
+    private readonly string prefix;
 
     public LocalFileStorage(string rootPath)
     {
-        root = Path.GetFullPath(rootPath);
+        // GetFullPath keeps a trailing separator; the prefix check below adds exactly one. A filesystem root
+        // (a drive or "/")  because it cannot be trimmed.
+        var full = Path.GetFullPath(rootPath);
+        root = Path.GetPathRoot(full) == full ? full : Path.TrimEndingDirectorySeparator(full);
+        prefix = Path.EndsInDirectorySeparator(root) ? root : root + Path.DirectorySeparatorChar;
     }
 
     public async Task<long> SaveAsync(string key, Stream content, long maxBytes, CancellationToken cancellationToken)
@@ -114,7 +119,7 @@ internal sealed partial class LocalFileStorage : IFileStorage
 
         var path = Path.GetFullPath(Path.Combine(root, key.Replace('/', Path.DirectorySeparatorChar)));
 
-        if (!path.StartsWith(root + Path.DirectorySeparatorChar, PathComparison))
+        if (!path.StartsWith(prefix, PathComparison))
         {
             throw new ArgumentException("The storage key is not valid.", nameof(key));
         }

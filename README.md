@@ -4,7 +4,7 @@ Plataforma interna para que personas de producto lleven una iniciativa desde la 
 
 > **Nota de marcas.** BMad y BMAD-METHOD son marcas de BMad Code, LLC. Este proyecto no está afiliado ni avalado por ellos: usa el método BMAD (licencia MIT del código) y solo lo menciona para describir con qué es compatible. Por eso el producto no lleva «BMAD» en su nombre.
 
-Estado actual: **paso 6 (Arquitectura y Épicas e historias)** de `PROPUESTA-MVP.md` §7, **entregado** (cambio `architecture-epics`, 2026-10-14). Incluye la solución por capas, MySQL, Serilog, el inicio de sesión, el estilo visual base, las iniciativas, la conversación guiada, la generación, edición y aprobación del Brief, el PRD, la especificación, la Arquitectura y las Épicas e historias, y la opción de que Gemini redacte las preguntas y los documentos (`Assistant:Provider=Gemini`; por defecto sigue el asistente de demostración). Siguen pendientes el contexto adjunto (paso 7) y la exportación completa (paso 8).
+Estado actual: **paso 7 (contexto adjunto)** de `PROPUESTA-MVP.md` §7, **entregado** (cambio `context-attachments`, 2026-10-15), sobre el paso 6 (Arquitectura y Épicas e historias, cambio `architecture-epics`, 2026-10-14). Incluye la solución por capas, MySQL, Serilog, el inicio de sesión, el estilo visual base, las iniciativas, la conversación guiada, la generación, edición y aprobación del Brief, el PRD, la especificación, la Arquitectura y las Épicas e historias, el contexto adjunto de cada iniciativa (archivos, enlaces y notas) y la opción de que Gemini redacte las preguntas y los documentos (`Assistant:Provider=Gemini`; por defecto sigue el asistente de demostración). Sigue pendiente la exportación completa (paso 8).
 
 ## Advertencia sobre Gemini (capa gratuita)
 
@@ -132,6 +132,8 @@ Los archivos del contexto se guardan en disco, nunca en MySQL (solo los metadato
 Límites por iniciativa: 20 elementos y 50 MB de archivos. Se rechazan los archivos vacíos y los ejecutables (`.exe .dll .bat .cmd .com .msi .scr .js .vbs .ps1 .sh .jar`); la descarga siempre se fuerza como adjunto.
 
 - **En Railway el disco del contenedor es efímero:** los archivos locales se pierden en cada nuevo despliegue hasta que exista el almacenamiento S3.
+- Una barra final en `Storage:LocalRootPath` (por ejemplo `/data/`) se ignora. Si un proceso se cae durante una subida puede quedar un archivo temporal `*.part` en la carpeta; no se lista, no cuenta en los límites y no se descarga, y se puede borrar a mano.
+- **Contexto de texto y Gemini.** Con `Assistant:Provider=Gemini`, las notas y los archivos de texto (`.txt`, `.md`, `.markdown`, `.csv`) se envían a Gemini como datos de referencia, igual que el resto de la conversación, y por tanto a la capa gratuita descrita en la advertencia de arriba (la interfaz no avisa, RN-05). Con `Fake` no sale nada. Los enlaces, PDF, imágenes y demás archivos solo se guardan.
 - **No hay análisis de malware.** La mitigación es la lista de bloqueo de extensiones y la descarga forzada como adjunto.
 
 ## Base de datos
