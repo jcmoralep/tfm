@@ -47,11 +47,17 @@ public static class DependencyInjection
         services.AddDbContextFactory<ApplicationDbContext>(
             options => options.UseApplicationMySql(connectionString, serverVersion));
 
+        // Read before Identity so SignIn.RequireConfirmedEmail follows Email:RequireConfirmedEmail; a bad value stops the app here.
+        var email = EmailOptions.BindAndValidate(configuration);
+
         services
             .AddIdentityCore<ApplicationUser>(options =>
             {
                 options.User.RequireUniqueEmail = true;
                 options.SignIn.RequireConfirmedAccount = false;
+
+                // Off by default. When on, an unconfirmed account is refused at sign-in (see SignInOutcome).
+                options.SignIn.RequireConfirmedEmail = email.RequireConfirmedEmail;
                 options.Lockout.AllowedForNewUsers = true;
 
                 // Explicit on purpose: the registration page lists these rules (PasswordPolicy) and checks them live.
@@ -62,9 +68,11 @@ public static class DependencyInjection
                 options.Password.RequireNonAlphanumeric = true;
             })
             .AddEntityFrameworkStores<ApplicationDbContext>()
-            .AddSignInManager();
+            .AddSignInManager()
+            .AddAccountTokenProviders();
 
         services.AddScoped<IAuthService, IdentityAuthService>();
+        services.AddScoped<IAccountTokenService, IdentityAccountTokenService>();
         services.AddScoped<InitialUserSeeder>();
 
         services.AddScoped<IInitiativeRepository, InitiativeRepository>();
@@ -83,7 +91,7 @@ public static class DependencyInjection
 
         // Email:Provider (None by default) selects the sender; Smtp without its settings, or a confirmation switch without
         // Smtp, stops the app at startup. Nothing is sent until the account flows use IEmailSender.
-        services.AddEmail(EmailOptions.BindAndValidate(configuration));
+        services.AddEmail(email);
 
         // One switch (Assistant:Provider) selects both the assistant and the drafter. Checked eagerly, like the
         // connection string, so a bad configuration stops the app at startup instead of on the first request.
