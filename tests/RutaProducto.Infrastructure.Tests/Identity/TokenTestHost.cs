@@ -9,7 +9,7 @@ namespace RutaProducto.Infrastructure.Tests.Identity;
 /// <summary>The real UserManager and token providers over an in-memory store. Each host has its own (ephemeral) key ring.</summary>
 internal static class TokenTestHost
 {
-    public static ServiceProvider Build(InMemoryUserStore store, TimeSpan? confirmationLifespan = null)
+    public static ServiceProvider Build(InMemoryUserStore store, TimeSpan? confirmationLifespan = null, TimeSpan? resetLifespan = null)
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -20,6 +20,11 @@ internal static class TokenTestHost
         if (confirmationLifespan is not null)
         {
             services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = confirmationLifespan.Value);
+        }
+
+        if (resetLifespan is not null)
+        {
+            services.Configure<PasswordResetTokenProviderOptions>(options => options.TokenLifespan = resetLifespan.Value);
         }
 
         services.AddScoped<IAccountTokenService, IdentityAccountTokenService>();

@@ -19,6 +19,16 @@ public sealed class AccountLinksTests
     }
 
     [Fact]
+    public void The_reset_link_is_the_configured_base_plus_the_reset_path_and_an_escaped_query()
+    {
+        var links = new AccountLinks(new AccountEmailSettings(true, true, new Uri("https://app.example.com/ruta/")));
+
+        Assert.Equal(
+            "https://app.example.com/ruta/restablecer-contrasena?usuario=u%201&codigo=a-b_c",
+            links.PasswordReset(new AccountToken("u 1", "a-b_c")).AbsoluteUri);
+    }
+
+    [Fact]
     public void The_login_and_forgot_links_use_the_same_base_and_no_request_host_exists_to_leak()
     {
         var links = new AccountLinks(new AccountEmailSettings(true, true, new Uri("https://app.example.com/ruta")));

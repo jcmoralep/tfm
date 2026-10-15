@@ -12,6 +12,9 @@ internal sealed class AccountLinks(AccountEmailSettings settings) : IAccountLink
     public Uri EmailConfirmation(AccountToken token) =>
         Build(AuthenticationEndpoints.ConfirmEmailPath, $"?usuario={Uri.EscapeDataString(token.UserId)}&codigo={Uri.EscapeDataString(token.Code)}");
 
+    public Uri PasswordReset(AccountToken token) =>
+        Build(AuthenticationEndpoints.ResetPasswordPath, $"?usuario={Uri.EscapeDataString(token.UserId)}&codigo={Uri.EscapeDataString(token.Code)}");
+
     public Uri Login() => Build(AuthenticationEndpoints.LoginPath);
 
     public Uri ForgotPassword() => Build(AuthenticationEndpoints.ForgotPasswordPath);

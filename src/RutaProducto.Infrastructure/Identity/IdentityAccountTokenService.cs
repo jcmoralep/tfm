@@ -38,4 +38,59 @@ internal sealed class IdentityAccountTokenService(
 
         return confirmed;
     }
+
+    public async Task<AccountToken?> CreatePasswordResetAsync(string email, CancellationToken cancellationToken)
+    {
+        // Confirmed or not, locked out or not: the reset mail goes to the mailbox, which is the proof of ownership.
+        var user = await userManager.FindByEmailAsync(email);
+
+        if (user is null)
+        {
+            return null;
+        }
+
+        var token = await userManager.GeneratePasswordResetTokenAsync(user);
+        logger.LogInformation("Password reset token created for user {UserId}", user.Id);
+
+        return new AccountToken(user.Id, AccountTokenCodec.Encode(token));
+    }
+
+    public async Task<PasswordResetResult> ResetPasswordAsync(
+        string userId, string code, string newPassword, CancellationToken cancellationToken)
+    {
+        var token = AccountTokenCodec.Decode(code);
+        var user = token is null || string.IsNullOrEmpty(userId) ? null : await userManager.FindByIdAsync(userId);
+
+        if (user is null || token is null)
+        {
+            logger.LogInformation("Password reset for user {UserId}: {Outcome}", user?.Id, "invalid-link");
+            return PasswordResetResult.InvalidLink;
+        }
+
+        // The token is verified first and the password policy second; a weak password leaves the token (and the stamp) intact.
+        var result = await userManager.ResetPasswordAsync(user, token, newPassword);
+
+        if (result.Succeeded)
+        {
+            // Opening the link proved control of the mailbox.
+            if (!user.EmailConfirmed)
+            {
+                user.EmailConfirmed = true;
+                await userManager.UpdateAsync(user);
+            }
+
+            logger.LogInformation("Password reset for user {UserId}: {Outcome}", user.Id, "reset");
+            return PasswordResetResult.Succeeded;
+        }
+
+        if (result.Errors.Any(error => error.Code == nameof(IdentityErrorDescriber.InvalidToken)))
+        {
+            logger.LogInformation("Password reset for user {UserId}: {Outcome}", user.Id, "invalid-link");
+            return PasswordResetResult.InvalidLink;
+        }
+
+        logger.LogInformation("Password reset for user {UserId}: {Outcome}", user.Id, "invalid-password");
+
+        return PasswordResetResult.InvalidPassword(PasswordMessages.From(result.Errors));
+    }
 }
