@@ -33,12 +33,33 @@ public sealed class FakeAccountTokenService : IAccountTokenService
 
         return Task.FromResult(ConfirmResult);
     }
+
+    /// <summary>Addresses that have an account (any state); they get a reset token.</summary>
+    public HashSet<string> ExistingEmails { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public PasswordResetResult ResetResult { get; set; } = PasswordResetResult.Succeeded;
+
+    public Task<AccountToken?> CreatePasswordResetAsync(string email, CancellationToken cancellationToken)
+    {
+        Calls.Add(nameof(CreatePasswordResetAsync));
+
+        return Task.FromResult(ExistingEmails.Contains(email) ? new AccountToken("user-1", "reset-code-1") : null);
+    }
+
+    public Task<PasswordResetResult> ResetPasswordAsync(string userId, string code, string newPassword, CancellationToken cancellationToken)
+    {
+        Calls.Add(nameof(ResetPasswordAsync));
+
+        return Task.FromResult(ResetResult);
+    }
 }
 
 /// <summary>Fixed, recognisable links.</summary>
 public sealed class FakeAccountLinks : IAccountLinks
 {
     public Uri EmailConfirmation(AccountToken token) => new($"https://app.test/confirmar-correo?usuario={token.UserId}&codigo={token.Code}");
+
+    public Uri PasswordReset(AccountToken token) => new($"https://app.test/restablecer-contrasena?usuario={token.UserId}&codigo={token.Code}");
 
     public Uri Login() => new("https://app.test/login");
 

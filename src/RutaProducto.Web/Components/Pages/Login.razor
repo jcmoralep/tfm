@@ -50,6 +50,12 @@
                                DescribedBy="@(errors.Count > 0 ? "login-errors" : null)"
                                @bind-Value="Input.Password" />
 
+                @if (EmailSettings.EmailEnabled)
+                {
+                    <a href="@AuthenticationEndpoints.ForgotPasswordPath" data-enhance-nav="false"
+                       class="block text-sm font-semibold text-primary hover:underline">¿Olvidaste tu contraseña?</a>
+                }
+
                 <label class="flex cursor-pointer items-center justify-between gap-4 text-sm text-ink-muted">
                     <span>Permanecer conectado</span>
                     <InputCheckbox @bind-Value="Input.RememberMe" class="peer sr-only" />
