@@ -73,21 +73,7 @@ public sealed class ApproveArtifactTests
         Assert.DoesNotContain(context.Sender.Sent, request => request is MarkReadyToBuildCommand);
     }
 
-    private static readonly ArtifactType[] LargeChain = [ArtifactType.Prd, ArtifactType.Architecture, ArtifactType.EpicsAndStories];
-
-    // Generates and approves the documents of the chain in order, up to and including <paramref name="last"/>.
-    private async Task<Guid> LargeApprovedThrough(ArtifactType last)
-    {
-        var id = await context.AtClosing(InitiativeDepth.Large);
-
-        foreach (var type in LargeChain.Take(Array.IndexOf(LargeChain, last) + 1))
-        {
-            await context.Generate(id, type);
-            await context.Approve(id, type, 1);
-        }
-
-        return id;
-    }
+    private Task<Guid> LargeApprovedThrough(ArtifactType last) => context.LargeApprovedThrough(last);
 
     [Theory]
     [InlineData(ArtifactType.Prd, InitiativeStatus.Planning)]
@@ -140,6 +126,26 @@ public sealed class ApproveArtifactTests
         Assert.Equal((2, ArtifactStatus.Draft), (context.StoredArtifact(id, ArtifactType.Prd).Version, context.StoredArtifact(id, ArtifactType.Prd).Status));
         Assert.Equal(ArtifactStatus.Approved, context.StoredArtifact(id, ArtifactType.Architecture).Status);
         Assert.Equal(ArtifactStatus.Approved, context.StoredArtifact(id, ArtifactType.EpicsAndStories).Status);
+    }
+
+    // Proves the handler passes the stored documents to the availability rule: without them the approval would go through.
+    [Theory]
+    [InlineData(ArtifactType.Architecture, ArtifactType.Prd, ArtifactTexts.WaitingForPrd)]
+    [InlineData(ArtifactType.EpicsAndStories, ArtifactType.Prd, ArtifactTexts.WaitingForPrd)]
+    [InlineData(ArtifactType.EpicsAndStories, ArtifactType.Architecture, ArtifactTexts.WaitingForArchitecture)]
+    public async Task Approving_a_dependent_while_its_upstream_is_a_draft_is_rejected(ArtifactType dependent, ArtifactType upstream, string message)
+    {
+        var id = await LargeApprovedThrough(ArtifactType.EpicsAndStories);
+        await context.Save(id, upstream, 1, "# Editado\n\n- **FR-1**: cambiado");
+        await context.Save(id, dependent, 1, "# Editado\n\n- **FR-1**: cambiado");
+        var sent = context.Sender.Sent.Count;
+
+        var error = await Assert.ThrowsAsync<DomainException>(() => context.Approve(id, dependent, 2));
+
+        Assert.Equal(message, error.Message);
+        Assert.Equal(ArtifactStatus.Draft, context.StoredArtifact(id, dependent).Status);
+        Assert.Equal(InitiativeStatus.Planning, await context.StatusOf(id));
+        Assert.DoesNotContain(context.Sender.Sent.Skip(sent), request => request is MarkReadyToBuildCommand);
     }
 
     [Fact]

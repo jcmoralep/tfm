@@ -46,7 +46,7 @@ internal static partial class ArchitectureLayout
         WriteInherited(c, prd);
 
         c.Heading("Invariantes y reglas");
-        var decisions = WriteDecisions(c, prd, budget, out var rejected);
+        var decisions = WriteDecisions(c, prd, budget, out var rejected, out var omitted);
 
         c.Heading("Mapa de capacidades");
         WriteMap(c, prd, budget, decisions);
@@ -61,6 +61,11 @@ internal static partial class ArchitectureLayout
         if (rejected > 0)
         {
             c.OpenQuestion("Una decisión del borrador tenía texto sin definir; ¿qué debe decir?");
+        }
+
+        if (omitted > 0)
+        {
+            c.OpenQuestion($"El borrador omitió {omitted} decisiones más allá del máximo de {MaxDecisions}; ¿qué otras decisiones de arquitectura hacen falta?");
         }
 
         foreach (var raw in c.ModelQuestions.Take(MaxModelQuestions))
@@ -87,13 +92,13 @@ internal static partial class ArchitectureLayout
     }
 
     // Numbers the surviving decisions AD-1..n in order and writes one block each; returns them with their identifiers.
-    private static List<(string Id, Decision Decision)> WriteDecisions(DraftComposer c, PrdFacts prd, LayoutBudget budget, out int rejected)
+    private static List<(string Id, Decision Decision)> WriteDecisions(DraftComposer c, PrdFacts prd, LayoutBudget budget, out int rejected, out int omitted)
     {
-        var decisions = Normalize(c.Decisions, prd, budget, out rejected);
+        var decisions = Normalize(c.Decisions, prd, budget, out rejected, out omitted);
 
         if (decisions.Count == 0)
         {
-            decisions = Normalize(FakeDecisions(prd), prd, budget, out _);
+            decisions = Normalize(FakeDecisions(prd), prd, budget, out _, out omitted);
         }
 
         if (decisions.Count == 0)
@@ -132,19 +137,16 @@ internal static partial class ArchitectureLayout
 
     // Binds are canonicalised, filtered to the PRD, de-duplicated and sorted in PRD order; a decision with no valid
     // bind is dropped; at most MaxDecisions are kept. A text that is a placeholder is replaced by a fixed one and counted
-    // in <rejected>, so the person is asked what the decision should say instead of reading "TBD".
-    private static List<Decision> Normalize(IEnumerable<DecisionItem> source, PrdFacts prd, LayoutBudget budget, out int rejected)
+    // in <rejected>, so the person is asked what the decision should say instead of reading "TBD". A decision with a
+    // valid bind that does not fit under the cap is counted in <omitted>, so the loss is asked about, not silent.
+    private static List<Decision> Normalize(IEnumerable<DecisionItem> source, PrdFacts prd, LayoutBudget budget, out int rejected, out int omitted)
     {
         var kept = new List<Decision>();
         rejected = 0;
+        omitted = 0;
 
         foreach (var item in source)
         {
-            if (kept.Count == MaxDecisions)
-            {
-                break;
-            }
-
             var binds = item.Binds
                 .Select(PrdFacts.CanonicalId)
                 .OfType<string>()
@@ -155,6 +157,13 @@ internal static partial class ArchitectureLayout
 
             if (binds.Count == 0)
             {
+                continue;
+            }
+
+            if (kept.Count == MaxDecisions)
+            {
+                omitted++;
+
                 continue;
             }
 

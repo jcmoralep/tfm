@@ -101,7 +101,10 @@ public sealed class ArtifactLabelsTests
     [InlineData(ArtifactType.EpicsAndStories, true)]
     public void Approval_copy_mentions_development_review_only_for_the_draft_documents(ArtifactType type, bool review)
     {
-        Assert.Equal(review, ArtifactLabels.ApproveConfirmText(type).Contains("revisa", StringComparison.Ordinal));
+        var text = ArtifactLabels.ApproveConfirmText(type);
+
+        Assert.Equal(review, text.Contains("desarrollo lo revisa", StringComparison.Ordinal));
+        Assert.Equal(review, text.Contains("usted confirma que lo revisó", StringComparison.Ordinal));
         Assert.Equal(review, ArtifactLabels.NeedsDevelopmentReview(type));
     }
 

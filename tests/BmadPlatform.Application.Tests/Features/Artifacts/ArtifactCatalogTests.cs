@@ -197,7 +197,7 @@ public sealed class ArtifactCatalogTests
     }
 
     [Fact]
-    public void Large_never_completes_in_this_change()
+    public void A_lone_prd_does_not_complete_a_large_initiative()
     {
         Assert.False(ArtifactCatalog.IsSetComplete(InitiativeDepth.Large, [Summary(ArtifactType.Prd, ArtifactStatus.Approved)]));
     }

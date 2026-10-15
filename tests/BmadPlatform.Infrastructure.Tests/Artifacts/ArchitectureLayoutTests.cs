@@ -72,6 +72,8 @@ public sealed class ArchitectureLayoutTests
         var markdown = Draft(Prd, [.. Enumerable.Range(1, 12).Select(n => Decision($"Decisión {n}", ["FR-1"]))]);
 
         Assert.Equal(10, ArchitectureDecisionItems.Parse(markdown).Count);
+        Assert.Contains("El borrador omitió 2 decisiones más allá del máximo de 10", markdown);
+        Assert.DoesNotContain("omitió", Draft(Prd, [.. Enumerable.Range(1, 10).Select(n => Decision($"Decisión {n}", ["FR-1"]))]));
     }
 
     [Theory]
