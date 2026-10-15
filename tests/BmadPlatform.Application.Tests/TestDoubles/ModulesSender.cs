@@ -1,5 +1,8 @@
 using BmadPlatform.Application.Features.Assistant.GetConversationAnswers;
 using BmadPlatform.Application.Features.Context;
+using BmadPlatform.Application.Features.Context.AddFileAttachment;
+using BmadPlatform.Application.Features.Context.AddLinkAttachment;
+using BmadPlatform.Application.Features.Context.AddNoteAttachment;
 using BmadPlatform.Application.Features.Context.GetContext;
 using BmadPlatform.Application.Features.Initiatives.GetInitiative;
 using BmadPlatform.Application.Features.Initiatives.MarkReadyToBuild;
@@ -7,6 +10,7 @@ using BmadPlatform.Application.Features.Initiatives.ReopenPlanning;
 using BmadPlatform.Application.Features.Initiatives.SetInitiativeDepth;
 using BmadPlatform.Application.Features.Initiatives.StartPlanning;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace BmadPlatform.Application.Tests.TestDoubles;
 
@@ -47,6 +51,22 @@ public sealed class ModulesSender(
                 var view = await new GetContextQueryHandler(this, context.Attachments, currentUser, context.Limits).Handle(query, cancellationToken);
 
                 return (TResponse)(object?)view!;
+            case AddFileAttachmentCommand command when context is not null:
+                var file = await new AddFileAttachmentCommandHandler(
+                    this, context.Attachments, context.Storage, currentUser, timeProvider, context.Limits,
+                    context.Loggers.CreateLogger<AddFileAttachmentCommandHandler>()).Handle(command, cancellationToken);
+
+                return (TResponse)(object)file;
+            case AddLinkAttachmentCommand command when context is not null:
+                var link = await new AddLinkAttachmentCommandHandler(
+                    this, context.Attachments, currentUser, timeProvider, context.Limits).Handle(command, cancellationToken);
+
+                return (TResponse)(object)link;
+            case AddNoteAttachmentCommand command when context is not null:
+                var note = await new AddNoteAttachmentCommandHandler(
+                    this, context.Attachments, currentUser, timeProvider, context.Limits).Handle(command, cancellationToken);
+
+                return (TResponse)(object)note;
             default:
                 throw new NotSupportedException($"{request.GetType().Name} is not routed by this double.");
         }
@@ -97,4 +117,4 @@ public sealed record ContextRoutes(
     InMemoryAttachmentRepository Attachments,
     InMemoryFileStorage Storage,
     ContextLimits Limits,
-    Microsoft.Extensions.Logging.ILoggerFactory Loggers);
+    ILoggerFactory Loggers);

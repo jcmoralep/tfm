@@ -1,4 +1,7 @@
 using BmadPlatform.Application.Features.Context;
+using BmadPlatform.Application.Features.Context.AddFileAttachment;
+using BmadPlatform.Application.Features.Context.AddLinkAttachment;
+using BmadPlatform.Application.Features.Context.AddNoteAttachment;
 using BmadPlatform.Application.Features.Context.GetContext;
 using BmadPlatform.Application.Tests.Features.Initiatives;
 using BmadPlatform.Application.Tests.TestDoubles;
@@ -54,4 +57,17 @@ public sealed class ContextTestContext
 
     public Task<ContextView?> Get(Guid initiativeId) =>
         new GetContextQueryHandler(Sender, Attachments, User, Limits).Handle(new GetContextQuery(initiativeId), default);
+
+    /// <summary>Adds a file whose announced size defaults to the real one.</summary>
+    public Task<ContextView> AddFile(Guid initiativeId, string name, byte[] bytes, long? declaredSize = null, string? contentType = "text/plain") =>
+        new AddFileAttachmentCommandHandler(Sender, Attachments, Storage, User, Clock, Limits, Loggers.CreateLogger<AddFileAttachmentCommandHandler>())
+            .Handle(new AddFileAttachmentCommand(initiativeId, name, contentType, declaredSize ?? bytes.Length, new MemoryStream(bytes)), default);
+
+    public Task<ContextView> AddLink(Guid initiativeId, string url) =>
+        new AddLinkAttachmentCommandHandler(Sender, Attachments, User, Clock, Limits)
+            .Handle(new AddLinkAttachmentCommand(initiativeId, url), default);
+
+    public Task<ContextView> AddNote(Guid initiativeId, string title, string text) =>
+        new AddNoteAttachmentCommandHandler(Sender, Attachments, User, Clock, Limits)
+            .Handle(new AddNoteAttachmentCommand(initiativeId, title, text), default);
 }
