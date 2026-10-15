@@ -63,7 +63,7 @@ Prueba = clase de xUnit (`Application.Tests/Context`, `Infrastructure.Tests`, `W
 | Logs in a real session | UI | Chrome S3 y S4 |
 | Upload with feedback | UI | Chrome S3 (fila, tamaño, «Descargar», línea verde); pendiente: estado de carga |
 | Over-cap, empty and blocked files | UI | Chrome S3 |
-| Limit reached | UI | Pendiente (20 elementos y 50 MB) |
+| Limit reached | UI | Segunda pasada: 20 elementos (deshabilitado con motivo y rehabilitado al borrar). Pendiente: 50 MB |
 | Link and note forms / Delete confirmation | UI | Chrome S4 |
 | Contexto is a live card | UI | Chrome S3 |
 | Context in any status (UI) | UI | Pendiente (etiqueta de estado en Borrador, Planificando y Lista para construir) |
@@ -85,4 +85,6 @@ Rama de cierre, proveedor falso, usuario `otro@example.com`, la misma iniciativa
 - **Estado de la iniciativa**: se mantuvo «Aclarando» durante todas las altas y bajas. No se repitió en Planificando ni en Lista para construir en esta pasada (cubierto por pruebas unitarias).
 - **Registros**: sin títulos, nombres ni textos de las notas; ningún error.
 
-Sigue sin ejercitarse en el navegador: el 404 de una iniciativa borrada o de un identificador de enlace, el estado de carga durante la subida, la tecla Escape del diálogo, la regresión con el proveedor falso de una conversación con contexto, y los borradores y documentos posteriores con contexto en vivo.
+Sigue sin ejercitarse en el navegador: el 404 de una iniciativa borrada o de un identificador de enlace, el estado de carga durante la subida, la tecla Escape del diálogo, el tope de 50 MB, la etiqueta de estado en Planificando y Lista para construir, el nombre que guarda el navegador al descargar, la regresión con el proveedor falso de una conversación con contexto, y los borradores y documentos posteriores con contexto en vivo.
+
+**Brechas aceptadas de forma explícita (decisión del orquestador, 2026-10-15, con el criterio del usuario de «decidir con lo recomendado»):** la verificación independiente dejó cinco escenarios parciales (nombre hostil en el navegador, nombre guardado por el navegador, estado de carga de la subida, el contexto en cualquier estado de la iniciativa en la interfaz, y la instrucción incrustada en un borrador con contexto en vivo). Todos tienen cobertura unitaria o evidencia parcial y se registran como seguimiento en `docs/mejoras-posteriores.md`; no bloquean el cierre.
