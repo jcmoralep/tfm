@@ -1,0 +1,42 @@
+@page "/"
+@attribute [Authorize]
+@using RutaProducto.Application.Abstractions.Authentication
+@using RutaProducto.Application.Features.Authentication.GetCurrentUser
+@inject IMediator Mediator
+
+<PageTitle>Inicio · Ruta de Producto</PageTitle>
+
+<section class="rounded-card border border-line bg-surface-raised p-8 shadow-card">
+    <h1 class="text-2xl font-semibold text-ink">Acceso confirmado</h1>
+
+    @if (user is not null)
+    {
+        <p class="mt-3 text-ink-muted">
+            Ha iniciado sesión como <span class="font-medium text-ink">@user.Email</span>.
+        </p>
+    }
+
+    <p class="mt-2 text-ink-muted">
+        Gestione sus iniciativas desde la lista o cree una nueva.
+    </p>
+
+    <div class="mt-6 flex flex-wrap gap-3">
+        <a href="/iniciativas"
+           class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover">
+            Ver mis iniciativas
+        </a>
+        <a href="/iniciativas/nueva"
+           class="rounded-full border border-line bg-surface-raised px-5 py-2 text-sm font-medium text-ink hover:bg-surface">
+            Nueva iniciativa
+        </a>
+    </div>
+</section>
+
+@code {
+    private AuthenticatedUser? user;
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await Mediator.Send(new GetCurrentUserQuery());
+    }
+}

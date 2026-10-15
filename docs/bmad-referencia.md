@@ -61,7 +61,7 @@ Todo corre con `uv run` y scripts de Python locales; no se encontró código de 
 
 ## 7. Verificación en una instalación real (lista del cambio `bmad-alignment`, ejecutada el 2026-10-14)
 
-Estas tres comprobaciones necesitan ejecutar BMAD de verdad. El cambio `bmad-alignment` solo dejó escrita la lista; **se ejecutaron el 2026-10-14** y la tabla siguiente registra el resultado. Para repetirlas con una versión nueva de BMAD: Cómo prepararlas: instalar BMAD 6.12.1 (módulo `bmm`) en una carpeta desechable **fuera de este repositorio**, inicializar un repositorio git vacío allí y copiar los archivos de ejemplo desde `tests/BmadPlatform.Infrastructure.Tests/Artifacts/Goldens/`. Si una comprobación contradice este documento, corregir el §4 y el punto 3 de la sección 6 de `AGENTS.md`.
+Estas tres comprobaciones necesitan ejecutar BMAD de verdad. El cambio `bmad-alignment` solo dejó escrita la lista; **se ejecutaron el 2026-10-14** y la tabla siguiente registra el resultado. Para repetirlas con una versión nueva de BMAD: Cómo prepararlas: instalar BMAD 6.12.1 (módulo `bmm`) en una carpeta desechable **fuera de este repositorio**, inicializar un repositorio git vacío allí y copiar los archivos de ejemplo desde `tests/RutaProducto.Infrastructure.Tests/Artifacts/Goldens/`. Si una comprobación contradice este documento, corregir el §4 y el punto 3 de la sección 6 de `AGENTS.md`.
 
 1. **`bmad-build` acepta una especificación de nivel Pequeña.**
    - Cómo: copiar `spec-small.md` como `specs/spec-demo/SPEC.md` y pedir a `bmad-build` que construya a partir de esa carpeta (`{spec_folder}`), o pasarle la ruta del archivo.

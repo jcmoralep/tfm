@@ -13,7 +13,7 @@ strict_tdd: false
 testing:
   strict_tdd: false
   runner:
-    command: dotnet test BmadPlatform.slnx --configuration Release
+    command: dotnet test RutaProducto.slnx --configuration Release
     framework: xUnit 2.9.3
   layers:
     unit: { available: true, tool: xunit }
@@ -22,7 +22,7 @@ testing:
   coverage: { available: false, command: null }
   quality:
     linter: { available: false, command: null }
-    type_checker: { available: true, command: "dotnet build BmadPlatform.slnx --configuration Release (TreatWarningsAsErrors)" }
+    type_checker: { available: true, command: "dotnet build RutaProducto.slnx --configuration Release (TreatWarningsAsErrors)" }
     formatter: { available: false, command: "dotnet format (SDK built-in, no .editorconfig present)" }
 
 rules:

@@ -2,7 +2,7 @@
 
 ## Preparación (una sola vez)
 
-1. Crear la carpeta del proyecto, por ejemplo `BmadPlatform/`, y abrir Claude Code en ella.
+1. Crear la carpeta del proyecto, por ejemplo `RutaProducto/`, y abrir Claude Code en ella.
 2. Copiar en la raíz: `AGENTS.md`, `REQUISITOS.md` y `PROPUESTA-MVP.md`.
 3. Descargar el diseño: `npx getdesign@latest add intercom` (deja `DESIGN.md` en la raíz).
 4. Tener instalados: SDK de .NET (última LTS), MySQL en local (o Docker) y Git.

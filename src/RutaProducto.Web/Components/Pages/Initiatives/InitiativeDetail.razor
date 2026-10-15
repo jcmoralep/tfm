@@ -1,0 +1,236 @@
+@page "/iniciativas/{Id:guid}"
+@attribute [Authorize]
+@using RutaProducto.Application.Common.Exceptions
+@using RutaProducto.Application.Features.Artifacts
+@using RutaProducto.Application.Features.Artifacts.GetArtifactsOverview
+@using RutaProducto.Application.Features.Assistant
+@using RutaProducto.Application.Features.Assistant.GetConversation
+@using RutaProducto.Application.Features.Initiatives
+@using RutaProducto.Application.Features.Initiatives.DeleteInitiative
+@using RutaProducto.Application.Features.Initiatives.GetInitiative
+@using RutaProducto.Domain.Initiatives
+@inject IMediator Mediator
+@inject NavigationManager Navigation
+@inject ILogger<InitiativeDetail> Logger
+
+<PageTitle>@(details?.Name ?? "Iniciativa") · Ruta de Producto</PageTitle>
+
+@if (loading)
+{
+    <p class="text-sm text-ink-muted" role="status">Cargando…</p>
+}
+else if (details is null)
+{
+    <InitiativeNotFound />
+}
+else
+{
+    <a href="/iniciativas" class="text-sm font-medium text-ink-muted hover:text-ink hover:underline">← Volver a iniciativas</a>
+
+    <section class="mt-4 rounded-card border border-line bg-surface-raised p-6 shadow-card sm:p-8">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="min-w-0">
+                <h1 class="break-words text-2xl font-semibold text-ink">@details.Name</h1>
+                <p class="mt-2"><StatusBadge Status="details.Status" /></p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+                @if (details.Status == InitiativeStatus.Draft)
+                {
+                    <a href="/iniciativas/@details.Id/crear"
+                       class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover">
+                        Continuar
+                    </a>
+                }
+                else if (conversation is not null && AssistantLabels.Card(conversation).ActionLabel is { } conversationAction)
+                {
+                    @* The next step is the conversation, so it is offered first instead of waiting below the details.
+                       It uses the same label as the Conversación card below: both go to the same page. *@
+                    <a href="/iniciativas/@details.Id/asistente"
+                       class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover">
+                        @conversationAction
+                    </a>
+                }
+                <a href="/iniciativas/@details.Id/editar"
+                   class="rounded-full border border-line bg-surface-raised px-5 py-2 text-sm font-medium text-ink hover:bg-surface">
+                    Editar
+                </a>
+                <button type="button" aria-expanded="@(confirmingDelete ? "true" : "false")" aria-controls="delete-panel" disabled="@busy"
+                        @onclick="AskDelete"
+                        class="rounded-full border border-danger-line bg-surface-raised px-5 py-2 text-sm font-medium text-danger hover:bg-danger-surface disabled:opacity-60">
+                    Eliminar
+                </button>
+            </div>
+        </div>
+
+        @if (details.Status == InitiativeStatus.Draft)
+        {
+            <p class="mt-4 rounded-control bg-primary-soft px-3 py-2 text-sm text-primary-ink">
+                Esta iniciativa sigue en borrador. Continúe el asistente de creación para completarla.
+            </p>
+        }
+
+        @if (errors.Count > 0)
+        {
+            <div class="mt-4">
+                <ErrorAlert Id="detail-errors" Messages="errors" />
+            </div>
+        }
+
+        @if (confirmingDelete)
+        {
+            <ConfirmPanel Id="delete-panel" Title="¿Eliminar esta iniciativa?" ConfirmLabel="Sí, eliminar" Destructive="true"
+                          Busy="busy" OnConfirm="DeleteAsync" OnCancel="CancelDelete">
+                La iniciativa dejará de aparecer en su lista y no podrá recuperarla desde la plataforma.
+            </ConfirmPanel>
+        }
+
+        <dl class="mt-6 divide-y divide-line rounded-control border border-line text-sm">
+            <div class="px-4 py-3">
+                <dt class="text-xs font-medium uppercase tracking-wide text-ink-muted">Descripción</dt>
+                <dd class="mt-1 whitespace-pre-line break-words text-ink">@(details.Description ?? "Sin descripción")</dd>
+            </div>
+            <div class="px-4 py-3">
+                <dt class="text-xs font-medium uppercase tracking-wide text-ink-muted">Modo de profundidad</dt>
+                <dd class="mt-1 text-ink">@InitiativeLabels.ModeSummary(details.DepthMode)</dd>
+            </div>
+            <div class="px-4 py-3">
+                <dt class="text-xs font-medium uppercase tracking-wide text-ink-muted">Nivel de profundidad</dt>
+                <dd class="mt-1 text-ink">
+                    @InitiativeLabels.DepthSummary(details.DepthMode, details.Depth)
+                    @if (details.Depth is { } level)
+                    {
+                        <span class="text-ink-muted"> · Entrega: @InitiativeLabels.DeliverablesSummary(level)</span>
+                    }
+                </dd>
+            </div>
+            <div class="px-4 py-3">
+                <dt class="text-xs font-medium uppercase tracking-wide text-ink-muted">Creada</dt>
+                <dd class="mt-1 text-ink"><time datetime="@details.CreatedAt.ToString("O")">@InitiativeLabels.Date(details.CreatedAt)</time></dd>
+            </div>
+            <div class="px-4 py-3">
+                <dt class="text-xs font-medium uppercase tracking-wide text-ink-muted">Última modificación</dt>
+                <dd class="mt-1 text-ink"><time datetime="@details.UpdatedAt.ToString("O")">@InitiativeLabels.Date(details.UpdatedAt)</time></dd>
+            </div>
+        </dl>
+    </section>
+
+    <div class="mt-6 grid gap-4 md:grid-cols-3">
+        <ConversationCard InitiativeId="details.Id" View="conversation" />
+        <ArtifactsCard InitiativeId="details.Id" Overview="artifacts" OnChanged="ReloadArtifactsAsync" />
+        <ContextCard InitiativeId="details.Id" />
+    </div>
+}
+
+@code {
+    private Guid? loadedId;
+
+    private InitiativeDetails? details;
+    private ConversationView? conversation;
+    private ArtifactsOverview? artifacts;
+    private bool loading = true;
+    private bool busy;
+    private bool confirmingDelete;
+    private IReadOnlyList<string> errors = [];
+
+    [Parameter]
+    public Guid Id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (loadedId == Id)
+        {
+            return;
+        }
+
+        loadedId = Id;
+        loading = true;
+        confirmingDelete = false;
+        errors = [];
+
+        details = await Mediator.Send(new GetInitiativeQuery(Id));
+        conversation = details is null ? null : await TryGetConversationAsync();
+        artifacts = details is null ? null : await TryGetArtifactsAsync();
+        loading = false;
+    }
+
+    // The card is secondary: if the conversation cannot be read, the page still works and the card has no action.
+    private async Task<ConversationView?> TryGetConversationAsync()
+    {
+        try
+        {
+            return await Mediator.Send(new GetConversationQuery(Id));
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // Type and id only: the exception message could echo conversation content.
+            Logger.LogWarning("The assistant card could not load the conversation of initiative {InitiativeId} ({ExceptionType}).", Id, exception.GetType().Name);
+
+            return null;
+        }
+    }
+
+    // Same rule as the conversation card: a failed read leaves a neutral card, the page keeps working.
+    private async Task<ArtifactsOverview?> TryGetArtifactsAsync()
+    {
+        try
+        {
+            return await Mediator.Send(new GetArtifactsOverviewQuery(Id));
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // Type and id only: the exception message could echo document content.
+            Logger.LogWarning("The artifacts card could not load the documents of initiative {InitiativeId} ({ExceptionType}).", Id, exception.GetType().Name);
+
+            return null;
+        }
+    }
+
+    // The card asks for a fresh overview after a refusal (for example the document already exists), so a row never
+    // keeps offering an action that no longer applies.
+    private async Task ReloadArtifactsAsync() => artifacts = await TryGetArtifactsAsync();
+
+    private void AskDelete()
+    {
+        confirmingDelete = true;
+    }
+
+    private void CancelDelete()
+    {
+        if (!busy)
+        {
+            confirmingDelete = false;
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (busy)
+        {
+            return;
+        }
+
+        busy = true;
+        errors = [];
+
+        try
+        {
+            await Mediator.Send(new DeleteInitiativeCommand(Id));
+            Navigation.NavigateTo("/iniciativas");
+        }
+        catch (Exception exception) when (UserMessages.TryGet(exception, out var messages))
+        {
+            errors = messages;
+            confirmingDelete = false;
+
+            // Already deleted or never visible to this user: same state as any other missing initiative.
+            if (exception is NotFoundException)
+            {
+                details = null;
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+}

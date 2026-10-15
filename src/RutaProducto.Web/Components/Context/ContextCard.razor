@@ -1,0 +1,413 @@
+@implements IDisposable
+@using RutaProducto.Application.Common.Exceptions
+@using RutaProducto.Application.Features.Context
+@using RutaProducto.Application.Features.Context.AddFileAttachment
+@using RutaProducto.Application.Features.Context.AddLinkAttachment
+@using RutaProducto.Application.Features.Context.AddNoteAttachment
+@using RutaProducto.Application.Features.Context.DeleteAttachment
+@using RutaProducto.Application.Features.Context.GetContext
+@using RutaProducto.Domain.Context
+@using RutaProducto.Web.Context
+@inject IMediator Mediator
+@inject ILogger<ContextCard> Logger
+@* The Contexto card of the initiative detail: lists the attachments and uploads files straight into storage, and adds links and notes. It holds
+   no business rules; the use cases decide, and the card only guards what the browser can already know. *@
+
+<section aria-labelledby="section-context" class="rounded-card border border-line bg-surface-raised p-5">
+    <h2 id="section-context" class="text-base font-semibold text-ink">@ContextLabels.CardTitle</h2>
+
+    @if (view is null)
+    {
+        <p class="mt-1 text-sm text-ink-muted">@ContextLabels.UnavailableText</p>
+    }
+    else
+    {
+        <p class="mt-1 text-sm text-ink-muted">@ContextLabels.CardIntro</p>
+        <p class="mt-1 text-xs text-ink-muted">
+            <span>@ContextLabels.Counter(view.Items.Count)</span> · <span>@ContextLabels.UsedSize(view.TotalBytes)</span>
+        </p>
+
+        @if (view.Items.Count == 0)
+        {
+            <p class="mt-3 text-sm text-ink-muted">@ContextLabels.EmptyText</p>
+        }
+        else
+        {
+            <ul class="mt-3 divide-y divide-line rounded-control border border-line">
+                @foreach (var item in view.Items)
+                {
+                    <li class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3 py-2.5">
+                        <div class="min-w-0 flex-1">
+                            @if (item.Kind == AttachmentKind.Note)
+                            {
+                                <details>
+                                    <summary class="cursor-pointer break-words text-sm font-medium text-ink">@item.Label</summary>
+                                    <p class="mt-2 whitespace-pre-line break-words text-sm text-ink">@item.NoteText</p>
+                                </details>
+                            }
+                            else if (item.Kind == AttachmentKind.Link && ContextLabels.IsWebUrl(item.Url))
+                            {
+                                <a href="@item.Url" target="_blank" rel="noopener noreferrer"
+                                   class="break-words text-sm font-medium text-primary-ink underline hover:no-underline">@item.Label</a>
+                            }
+                            else
+                            {
+                                <p class="break-words text-sm font-medium text-ink">@item.Label</p>
+                            }
+                            <p class="mt-0.5 text-xs text-ink-muted">@ContextLabels.RowDetail(item)</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            @if (item.Kind == AttachmentKind.File)
+                            {
+                                <a href="@ContextEndpoints.DownloadPath(InitiativeId, item.Id)" download data-enhance-nav="false"
+                                   aria-label="@(ContextLabels.DownloadAction + " " + item.Label)"
+                                   class="rounded-full border border-line bg-surface-raised px-4 py-1.5 text-sm font-medium text-ink hover:bg-surface">
+                                    @ContextLabels.DownloadAction
+                                </a>
+                            }
+                            <button type="button" disabled="@busy" @onclick="() => AskDelete(item.Id)"
+                                    aria-label="@(ContextLabels.DeleteAction + " " + item.Label)"
+                                    class="rounded-full border border-danger-line bg-surface-raised px-4 py-1.5 text-sm font-medium text-danger hover:bg-danger-surface disabled:opacity-60">
+                                @ContextLabels.DeleteAction
+                            </button>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+
+        <div class="mt-4">
+            <label for="context-upload" class="block text-sm font-medium text-ink">@ContextLabels.UploadLabel</label>
+            <InputFile @key="inputKey" id="context-upload" multiple OnChange="UploadAsync" disabled="@(busy || !view.CanAdd)"
+                       aria-describedby="context-upload-hint"
+                       class="mt-1 block w-full text-sm text-ink-muted file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-primary file:px-4 file:py-1.5 file:text-sm file:font-semibold file:text-on-primary hover:file:bg-primary-hover disabled:opacity-60 disabled:file:cursor-not-allowed" />
+            <p id="context-upload-hint" class="mt-1 text-xs text-ink-muted">@ContextLabels.UploadHint</p>
+        </div>
+
+        <div class="mt-4 flex flex-wrap gap-2">
+            <button type="button" disabled="@(busy || !view.CanAdd)" aria-expanded="@(form == FormKind.Link ? "true" : "false")" @onclick="() => ToggleForm(FormKind.Link)"
+                    class="rounded-full border border-line bg-surface-raised px-4 py-1.5 text-sm font-medium text-ink hover:bg-surface disabled:opacity-60">
+                @ContextLabels.AddLinkAction
+            </button>
+            <button type="button" disabled="@(busy || !view.CanAdd)" aria-expanded="@(form == FormKind.Note ? "true" : "false")" @onclick="() => ToggleForm(FormKind.Note)"
+                    class="rounded-full border border-line bg-surface-raised px-4 py-1.5 text-sm font-medium text-ink hover:bg-surface disabled:opacity-60">
+                @ContextLabels.AddNoteAction
+            </button>
+        </div>
+
+        @if (form == FormKind.Link && view.CanAdd)
+        {
+            <form @onsubmit="AddLinkAsync" @onsubmit:preventDefault class="mt-3 space-y-3 rounded-control border border-line p-3">
+                <div>
+                    <label for="context-link-url" class="block text-sm font-medium text-ink">@ContextLabels.LinkUrlLabel<RequiredMark /></label>
+                    <input id="context-link-url" type="text" @bind="linkUrl" @bind:event="oninput" autocomplete="off" inputmode="url"
+                           placeholder="https://ejemplo.com/prototipo" aria-required="true"
+                           class="mt-1.5 block w-full rounded-control border border-line bg-surface-raised px-3 py-2 text-sm text-ink" />
+                </div>
+                <button type="submit" disabled="@busy"
+                        class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-60">
+                    @ContextLabels.SaveLinkAction
+                </button>
+            </form>
+        }
+
+        @if (form == FormKind.Note && view.CanAdd)
+        {
+            <form @onsubmit="AddNoteAsync" @onsubmit:preventDefault class="mt-3 space-y-3 rounded-control border border-line p-3">
+                <div>
+                    <label for="context-note-title" class="block text-sm font-medium text-ink">@ContextLabels.NoteTitleLabel<RequiredMark /></label>
+                    <input id="context-note-title" type="text" @bind="noteTitle" @bind:event="oninput" autocomplete="off" aria-required="true"
+                           class="mt-1.5 block w-full rounded-control border border-line bg-surface-raised px-3 py-2 text-sm text-ink" />
+                </div>
+                <div>
+                    <label for="context-note-text" class="block text-sm font-medium text-ink">@ContextLabels.NoteTextLabel<RequiredMark /></label>
+                    <textarea id="context-note-text" rows="5" @bind="noteText" @bind:event="oninput" aria-required="true"
+                              class="mt-1.5 block w-full rounded-control border border-line bg-surface-raised px-3 py-2 text-sm text-ink"></textarea>
+                </div>
+                <button type="submit" disabled="@busy"
+                        class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-60">
+                    @ContextLabels.SaveNoteAction
+                </button>
+            </form>
+        }
+
+        @if (!view.CanAdd)
+        {
+            <p class="mt-2 text-sm text-ink-muted">@ContextLabels.CapReached(view.Items.Count)</p>
+        }
+
+        @if (errors.Count > 0)
+        {
+            <div class="mt-3">
+                <ErrorAlert Id="context-errors" Messages="errors" />
+            </div>
+        }
+
+        @if (notice is not null)
+        {
+            <p role="status" class="mt-3 rounded-control bg-success-soft px-3 py-2 text-sm text-success-ink">@notice</p>
+        }
+
+        @if (busy)
+        {
+            <p role="status" class="mt-3 flex items-center gap-2 text-sm text-ink-muted">
+                <span class="flex gap-1" aria-hidden="true">
+                    <span class="size-1.5 rounded-full bg-primary motion-safe:animate-bounce"></span>
+                    <span class="size-1.5 rounded-full bg-primary motion-safe:animate-bounce [animation-delay:150ms]"></span>
+                    <span class="size-1.5 rounded-full bg-primary motion-safe:animate-bounce [animation-delay:300ms]"></span>
+                </span>
+                @busyText
+            </p>
+        }
+
+        @if (results.Count > 0)
+        {
+            <ul id="context-results" class="mt-3 space-y-1 text-sm">
+                @foreach (var result in results)
+                {
+                    <li role="@(result.Success ? "status" : "alert")" class="break-words @(result.Success ? "text-success-ink" : "text-danger")">@result.Text</li>
+                }
+            </ul>
+        }
+
+        @if (pendingDelete is not null)
+        {
+            <ConfirmPanel Id="context-delete-panel" Title="@ContextLabels.DeleteTitle" ConfirmLabel="@ContextLabels.DeleteConfirm" Destructive="true"
+                          Busy="busy" OnConfirm="DeleteAsync" OnCancel="CancelDelete">
+                @ContextLabels.DeleteText
+            </ConfirmPanel>
+        }
+    }
+</section>
+
+@code {
+    private sealed record UploadResult(bool Success, string Text);
+
+    private readonly CancellationTokenSource cancellation = new();
+    private readonly List<UploadResult> results = [];
+    private ContextView? view;
+    private Guid? loadedId;
+    private bool busy;
+    private int inputKey;
+
+    private enum FormKind { None, Link, Note }
+
+    private IReadOnlyList<string> errors = [];
+    private FormKind form;
+    private string linkUrl = string.Empty;
+    private string noteTitle = string.Empty;
+    private string noteText = string.Empty;
+    private string? notice;
+    private string busyText = ContextLabels.Uploading;
+    private Guid? pendingDelete;
+
+    [Parameter, EditorRequired]
+    public Guid InitiativeId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (loadedId == InitiativeId)
+        {
+            return;
+        }
+
+        loadedId = InitiativeId;
+        ClearFeedback();
+        view = await TryLoadAsync();
+    }
+
+    // The card is secondary: if the context cannot be read the page still works and the card offers no action.
+    private async Task<ContextView?> TryLoadAsync()
+    {
+        try
+        {
+            return await Mediator.Send(new GetContextQuery(InitiativeId), cancellation.Token);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // Type and id only: the exception message could echo file names.
+            Logger.LogWarning("The context card could not load the context of initiative {InitiativeId} ({ExceptionType}).", InitiativeId, exception.GetType().Name);
+
+            return null;
+        }
+    }
+
+    private async Task UploadAsync(InputFileChangeEventArgs e)
+    {
+        if (busy || view is null)
+        {
+            return;
+        }
+
+        ClearFeedback();
+        busyText = ContextLabels.Uploading;
+        form = FormKind.None;
+
+        // A guard for the screen only (many results at once are hard to read), not a product limit.
+        if (e.FileCount > ContextLabels.MaxFilesPerSelection)
+        {
+            results.Add(new UploadResult(false, ContextLabels.TooManyFilesSelected));
+            inputKey++;
+
+            return;
+        }
+
+        busy = true;
+
+        try
+        {
+            foreach (var file in e.GetMultipleFiles(ContextLabels.MaxFilesPerSelection))
+            {
+                await UploadOneAsync(file);
+            }
+        }
+        finally
+        {
+            busy = false;
+            inputKey++;
+        }
+    }
+
+    private void ClearFeedback()
+    {
+        results.Clear();
+        errors = [];
+        notice = null;
+    }
+
+    private void ToggleForm(FormKind kind)
+    {
+        ClearFeedback();
+        form = form == kind ? FormKind.None : kind;
+    }
+
+    private Task AddLinkAsync() =>
+        RunAsync(ContextLabels.Saving, ContextLabels.LinkAdded, () => Mediator.Send(new AddLinkAttachmentCommand(InitiativeId, linkUrl), cancellation.Token), () =>
+        {
+            linkUrl = string.Empty;
+            form = FormKind.None;
+        });
+
+    private Task AddNoteAsync() =>
+        RunAsync(ContextLabels.Saving, ContextLabels.NoteAdded, () => Mediator.Send(new AddNoteAttachmentCommand(InitiativeId, noteTitle, noteText), cancellation.Token), () =>
+        {
+            noteTitle = string.Empty;
+            noteText = string.Empty;
+            form = FormKind.None;
+        });
+
+    private void AskDelete(Guid attachmentId)
+    {
+        ClearFeedback();
+        pendingDelete = attachmentId;
+    }
+
+    private void CancelDelete() => pendingDelete = null;
+
+    private async Task DeleteAsync()
+    {
+        var attachmentId = pendingDelete;
+
+        if (attachmentId is null)
+        {
+            return;
+        }
+
+        await RunAsync(ContextLabels.Deleting, ContextLabels.Deleted, () => Mediator.Send(new DeleteAttachmentCommand(InitiativeId, attachmentId.Value), cancellation.Token), onSuccess: null);
+        pendingDelete = null;
+    }
+
+    // One path for the three operations: loading state, the mediator call, green notice or red messages.
+    private async Task RunAsync(string loadingText, string successText, Func<Task<ContextView>> send, Action? onSuccess)
+    {
+        if (busy || view is null)
+        {
+            return;
+        }
+
+        ClearFeedback();
+        busyText = loadingText;
+        busy = true;
+
+        try
+        {
+            view = await send();
+            notice = successText;
+            onSuccess?.Invoke();
+        }
+        catch (Exception exception) when (UserMessages.TryGet(exception, out var messages))
+        {
+            errors = messages;
+
+            if (exception is NotFoundException)
+            {
+                view = await TryLoadAsync();
+            }
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // Type and id only: the exception message could echo titles, URLs or note text.
+            Logger.LogError("Changing the context of initiative {InitiativeId} failed ({ExceptionType}).", InitiativeId, exception.GetType().Name);
+            errors = [ContextLabels.ChangeFailed];
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task UploadOneAsync(IBrowserFile file)
+    {
+        var limits = view!.Limits;
+
+        // What the browser announced is checked before opening anything; the storage counts the real bytes again.
+        if (file.Size <= 0)
+        {
+            results.Add(new UploadResult(false, $"{file.Name}: {Attachment.EmptyFileMessage}"));
+
+            return;
+        }
+
+        if (file.Size > limits.MaxFileBytes)
+        {
+            results.Add(new UploadResult(false, $"{file.Name}: {ContextTexts.FileTooLarge(limits.MaxFileBytes)}"));
+
+            return;
+        }
+
+        try
+        {
+            await using var stream = file.OpenReadStream(limits.MaxFileBytes, cancellation.Token);
+            view = await Mediator.Send(
+                new AddFileAttachmentCommand(InitiativeId, file.Name, file.ContentType, file.Size, stream),
+                cancellation.Token);
+            results.Add(new UploadResult(true, ContextLabels.ResultAdded(file.Name)));
+        }
+        catch (IOException)
+        {
+            // The browser stream refuses to go past the cap it was opened with.
+            results.Add(new UploadResult(false, $"{file.Name}: {ContextTexts.FileTooLarge(limits.MaxFileBytes)}"));
+        }
+        catch (Exception exception) when (UserMessages.TryGet(exception, out var messages))
+        {
+            results.AddRange(messages.Select(message => new UploadResult(false, $"{file.Name}: {message}")));
+
+            if (exception is NotFoundException)
+            {
+                view = await TryLoadAsync();
+            }
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // Type and id only: the exception message could echo the file name.
+            Logger.LogError("Adding a file to the context of initiative {InitiativeId} failed ({ExceptionType}).", InitiativeId, exception.GetType().Name);
+            results.Add(new UploadResult(false, $"{file.Name}: {ContextLabels.UploadFailed}"));
+        }
+    }
+
+    public void Dispose()
+    {
+        cancellation.Cancel();
+        cancellation.Dispose();
+    }
+}

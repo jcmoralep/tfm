@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RutaProducto.Application/RutaProducto.Application.csproj" />
+    <Project Path="src/RutaProducto.Domain/RutaProducto.Domain.csproj" />
+    <Project Path="src/RutaProducto.Infrastructure/RutaProducto.Infrastructure.csproj" />
+    <Project Path="src/RutaProducto.Web/RutaProducto.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RutaProducto.Application.Tests/RutaProducto.Application.Tests.csproj" />
+    <Project Path="tests/RutaProducto.ArchitectureTests/RutaProducto.ArchitectureTests.csproj" />
+    <Project Path="tests/RutaProducto.Infrastructure.Tests/RutaProducto.Infrastructure.Tests.csproj" />
+    <Project Path="tests/RutaProducto.Web.Tests/RutaProducto.Web.Tests.csproj" />
+  </Folder>
+</Solution>
