@@ -12,9 +12,12 @@
     {
         <p id="questions-hint" class="mt-1 text-sm text-warning-ink">@Hint</p>
     }
-    <p class="mt-1 text-xs text-ink-muted">
-        <span class="text-danger" aria-hidden="true">*</span> @ArtifactLabels.QuestionsRequiredLegend
-    </p>
+    @if (rows.Any(r => string.IsNullOrWhiteSpace(r.Owner) || string.IsNullOrWhiteSpace(r.Revisit)))
+    {
+        <p class="mt-1 text-xs text-ink-muted">
+            <span class="text-danger" aria-hidden="true">*</span> @ArtifactLabels.QuestionsRequiredLegend
+        </p>
+    }
 
     <datalist id="owner-suggestions">
         @foreach (var suggestion in ArtifactLabels.OwnerSuggestions)
@@ -37,14 +40,14 @@
                 </legend>
                 <div class="mt-2 grid gap-3 sm:grid-cols-2">
                     <div>
-                        <label for="@OwnerId(row)" class="block text-sm font-medium text-ink">Responsable de @row.Id<RequiredMark /></label>
+                        <label for="@OwnerId(row)" class="block text-sm font-medium text-ink">Responsable de @row.Id@if (string.IsNullOrWhiteSpace(row.Owner)){<RequiredMark />}</label>
                         <input id="@OwnerId(row)" type="text" list="owner-suggestions" maxlength="@QuestionOwners.OwnerMaxLength"
                                readonly="@Busy" @bind="row.Owner" @bind:event="oninput" aria-required="true"
                                aria-describedby="@DescribedBy"
                                class="mt-1 block min-h-6 w-full rounded-control border border-line bg-surface-raised px-3 py-2 text-sm text-ink read-only:opacity-60" />
                     </div>
                     <div>
-                        <label for="@RevisitId(row)" class="block text-sm font-medium text-ink">Condición de revisión de @row.Id<RequiredMark /></label>
+                        <label for="@RevisitId(row)" class="block text-sm font-medium text-ink">Condición de revisión de @row.Id@if (string.IsNullOrWhiteSpace(row.Revisit)){<RequiredMark />}</label>
                         <input id="@RevisitId(row)" type="text" maxlength="@QuestionOwners.RevisitMaxLength"
                                placeholder="@ArtifactLabels.OwnerPlaceholderHint"
                                readonly="@Busy" @bind="row.Revisit" @bind:event="oninput" aria-required="true"

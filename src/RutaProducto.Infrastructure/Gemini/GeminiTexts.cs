@@ -20,6 +20,6 @@ internal static class GeminiTexts
             "El asistente no pudo responder a este contenido. Reformúlelo e inténtelo de nuevo.",
         AssistantUnavailableReason.Malformed =>
             "El asistente devolvió una respuesta que no se pudo usar. Inténtelo de nuevo.",
-        _ => "El asistente tardó demasiado en responder. Inténtelo de nuevo en unos minutos.",
+        _ => "El asistente está ocupado o tardó demasiado en responder. Inténtelo de nuevo en unos minutos.",
     };
 }
