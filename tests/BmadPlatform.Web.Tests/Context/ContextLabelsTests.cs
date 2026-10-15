@@ -19,6 +19,18 @@ public sealed class ContextLabelsTests
     public void Sizes_are_shown_in_Spanish(long bytes, string expected) =>
         Assert.Equal(expected, ContextLabels.SizeLabel(bytes));
 
+    [Theory]
+    [InlineData("https://example.com/a?b=1", true)]
+    [InlineData("HTTP://Example.com", true)]
+    [InlineData("javascript:alert(1)", false)]
+    [InlineData("data:text/html,x", false)]
+    [InlineData("ftp://example.com", false)]
+    [InlineData("example.com", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void Only_web_addresses_open_in_a_new_tab(string? url, bool expected) =>
+        Assert.Equal(expected, ContextLabels.IsWebUrl(url));
+
     [Fact]
     public void A_file_row_shows_its_size_and_the_rest_only_their_kind()
     {

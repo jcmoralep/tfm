@@ -29,6 +29,40 @@ public static class ContextLabels
 
     public const string UploadFailed = "No se pudo añadir el archivo. Inténtelo de nuevo.";
 
+    public const string AddLinkAction = "Añadir enlace";
+
+    public const string AddNoteAction = "Añadir nota";
+
+    public const string LinkUrlLabel = "Enlace";
+
+    public const string NoteTitleLabel = "Título de la nota";
+
+    public const string NoteTextLabel = "Texto de la nota";
+
+    public const string SaveLinkAction = "Guardar enlace";
+
+    public const string SaveNoteAction = "Guardar nota";
+
+    public const string Saving = "Guardando…";
+
+    public const string Deleting = "Eliminando…";
+
+    public const string LinkAdded = "Enlace añadido.";
+
+    public const string NoteAdded = "Nota añadida.";
+
+    public const string Deleted = "Elemento eliminado del contexto.";
+
+    public const string DeleteAction = "Eliminar";
+
+    public const string DeleteTitle = "¿Eliminar este elemento del contexto?";
+
+    public const string DeleteText = "Dejará de formar parte del contexto de la iniciativa y no podrá recuperarlo.";
+
+    public const string DeleteConfirm = "Sí, eliminar";
+
+    public const string ChangeFailed = "No se pudo completar la operación. Inténtelo de nuevo.";
+
     /// <summary>Files per selection the card accepts. A UI guard only, not a product limit.</summary>
     public const int MaxFilesPerSelection = 5;
 
@@ -72,6 +106,10 @@ public static class ContextLabels
         item.Kind == AttachmentKind.File && item.SizeBytes is { } size
             ? $"{KindLabel(item.Kind)} · {SizeLabel(size)}"
             : KindLabel(item.Kind);
+
+    /// <summary>True for an absolute http or https address: the only links the card opens in a new tab.</summary>
+    public static bool IsWebUrl(string? url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https";
 
     public static string ResultAdded(string fileName) => $"{fileName}: {Added}";
 }
