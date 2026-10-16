@@ -192,3 +192,35 @@ Repositorio: https://github.com/VoltAgent/awesome-design-md
 - copiar manualmente desde https://getdesign.md/intercom/design-md.
 
 Dejar el archivo `DESIGN.md` en la raíz, junto a este `AGENTS.md`, y seguirlo para toda la interfaz.
+
+## 8. Agentes y skills del proyecto
+
+Viven en `.claude/` y se versionan con el código. Las skills son contratos de ejecución para el agente (en inglés, como el código); cada agente lee las skills que le corresponden por su ruta. Antes de una tarea, cargar la skill que coincida; para trabajo delegado, usar el agente.
+
+### Skills (`.claude/skills/<nombre>/SKILL.md`)
+
+| Skill | Cuándo |
+|---|---|
+| `rp-build-gate` | Antes de cualquier commit, PR o «terminado»: restaurar, compilar y probar como la CI |
+| `rp-local-walkthrough` | Recorrido en Chrome con MySQL descartable (§5.4); incluye receptor SMTP, claves de prueba y trampas conocidas |
+| `rp-ship-pr` | Commit convencional sin atribución, PR en inglés, CI, fusión squash |
+| `rp-config-switch` | Añadir un ajuste o proveedor apagado por defecto, con validación de arranque |
+| `rp-docs-sync` | Mantener README, REQUISITOS, AGENTS y `docs/mejoras-posteriores.md` al día |
+| `rp-bmad-conformance` | Validar el formato exportado contra una instalación real de BMAD (§5.5, §6.3) |
+| `rp-gemini-live-check` | Comprobación moderada con Gemini real, sin datos reales ni fugas en registros |
+| `rp-ui-conventions` | Vistas Blazor: solo clases CSS, JS permitido, textos en español, trampas conocidas |
+| `rp-security-privacy` | Autenticación, correo, registros, secretos, adjuntos y descargas |
+| `rp-lean-tests` | Pruebas unitarias austeras (§4.1) |
+| `rp-artifact-pipeline` | Cambios en la cadena de documentos: borrador, numeración, exportación |
+
+### Agentes (`.claude/agents/<nombre>.md`)
+
+| Agente | Rol |
+|---|---|
+| `rp-feature-writer` | Único escritor de un cambio; aplica las skills, pasa la compuerta y hace commit en una rama sin subirla |
+| `rp-code-reviewer` | Revisión de solo lectura con cuatro lentes (riesgo, resiliencia, legibilidad, fiabilidad); úsese cuando la revisión nativa no pueda inspeccionar el candidato |
+| `rp-walkthrough-verifier` | Levanta el entorno, recorre el flujo en Chrome, informa y desmonta todo; no edita código |
+| `rp-bmad-auditor` | Ejecuta las comprobaciones de BMAD en una carpeta desechable e informa con evidencia |
+| `rp-artifact-reviewer` | Revisa la fidelidad y la forma de los documentos generados |
+
+Flujo recomendado para un cambio: `rp-feature-writer` → `rp-code-reviewer` → `rp-walkthrough-verifier` (si hay interfaz) → `rp-ship-pr`. Para formatos de documentos, añadir `rp-bmad-auditor` y `rp-artifact-reviewer`. Al añadir o cambiar una skill o un agente, actualizar esta tabla.

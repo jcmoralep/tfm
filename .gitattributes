@@ -1,2 +1,7 @@
 # Golden Markdown outputs of the fake drafter are compared byte for byte, so keep LF on every platform.
 tests/RutaProducto.Infrastructure.Tests/Artifacts/Goldens/*.md text eol=lf
+
+# Shell and Python scripts must keep LF: with CRLF, bash fails on the carriage return after a Windows checkout.
+' errors after a Windows checkout.
+*.sh text eol=lf
+*.py text eol=lf
