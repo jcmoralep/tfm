@@ -1,0 +1,28 @@
+@using RutaProducto.Application.Features.Initiatives.GetDashboard
+
+<section aria-labelledby="depth-title" class="h-full rounded-card border border-line bg-surface-raised p-5 shadow-card">
+    <h2 id="depth-title" class="text-lg font-semibold text-ink">Por tamaño</h2>
+    <p class="mt-1 text-sm text-ink-muted">Cuántos documentos pide cada iniciativa.</p>
+
+    <ul class="mt-4 space-y-4">
+        @foreach (var item in Depths)
+        {
+            var label = InitiativeLabels.Depth(item.Depth);
+            <li>
+                <div class="flex items-baseline justify-between text-sm">
+                    <label for="@($"depth-{item.Depth}")" class="font-medium text-ink">@label</label>
+                    <span class="text-ink-muted">@item.Count</span>
+                </div>
+                <progress id="@($"depth-{item.Depth}")" value="@item.Count" max="@Max" class="progress-bar mt-1">@item.Count</progress>
+            </li>
+        }
+    </ul>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<DashboardDepthCount> Depths { get; set; } = [];
+
+    // The largest group fills the bar; max is never 0 so an empty chart stays valid.
+    private int Max => Math.Max(1, Depths.Count == 0 ? 0 : Depths.Max(item => item.Count));
+}

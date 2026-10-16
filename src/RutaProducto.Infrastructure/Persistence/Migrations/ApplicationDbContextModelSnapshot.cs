@@ -331,6 +331,9 @@ namespace RutaProducto.Infrastructure.Persistence.Migrations
                         .HasColumnType("varchar(120)")
                         .UseCollation("utf8mb4_0900_ai_ci");
 
+                    b.Property<DateTimeOffset?>("ReadyToBuildAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)

@@ -1,3 +1,4 @@
+using RutaProducto.Application.Features.Initiatives.GetDashboard;
 using RutaProducto.Domain.Initiatives;
 
 namespace RutaProducto.Application.Features.Initiatives;
@@ -9,6 +10,14 @@ namespace RutaProducto.Application.Features.Initiatives;
 public interface IInitiativeRepository
 {
     Task<IReadOnlyList<InitiativeSummary>> ListAsync(string ownerId, InitiativeListFilter filter, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The dashboard snapshots of every non-deleted initiative owned by any of the given owners. The only method
+    /// that takes several owners, so a future team view can reuse it.
+    /// </summary>
+    Task<IReadOnlyList<DashboardInitiative>> ListDashboardSnapshotsAsync(
+        IReadOnlyCollection<string> ownerIds,
+        CancellationToken cancellationToken);
 
     Task<InitiativeDetails?> GetDetailsAsync(Guid id, string ownerId, CancellationToken cancellationToken);
 

@@ -38,6 +38,9 @@ public sealed class Initiative
 
     public DateTimeOffset UpdatedAt { get; private set; }
 
+    /// <summary>When the initiative last became ReadyToBuild; null in any other status (reopening clears it).</summary>
+    public DateTimeOffset? ReadyToBuildAt { get; private set; }
+
     public DateTimeOffset? DeletedAt { get; private set; }
 
     public static Initiative CreateDraft(string ownerId, string name, string? description, DateTimeOffset now)
@@ -193,6 +196,7 @@ public sealed class Initiative
         }
 
         Status = InitiativeStatus.ReadyToBuild;
+        ReadyToBuildAt = now;
         UpdatedAt = now;
     }
 
@@ -213,6 +217,7 @@ public sealed class Initiative
         }
 
         Status = InitiativeStatus.Planning;
+        ReadyToBuildAt = null;
         UpdatedAt = now;
     }
 

@@ -295,6 +295,7 @@ public sealed class InitiativeTests
         initiative.MarkReadyToBuild(T1);
 
         Assert.Equal(InitiativeStatus.ReadyToBuild, initiative.Status);
+        Assert.Equal(T1, initiative.ReadyToBuildAt);
         Assert.Equal("App de pagos", initiative.Name);
         Assert.Equal(DepthMode.Manual, initiative.DepthMode);
         Assert.Equal(InitiativeDepth.Standard, initiative.Depth);
@@ -311,6 +312,7 @@ public sealed class InitiativeTests
 
         Assert.Equal(InitiativeStatus.ReadyToBuild, initiative.Status);
         Assert.Equal(T1, initiative.UpdatedAt);
+        Assert.Equal(T1, initiative.ReadyToBuildAt);
     }
 
     [Theory]
@@ -331,11 +333,13 @@ public sealed class InitiativeTests
     [Fact]
     public void ReopenPlanning_moves_a_ready_initiative_back_and_refreshes_updated_at()
     {
-        var initiative = InStatus(InitiativeStatus.ReadyToBuild);
+        var initiative = InStatus(InitiativeStatus.Planning);
+        initiative.MarkReadyToBuild(T0);
 
         initiative.ReopenPlanning(T1);
 
         Assert.Equal(InitiativeStatus.Planning, initiative.Status);
+        Assert.Null(initiative.ReadyToBuildAt);
         Assert.Equal(DepthMode.Manual, initiative.DepthMode);
         Assert.Equal(InitiativeDepth.Standard, initiative.Depth);
         Assert.Equal(T1, initiative.UpdatedAt);

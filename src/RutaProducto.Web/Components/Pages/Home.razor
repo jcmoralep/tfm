@@ -1,42 +1,58 @@
 @page "/"
 @attribute [Authorize]
-@using RutaProducto.Application.Abstractions.Authentication
-@using RutaProducto.Application.Features.Authentication.GetCurrentUser
+@using RutaProducto.Application.Features.Initiatives.GetDashboard
+@using RutaProducto.Web.Components.Home
 @inject IMediator Mediator
+@inject TimeProvider Clock
 
 <PageTitle>Inicio · Ruta de Producto</PageTitle>
 
-<section class="rounded-card border border-line bg-surface-raised p-8 shadow-card">
-    <h1 class="text-2xl font-semibold text-ink">Acceso confirmado</h1>
+<div class="space-y-6">
+    <DashboardHero HasInitiatives="@(view is { Total: > 0 })" />
 
-    @if (user is not null)
+    @if (errors.Count > 0)
     {
-        <p class="mt-3 text-ink-muted">
-            Ha iniciado sesión como <span class="font-medium text-ink">@user.Email</span>.
-        </p>
+        <ErrorAlert Id="dashboard-errors" Messages="errors" />
     }
+    else if (view is null)
+    {
+        <p class="text-sm text-ink-muted" role="status">Cargando…</p>
+    }
+    else if (view.Total == 0)
+    {
+        <DashboardEmpty />
+    }
+    else
+    {
+        @* One 12-column grid; every row splits 7/5 so the edges line up from top to bottom. *@
+        <div class="grid gap-6 lg:grid-cols-12">
+            <div class="lg:col-span-7"><StatusCards Counts="view.StatusCounts" /></div>
+            <div class="lg:col-span-5"><KpiStrip View="view" /></div>
 
-    <p class="mt-2 text-ink-muted">
-        Gestione sus iniciativas desde la lista o cree una nueva.
-    </p>
+            <div class="lg:col-span-7"><ResumeList Items="view.Resume" Now="now" /></div>
+            <div class="lg:col-span-5"><RecentActivity Items="view.Recent" Now="now" /></div>
 
-    <div class="mt-6 flex flex-wrap gap-3">
-        <a href="/iniciativas"
-           class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover">
-            Ver mis iniciativas
-        </a>
-        <a href="/iniciativas/nueva"
-           class="rounded-full border border-line bg-surface-raised px-5 py-2 text-sm font-medium text-ink hover:bg-surface">
-            Nueva iniciativa
-        </a>
-    </div>
-</section>
+            <div class="lg:col-span-7"><ActivityChart Weeks="view.Weeks" /></div>
+            <div class="lg:col-span-5"><DepthBars Depths="view.Depths" /></div>
+        </div>
+    }
+</div>
 
 @code {
-    private AuthenticatedUser? user;
+    private DashboardView? view;
+    private IReadOnlyList<string> errors = [];
+    private DateTimeOffset now;
 
     protected override async Task OnInitializedAsync()
     {
-        user = await Mediator.Send(new GetCurrentUserQuery());
+        try
+        {
+            now = Clock.GetUtcNow();
+            view = await Mediator.Send(new GetDashboardQuery());
+        }
+        catch (Exception exception) when (UserMessages.TryGet(exception, out var messages))
+        {
+            errors = messages;
+        }
     }
 }

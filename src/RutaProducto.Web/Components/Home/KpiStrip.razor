@@ -1,0 +1,41 @@
+@using RutaProducto.Application.Features.Initiatives.GetDashboard
+
+<section aria-labelledby="kpi-title" class="h-full">
+    <h2 id="kpi-title" class="sr-only">Cifras clave</h2>
+    <dl class="grid h-full auto-rows-fr gap-4 sm:grid-cols-2">
+        <div class="rounded-card border border-line bg-surface-raised p-5 shadow-card">
+            <dt class="text-sm font-medium text-ink-muted">Iniciativas en total</dt>
+            <dd class="mt-2 text-3xl font-semibold text-ink">@View.Total</dd>
+        </div>
+
+        <div class="rounded-card border border-line bg-surface-raised p-5 shadow-card">
+            <dt class="text-sm font-medium text-ink-muted">Listas para construir</dt>
+            <dd class="mt-2 text-3xl font-semibold text-success-ink">@DashboardLabels.Percent(View.CompletionPercent)</dd>
+            <dd class="mt-1 text-sm text-ink-muted">De todas sus iniciativas.</dd>
+        </div>
+
+        <div class="rounded-card border border-line bg-surface-raised p-5 shadow-card">
+            <dt class="text-sm font-medium text-ink-muted">Días promedio hasta quedar lista</dt>
+            <dd class="mt-2 text-3xl font-semibold text-ink">@DashboardLabels.AverageDays(View.AverageDaysToReady)</dd>
+            <dd class="mt-1 text-sm text-ink-muted">
+                @(View.AverageDaysToReady is null
+                    ? "Aparecerá cuando una iniciativa llegue a Lista para construir."
+                    : "Desde que se crea hasta que queda lista.")
+            </dd>
+        </div>
+
+        <div class="@StalledCss rounded-card border border-line p-5 shadow-card">
+            <dt class="text-sm font-medium">Sin movimiento</dt>
+            <dd class="mt-2 text-3xl font-semibold">@View.StalledCount</dd>
+            <dd class="mt-1 text-sm">Sin cambios hace 7 días o más.</dd>
+        </div>
+    </dl>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public DashboardView View { get; set; } = default!;
+
+    // Amber only when something needs attention.
+    private string StalledCss => View.StalledCount > 0 ? "bg-warning-soft text-warning-ink" : "bg-surface-raised text-ink-muted";
+}

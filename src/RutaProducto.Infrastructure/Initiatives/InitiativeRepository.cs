@@ -1,5 +1,6 @@
 using RutaProducto.Application.Common.Exceptions;
 using RutaProducto.Application.Features.Initiatives;
+using RutaProducto.Application.Features.Initiatives.GetDashboard;
 using RutaProducto.Domain.Initiatives;
 using RutaProducto.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -49,6 +50,26 @@ internal sealed class InitiativeRepository(IDbContextFactory<ApplicationDbContex
                 initiative.DepthMode,
                 initiative.Depth,
                 initiative.UpdatedAt))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<DashboardInitiative>> ListDashboardSnapshotsAsync(
+        IReadOnlyCollection<string> ownerIds,
+        CancellationToken cancellationToken)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        return await context.Set<Initiative>()
+            .AsNoTracking()
+            .Where(initiative => ownerIds.Contains(initiative.CreatedByUserId))
+            .Select(initiative => new DashboardInitiative(
+                initiative.Id,
+                initiative.Name,
+                initiative.Status,
+                initiative.Depth,
+                initiative.CreatedAt,
+                initiative.UpdatedAt,
+                initiative.ReadyToBuildAt))
             .ToListAsync(cancellationToken);
     }
 

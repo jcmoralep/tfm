@@ -1,6 +1,7 @@
 using System.Reflection;
 using RutaProducto.Application.Common.Exceptions;
 using RutaProducto.Application.Features.Initiatives;
+using RutaProducto.Application.Features.Initiatives.GetDashboard;
 using RutaProducto.Domain.Initiatives;
 
 namespace RutaProducto.Application.Tests.TestDoubles;
@@ -48,6 +49,18 @@ public sealed class InMemoryInitiativeRepository : IInitiativeRepository
             .OrderByDescending(i => i.UpdatedAt)
             .ThenByDescending(i => i.Id)
             .Select(i => new InitiativeSummary(i.Id, i.Name, i.Status, i.DepthMode, i.Depth, i.UpdatedAt))
+            .ToList();
+
+        return Task.FromResult(result);
+    }
+
+    public Task<IReadOnlyList<DashboardInitiative>> ListDashboardSnapshotsAsync(
+        IReadOnlyCollection<string> ownerIds,
+        CancellationToken cancellationToken)
+    {
+        IReadOnlyList<DashboardInitiative> result = stored
+            .Where(i => ownerIds.Contains(i.CreatedByUserId) && i.DeletedAt is null)
+            .Select(i => new DashboardInitiative(i.Id, i.Name, i.Status, i.Depth, i.CreatedAt, i.UpdatedAt, i.ReadyToBuildAt))
             .ToList();
 
         return Task.FromResult(result);
