@@ -60,7 +60,7 @@ public sealed class InMemoryInitiativeRepository : IInitiativeRepository
     {
         IReadOnlyList<DashboardInitiative> result = stored
             .Where(i => ownerIds.Contains(i.CreatedByUserId) && i.DeletedAt is null)
-            .Select(i => new DashboardInitiative(i.Id, i.Name, i.Status, i.Depth, i.CreatedAt, i.UpdatedAt, i.ReadyToBuildAt))
+            .Select(i => new DashboardInitiative(i.Id, i.Name, i.Status, i.Depth, i.CreatedAt, i.UpdatedAt, i.ReadyToBuildAt, i.LastActivityAt))
             .ToList();
 
         return Task.FromResult(result);

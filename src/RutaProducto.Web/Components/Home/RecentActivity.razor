@@ -10,7 +10,7 @@
                 <a href="@DashboardLabels.OpenHref(item.Id, item.Status)" class="min-w-0 break-words font-medium text-ink hover:underline">@item.Name</a>
                 <div class="flex items-center gap-3 text-sm">
                     <StatusBadge Status="item.Status" />
-                    <span class="text-ink-muted">@DashboardLabels.RelativeTime(item.UpdatedAt, Now)</span>
+                    <span class="text-ink-muted">@DashboardLabels.RelativeTime(item.ActivityAt, Now)</span>
                 </div>
             </li>
         }

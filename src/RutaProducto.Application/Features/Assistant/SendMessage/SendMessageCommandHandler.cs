@@ -5,6 +5,8 @@ using RutaProducto.Application.Features.Initiatives.SetInitiativeDepth;
 using RutaProducto.Domain.Assistant;
 using RutaProducto.Domain.Common;
 using RutaProducto.Domain.Initiatives;
+using RutaProducto.Application.Features.Initiatives.RecordInitiativeActivity;
+using Microsoft.Extensions.Logging;
 using MediatR;
 
 namespace RutaProducto.Application.Features.Assistant.SendMessage;
@@ -21,7 +23,8 @@ public sealed class SendMessageCommandHandler(
     IConversationRepository repository,
     ConversationAdvancer advancer,
     ICurrentUser currentUser,
-    TimeProvider timeProvider) : IRequestHandler<SendMessageCommand, ConversationView>
+    TimeProvider timeProvider,
+    ILogger<SendMessageCommandHandler> logger) : IRequestHandler<SendMessageCommand, ConversationView>
 {
     public async Task<ConversationView> Handle(SendMessageCommand request, CancellationToken cancellationToken)
     {
@@ -56,6 +59,7 @@ public sealed class SendMessageCommandHandler(
         }
 
         await repository.SaveAsync(conversation, request.ExpectedVersion, cancellationToken);
+        await sender.RecordActivityAsync(logger, initiative.Id, cancellationToken);
 
         // A confirmation needs no command here: the stored answer makes the journey report a pending transition,
         // and the advancer sends StartPlanningCommand, which is also what a later resume does.

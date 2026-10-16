@@ -12,7 +12,7 @@ public static class DashboardCalculator
     public const int ResumeCount = 3;
     public const int RecentCount = 5;
 
-    /// <summary>An unfinished initiative untouched for this long (or longer) counts as "sin movimiento".</summary>
+    /// <summary>An unfinished initiative without activity for this long (or longer) counts as "sin movimiento".</summary>
     public static readonly TimeSpan StalledAfter = TimeSpan.FromDays(7);
 
     public static DashboardView Calculate(IReadOnlyCollection<DashboardInitiative> initiatives, DateTimeOffset now)
@@ -32,7 +32,7 @@ public static class DashboardCalculator
 
         double? averageDays = cycles.Count == 0 ? null : Math.Round(cycles.Average(), 1, MidpointRounding.AwayFromZero);
 
-        var stalled = initiatives.Count(i => i.Status != InitiativeStatus.ReadyToBuild && now - i.UpdatedAt >= StalledAfter);
+        var stalled = initiatives.Count(i => i.Status != InitiativeStatus.ReadyToBuild && now - i.ActivityAt >= StalledAfter);
 
         var statusCounts = Enum.GetValues<InitiativeStatus>()
             .Select(status => new DashboardStatusCount(status, initiatives.Count(i => i.Status == status)))
@@ -43,7 +43,7 @@ public static class DashboardCalculator
             .ToList();
 
         var byRecency = initiatives
-            .OrderByDescending(i => i.UpdatedAt)
+            .OrderByDescending(i => i.ActivityAt)
             .ThenByDescending(i => i.Id)
             .ToList();
 
@@ -87,5 +87,5 @@ public static class DashboardCalculator
         return weeks;
     }
 
-    private static DashboardItem ToItem(DashboardInitiative i) => new(i.Id, i.Name, i.Status, i.UpdatedAt);
+    private static DashboardItem ToItem(DashboardInitiative i) => new(i.Id, i.Name, i.Status, i.ActivityAt);
 }

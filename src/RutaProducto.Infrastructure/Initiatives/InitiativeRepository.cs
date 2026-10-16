@@ -69,7 +69,8 @@ internal sealed class InitiativeRepository(IDbContextFactory<ApplicationDbContex
                 initiative.Depth,
                 initiative.CreatedAt,
                 initiative.UpdatedAt,
-                initiative.ReadyToBuildAt))
+                initiative.ReadyToBuildAt,
+                initiative.LastActivityAt))
             .ToListAsync(cancellationToken);
     }
 

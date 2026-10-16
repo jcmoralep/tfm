@@ -14,8 +14,9 @@ public sealed class DashboardCalculatorTests
         DateTimeOffset? created = null,
         DateTimeOffset? updated = null,
         DateTimeOffset? readyAt = null,
-        string name = "Idea") =>
-        new(Guid.NewGuid(), name, status, depth, created ?? Now.AddDays(-1), updated ?? Now.AddDays(-1), readyAt);
+        string name = "Idea",
+        DateTimeOffset? activity = null) =>
+        new(Guid.NewGuid(), name, status, depth, created ?? Now.AddDays(-1), updated ?? Now.AddDays(-1), readyAt, activity);
 
     private static DashboardInitiative Ready(DateTimeOffset created, DateTimeOffset readyAt) =>
         Item(InitiativeStatus.ReadyToBuild, created: created, updated: readyAt, readyAt: readyAt);
@@ -109,6 +110,34 @@ public sealed class DashboardCalculatorTests
         var view = DashboardCalculator.Calculate([Item(status, updated: Now.AddHours(-hoursAgo))], Now);
 
         Assert.Equal(expected ? 1 : 0, view.StalledCount);
+    }
+
+    [Fact]
+    public void Recent_activity_keeps_an_old_initiative_from_being_stalled_and_ranks_it_first()
+    {
+        var worked = Item(InitiativeStatus.Planning, name: "Trabajada", updated: Now.AddDays(-30), activity: Now.AddHours(-1));
+        var edited = Item(InitiativeStatus.Clarifying, name: "Editada", updated: Now.AddDays(-2));
+        var idle = Item(InitiativeStatus.Draft, name: "Quieta", updated: Now.AddDays(-20), activity: Now.AddDays(-10));
+
+        var view = DashboardCalculator.Calculate([idle, edited, worked], Now);
+
+        Assert.Equal(1, view.StalledCount); // only the idle one
+        Assert.Equal(["Trabajada", "Editada", "Quieta"], view.Resume.Select(i => i.Name));
+        Assert.Equal(["Trabajada", "Editada", "Quieta"], view.Recent.Select(i => i.Name));
+        Assert.Equal(Now.AddHours(-1), view.Recent[0].ActivityAt);
+    }
+
+    [Fact]
+    public void Without_a_recorded_activity_the_last_change_decides()
+    {
+        var older = Item(InitiativeStatus.Planning, name: "Antigua", updated: Now.AddDays(-9));
+        var newer = Item(InitiativeStatus.Planning, name: "Nueva", updated: Now.AddDays(-8), activity: null);
+
+        var view = DashboardCalculator.Calculate([older, newer], Now);
+
+        Assert.Equal(2, view.StalledCount);
+        Assert.Equal(["Nueva", "Antigua"], view.Recent.Select(i => i.Name));
+        Assert.Equal(Now.AddDays(-8), view.Recent[0].ActivityAt);
     }
 
     [Fact]

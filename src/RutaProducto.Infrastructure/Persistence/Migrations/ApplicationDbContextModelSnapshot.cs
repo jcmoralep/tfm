@@ -325,6 +325,9 @@ namespace RutaProducto.Infrastructure.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("varchar(1000)");
 
+                    b.Property<DateTimeOffset?>("LastActivityAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)

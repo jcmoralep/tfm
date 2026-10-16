@@ -1,6 +1,8 @@
 using RutaProducto.Application.Abstractions.Authentication;
 using RutaProducto.Domain.Artifacts;
 using RutaProducto.Domain.Common;
+using RutaProducto.Application.Features.Initiatives.RecordInitiativeActivity;
+using Microsoft.Extensions.Logging;
 using MediatR;
 
 namespace RutaProducto.Application.Features.Artifacts.GenerateArtifact;
@@ -14,7 +16,8 @@ public sealed class GenerateArtifactCommandHandler(
     IArtifactRepository repository,
     IArtifactDrafter drafter,
     ICurrentUser currentUser,
-    TimeProvider timeProvider) : IRequestHandler<GenerateArtifactCommand, ArtifactView>
+    TimeProvider timeProvider,
+    ILogger<GenerateArtifactCommandHandler> logger) : IRequestHandler<GenerateArtifactCommand, ArtifactView>
 {
     public async Task<ArtifactView> Handle(GenerateArtifactCommand request, CancellationToken cancellationToken)
     {
@@ -36,6 +39,7 @@ public sealed class GenerateArtifactCommandHandler(
 
         var artifact = Artifact.Create(initiative.Id, ownerId, request.Type, markdown, timeProvider.GetUtcNow());
         await repository.AddAsync(artifact, cancellationToken);
+        await sender.RecordActivityAsync(logger, initiative.Id, cancellationToken);
 
         return await ArtifactGuards.ReloadViewAsync(sender, repository, ownerId, initiative.Id, request.Type, cancellationToken);
     }

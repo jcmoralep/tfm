@@ -4,11 +4,13 @@ using RutaProducto.Application.Features.Assistant.GetConversationAnswers;
 using RutaProducto.Application.Features.Context.GetContextForAssistant;
 using RutaProducto.Application.Features.Initiatives;
 using RutaProducto.Application.Features.Initiatives.GetInitiative;
+using RutaProducto.Application.Features.Initiatives.RecordInitiativeActivity;
 using RutaProducto.Application.Features.Initiatives.ReopenPlanning;
 using RutaProducto.Domain.Artifacts;
 using RutaProducto.Domain.Common;
 using RutaProducto.Domain.Initiatives;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace RutaProducto.Application.Features.Artifacts;
 
@@ -60,12 +62,13 @@ internal static class ArtifactGuards
     /// <summary>
     /// The shared edit path; <paramref name="content"/> is already normalized and validated. The same text touches
     /// nothing. Otherwise Planning is reopened first (a failed save then leaves Planning with approved documents, which
-    /// the next approval completes, never Ready to build with a Draft), then the document is edited and saved.
+    /// the next approval completes, never Ready to build with a Draft), then the document is edited and saved, and the activity is noted.
     /// </summary>
     public static async Task SaveEditAsync(
         ISender sender,
         IArtifactRepository repository,
         TimeProvider timeProvider,
+        ILogger logger,
         InitiativeDetails initiative,
         Artifact artifact,
         string content,
@@ -84,6 +87,7 @@ internal static class ArtifactGuards
 
         artifact.Edit(content, timeProvider.GetUtcNow());
         await repository.SaveAsync(artifact, expectedVersion, cancellationToken);
+        await sender.RecordActivityAsync(logger, initiative.Id, cancellationToken);
     }
 
     /// <summary>

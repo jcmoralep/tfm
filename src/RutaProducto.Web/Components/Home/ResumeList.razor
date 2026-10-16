@@ -1,7 +1,7 @@
 @using RutaProducto.Application.Features.Initiatives.GetDashboard
 
 <section aria-labelledby="resume-title" class="h-full rounded-card border border-line bg-surface-raised p-5 shadow-card">
-    <h2 id="resume-title" class="text-lg font-semibold text-ink">Retomar donde lo dejaste</h2>
+    <h2 id="resume-title" class="text-lg font-semibold text-ink">Retome donde lo dejó</h2>
 
     @if (Items.Count == 0)
     {
@@ -17,7 +17,7 @@
                     <p class="break-words font-medium text-ink">@item.Name</p>
                     <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                         <StatusBadge Status="item.Status" />
-                        <span class="text-ink-muted">@DashboardLabels.RelativeTime(item.UpdatedAt, Now)</span>
+                        <span class="text-ink-muted">@DashboardLabels.RelativeTime(item.ActivityAt, Now)</span>
                     </div>
                     <a href="@step.Href" class="mt-2 inline-block text-sm font-semibold text-primary-ink hover:underline">@step.Label<span class="sr-only"> de @item.Name</span></a>
                 </li>

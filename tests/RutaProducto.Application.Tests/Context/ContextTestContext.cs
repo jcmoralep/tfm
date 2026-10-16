@@ -67,7 +67,7 @@ public sealed class ContextTestContext
             .Handle(new AddFileAttachmentCommand(initiativeId, name, contentType, declaredSize ?? bytes.Length, new MemoryStream(bytes)), default);
 
     public Task<ContextView> AddLink(Guid initiativeId, string url) =>
-        new AddLinkAttachmentCommandHandler(Sender, Attachments, User, Clock, Limits)
+        new AddLinkAttachmentCommandHandler(Sender, Attachments, User, Clock, Limits, Loggers.CreateLogger<AddLinkAttachmentCommandHandler>())
             .Handle(new AddLinkAttachmentCommand(initiativeId, url), default);
 
     public Task<ContextView> Delete(Guid initiativeId, Guid attachmentId) =>
@@ -83,6 +83,6 @@ public sealed class ContextTestContext
             .Handle(new GetContextForAssistantQuery(initiativeId), default);
 
     public Task<ContextView> AddNote(Guid initiativeId, string title, string text) =>
-        new AddNoteAttachmentCommandHandler(Sender, Attachments, User, Clock, Limits)
+        new AddNoteAttachmentCommandHandler(Sender, Attachments, User, Clock, Limits, Loggers.CreateLogger<AddNoteAttachmentCommandHandler>())
             .Handle(new AddNoteAttachmentCommand(initiativeId, title, text), default);
 }

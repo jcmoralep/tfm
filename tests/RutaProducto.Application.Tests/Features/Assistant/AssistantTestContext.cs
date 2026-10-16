@@ -71,7 +71,7 @@ public sealed class AssistantTestContext
             .Handle(new StartConversationCommand(id), default);
 
     public Task<ConversationView> Send(Guid id, int expectedVersion, string? text = null, string? quickReplyKey = null) =>
-        new SendMessageCommandHandler(Sender, Conversations, Advancer, User, Clock)
+        new SendMessageCommandHandler(Sender, Conversations, Advancer, User, Clock, ContextRoutes.Loggers.CreateLogger<SendMessageCommandHandler>())
             .Handle(new SendMessageCommand(id, expectedVersion, text, quickReplyKey), default);
 
     public Task<ConversationView> Undo(Guid id, int expectedVersion) =>

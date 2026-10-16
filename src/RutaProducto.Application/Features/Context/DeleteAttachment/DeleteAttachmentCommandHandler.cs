@@ -2,6 +2,7 @@ using RutaProducto.Application.Abstractions.Authentication;
 using RutaProducto.Application.Abstractions.Storage;
 using RutaProducto.Application.Common.Exceptions;
 using RutaProducto.Domain.Context;
+using RutaProducto.Application.Features.Initiatives.RecordInitiativeActivity;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -46,6 +47,8 @@ public sealed class DeleteAttachmentCommandHandler(
         {
             throw new NotFoundException(ContextTexts.NotFound);
         }
+
+        await sender.RecordActivityAsync(logger, initiative.Id, cancellationToken);
 
         return ContextView.From(await repository.ListAsync(initiative.Id, ownerId, cancellationToken), limits);
     }

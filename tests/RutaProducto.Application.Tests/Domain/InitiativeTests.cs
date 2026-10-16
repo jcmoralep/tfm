@@ -420,4 +420,62 @@ public sealed class InitiativeTests
         Assert.Equal(T1, initiative.DeletedAt);
         Assert.Equal(T1, initiative.UpdatedAt);
     }
+
+    [Fact]
+    public void A_new_initiative_starts_its_activity_at_creation()
+    {
+        var initiative = NewDraft();
+
+        Assert.Equal(T0, initiative.LastActivityAt);
+        Assert.Equal(T0, initiative.EffectiveActivityAt);
+    }
+
+    [Fact]
+    public void Recording_activity_sets_only_the_activity_date()
+    {
+        var initiative = NewDraft();
+
+        initiative.RecordActivity(T1);
+
+        Assert.Equal(T1, initiative.LastActivityAt);
+        Assert.Equal(T0, initiative.UpdatedAt);
+        Assert.Equal(T1, initiative.EffectiveActivityAt);
+    }
+
+    [Fact]
+    public void Without_a_recorded_activity_the_last_change_stands_in()
+    {
+        var initiative = NewDraft();
+        typeof(Initiative).GetProperty(nameof(Initiative.LastActivityAt))!.SetValue(initiative, null);
+
+        Assert.Equal(T0, initiative.EffectiveActivityAt);
+    }
+
+    [Fact]
+    public void Every_mutator_that_changes_the_initiative_refreshes_both_dates()
+    {
+        var initiative = NewDraft();
+        var step = T0;
+
+        var mutators = new Action<DateTimeOffset>[]
+        {
+            now => initiative.Rename("Otro", null, now),
+            now => initiative.SetDepth(DepthMode.Manual, InitiativeDepth.Small, now),
+            now => initiative.MoveToStep(CreationStep.Depth, now),
+            initiative.Complete,
+            initiative.StartPlanning,
+            initiative.MarkReadyToBuild,
+            initiative.ReopenPlanning,
+            initiative.Delete,
+        };
+
+        foreach (var mutate in mutators)
+        {
+            step = step.AddMinutes(1);
+
+            mutate(step);
+
+            Assert.Equal((step, step), (initiative.UpdatedAt, initiative.LastActivityAt));
+        }
+    }
 }
