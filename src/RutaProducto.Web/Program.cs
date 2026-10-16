@@ -3,11 +3,13 @@ using RutaProducto.Application.Abstractions.Authentication;
 using RutaProducto.Application.Abstractions.Registration;
 using RutaProducto.Infrastructure;
 using RutaProducto.Infrastructure.Identity.Seeding;
+using RutaProducto.Infrastructure.Persistence;
 using RutaProducto.Web.Artifacts;
 using RutaProducto.Web.Authentication;
 using RutaProducto.Web.Components;
 using RutaProducto.Web.Components.Artifacts;
 using RutaProducto.Web.Context;
+using RutaProducto.Web.Hosting;
 using RutaProducto.Web.Logging;
 using RutaProducto.Web.Security;
 using Microsoft.AspNetCore.Components.Server.Circuits;
@@ -23,6 +25,16 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
 
+    // Railway injects PORT. Explicit URLs (ASPNETCORE_URLS, --urls) win; without PORT nothing changes.
+    var portUrl = PortSetting.ResolveUrl(
+        Environment.GetEnvironmentVariable(PortSetting.VariableName),
+        builder.Configuration[WebHostDefaults.ServerUrlsKey]);
+
+    if (portUrl is not null)
+    {
+        builder.WebHost.UseUrls(portUrl);
+    }
+
     builder.Host.UseSerilog((context, services, configuration) =>
     {
         // File sink, rolling and retention come from appsettings.json (Serilog section).
@@ -30,11 +42,9 @@ try
             .ReadFrom.Configuration(context.Configuration)
             .ReadFrom.Services(services);
 
-        if (context.HostingEnvironment.IsDevelopment())
-        {
-            configuration.WriteTo.Console(
-                outputTemplate: "{Timestamp:HH:mm:ss} [{Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}");
-        }
+        // The console in every environment: the platform (Railway) reads stdout, and the file stays for local and server use.
+        configuration.WriteTo.Console(
+            outputTemplate: "{Timestamp:HH:mm:ss} [{Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}");
     });
 
     builder.Services
@@ -78,10 +88,34 @@ try
         builder.Services.AddRateLimiter(limiter => AuthRateLimiting.Configure(limiter, rateLimit));
     }
 
+    // Off by default: with the switch off neither the options nor UseForwardedHeaders exist. Enable only behind the proxy.
+    var forwardedHeaders = ForwardedHeadersSetting.BindAndValidate(builder.Configuration);
+    forwardedHeaders.AddForwardedHeadersIfEnabled(builder.Services);
+
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
 
     var app = builder.Build();
+
+    // Pre-deploy mode: apply the pending migrations and exit. No Kestrel, no seeding, no middleware.
+    if (MigrateMode.IsRequested(args))
+    {
+        Environment.ExitCode = await MigrateMode.RunAsync(
+            () => app.Services.MigrateDatabaseAsync(),
+            app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Migrate"));
+
+        return;
+    }
+
+    // First on purpose: the platform's health check calls plain http without X-Forwarded-Proto, and the probe must not be
+    // redirected, authenticated, rate limited or logged per call.
+    app.UseMiddleware<HealthCheckMiddleware>();
+
+    if (forwardedHeaders.Enabled)
+    {
+        // Before HTTPS redirection and the rate limiter, so both see the real scheme and client address.
+        app.UseForwardedHeaders();
+    }
 
     if (!app.Environment.IsDevelopment())
     {

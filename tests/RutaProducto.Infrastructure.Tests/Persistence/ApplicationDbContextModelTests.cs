@@ -68,20 +68,21 @@ public sealed class ApplicationDbContextModelTests : IDisposable
             .ToArray();
 
         Assert.Equal<string>(
-            ["AspNetUserClaims", "AspNetUserLogins", "AspNetUserTokens", "AspNetUsers", "art_artifacts", "asi_conversations", "asi_messages", "ctx_attachments", "ini_initiatives"],
+            ["AspNetUserClaims", "AspNetUserLogins", "AspNetUserTokens", "AspNetUsers", "art_artifacts", "asi_conversations", "asi_messages", "ctx_attachments", "dp_keys", "ini_initiatives"],
             tables);
     }
 
     [Fact]
-    public void Every_table_outside_identity_carries_a_module_prefix()
+    public void Every_table_outside_identity_and_the_platform_carries_a_module_prefix()
     {
         using var context = CreateContext();
 
+        // dp_keys is the one platform table (Data Protection keys); every other table belongs to a module and must say which.
         var tables = context.Model.GetEntityTypes()
             .Select(entityType => entityType.GetTableName() ?? string.Empty)
-            .Where(table => !table.StartsWith("AspNet", StringComparison.Ordinal));
+            .Where(table => !table.StartsWith("AspNet", StringComparison.Ordinal) && table != "dp_keys");
 
-        Assert.All(tables, table => Assert.Matches("^[a-z]{2,}_[a-z_]+$", table));
+        Assert.All(tables, table => Assert.Matches("^(ini|asi|art|ctx)_[a-z_]+$", table));
     }
 
     [Fact]
@@ -406,6 +407,14 @@ public sealed class ApplicationDbContextModelTests : IDisposable
         var repository = scope.ServiceProvider.GetRequiredService<RutaProducto.Application.Features.Context.IAttachmentRepository>();
 
         Assert.IsType<RutaProducto.Infrastructure.Context.AttachmentRepository>(repository);
+    }
+
+    [Fact]
+    public void Data_protection_keys_migration_is_present()
+    {
+        using var context = new DesignTimeDbContextFactory().CreateDbContext([]);
+
+        Assert.Contains(context.Database.GetMigrations(), migration => migration.EndsWith("_AddDataProtectionKeys", StringComparison.Ordinal));
     }
 
     [Fact]

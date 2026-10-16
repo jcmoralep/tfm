@@ -77,6 +77,21 @@ public sealed class ModuleBoundaryTests
         Assert.All(module.Folders, folder => Assert.NotEmpty(SourcesOf(module with { Folders = [folder] })));
     }
 
+    // The dp_keys table is a platform table (Infrastructure/DataProtection), not a module: no module may read or write it.
+    [Theory]
+    [InlineData("Initiatives")]
+    [InlineData("Assistant")]
+    [InlineData("Artifacts")]
+    [InlineData("Context")]
+    public void A_module_does_not_touch_the_platform_data_protection_table(string moduleName)
+    {
+        var module = Modules.Single(candidate => candidate.Name == moduleName);
+
+        var violations = FindViolations(SourcesOf(module), [@"\bdp_", @"\bDataProtectionKeys?\b", @"Infrastructure\.DataProtection"]);
+
+        Assert.True(violations.Count == 0, $"{module.Name} must not reference the platform table:{Environment.NewLine}{string.Join(Environment.NewLine, violations)}");
+    }
+
     [Fact]
     public void A_forbidden_token_in_code_is_reported_but_the_same_text_in_a_comment_is_not()
     {

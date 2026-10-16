@@ -10,6 +10,7 @@ using RutaProducto.Infrastructure.Assistant;
 using RutaProducto.Infrastructure.Captcha;
 using RutaProducto.Infrastructure.Registration;
 using RutaProducto.Infrastructure.Context;
+using RutaProducto.Infrastructure.DataProtection;
 using RutaProducto.Infrastructure.Email;
 using RutaProducto.Infrastructure.Export;
 using RutaProducto.Infrastructure.Gemini;
@@ -86,6 +87,10 @@ public static class DependencyInjection
         var storage = StorageOptions.BindAndValidate(configuration);
         services.AddSingleton<IFileStorage>(_ => new LocalFileStorage(storage.LocalRootPath));
         services.AddSingleton(new ContextLimits(storage.MaxFileBytes));
+
+        // DataProtection:Provider (Default by default) optionally keeps the key ring in the database (table dp_keys), so
+        // cookies and email links survive a redeploy; an unknown value stops the app at startup.
+        services.AddKeyPersistence(DataProtectionOptions.BindAndValidate(configuration));
 
         // Captcha:Provider (None by default) selects the verifier; Turnstile without its keys stops the app at startup.
         services.AddCaptcha(CaptchaOptions.BindAndValidate(configuration));
