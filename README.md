@@ -96,7 +96,7 @@ Ningún secreto se guarda en el repositorio. La aplicación lee estas variables:
 | `SeedUsers__0__Email` | Sí, para poder entrar | Correo del primer usuario inicial |
 | `SeedUsers__0__Password` | Sí, para poder entrar | Contraseña del primer usuario inicial |
 | `SeedUsers__1__Email`, `SeedUsers__1__Password`, ... | No | Usuarios adicionales, con índices consecutivos |
-| `ASPNETCORE_ENVIRONMENT` | No | `Development` activa la salida de registros por consola |
+| `ASPNETCORE_ENVIRONMENT` | No | `Development` activa los detalles de error y el registro `Information` de `Microsoft.Hosting.Lifetime`; la consola recibe los registros en todos los entornos |
 
 Los usuarios iniciales se crean al arrancar la aplicación si todavía no existen. Si un usuario ya existe, no se modifica (su contraseña no se sobrescribe). La contraseña debe cumplir la política de ASP.NET Core Identity: al menos 6 caracteres, con una mayúscula, una minúscula, un dígito y un carácter no alfanumérico. Si no la cumple, el usuario no se crea y el motivo queda en el registro.
 
@@ -251,9 +251,34 @@ La base de datos de producción es la plantilla MySQL de Railway. Se conecta por
    ```
 
 3. Defina `Database__MySqlServerVersion` con la versión de MySQL que ejecute el servicio. Debe coincidir con la imagen.
-4. Las migraciones se aplicarán como comando previo al despliegue (pendiente de implementar; ver `AGENTS.md` §6).
+4. Las migraciones se aplican como comando previo al despliegue (ver «Despliegue en Railway»).
 
 `MYSQL_URL` de Railway tiene formato de URL y no sirve directamente como cadena de conexión de .NET.
+
+## Despliegue en Railway
+
+El repositorio trae un `Dockerfile` multi-etapa (SDK .NET 10 para compilar, `aspnet:10.0` para ejecutar, usuario sin privilegios, sin secretos en la imagen). Todos los ajustes de despliegue están **apagados por defecto**: sin configurarlos, la aplicación se comporta como en local. Para probar la imagen: `docker build -t rutaproducto:local .` (la compilación descarga el CLI de Tailwind, así que necesita internet).
+
+Configuración del servicio de la aplicación:
+
+| Variable | Valor en Railway | Descripción |
+|---|---|---|
+| `PORT` | La inyecta Railway | Si existe y no hay `ASPNETCORE_URLS`, la aplicación escucha en `http://0.0.0.0:$PORT`. Un valor que no sea un puerto de 1 a 65535 impide el arranque |
+| `ConnectionStrings__DefaultConnection` | Variables de referencia (ver «Base de datos en Railway») | Cadena de conexión al servicio MySQL |
+| `Database__MySqlServerVersion` | `8.4.0` | Debe coincidir con la imagen del servicio MySQL |
+| `SeedUsers__0__Email`, `SeedUsers__0__Password` | Usuario inicial | Se crea al arrancar si no existe |
+| `Registration__InviteCode` | Código compartido (mínimo 12 caracteres) | Protege `/registro`; vacío = apagado |
+| `ForwardedHeaders__Enabled` | `true` | Confía en `X-Forwarded-For` y `X-Forwarded-Proto` del proxy de Railway, para que HTTPS y el limitador de intentos vean el esquema y la IP reales. **Actívelo solo detrás del proxy**: llegando directo al contenedor, un cliente podría falsificar la cabecera y evadir el limitador por IP |
+| `DataProtection__Provider` | `Database` | Guarda las claves de Data Protection en la tabla `dp_keys`, de modo que sesiones y enlaces de correo sobreviven a un redespliegue. Las claves quedan **sin cifrar** en la base (misma confianza que los datos, red privada de Railway); el cifrado con certificado está aplazado. `Default` (por defecto) las deja en el disco efímero del contenedor |
+| `Assistant__Provider`, `Gemini__ApiKey` | `Fake` o `Gemini` + clave | Ver «Asistente: Fake o Gemini» |
+| `RateLimiting__Enabled` | `true` | Recomendado junto con `ForwardedHeaders__Enabled` |
+
+Pasos:
+
+1. Cree el servicio MySQL **fijando la imagen en `mysql:8.4`** (la plantilla de Railway despliega `mysql:9` por defecto) y defina `Database__MySqlServerVersion=8.4.0`.
+2. **Comando previo al despliegue** (`pre-deploy command`): `dotnet RutaProducto.Web.dll --migrate`. Aplica las migraciones pendientes con la cadena de conexión configurada y termina con código 0, o con código distinto de cero y un error registrado; no arranca el servidor ni siembra usuarios. El arranque normal no migra.
+3. **Ruta de comprobación de salud** (`healthcheck path`): `/health`. Responde 200 `ok` sin autenticación ni consulta a la base de datos (solo comprueba que el proceso vive).
+4. El disco del contenedor es efímero: los **archivos adjuntos locales se pierden en cada despliegue** hasta que exista almacenamiento S3 (pendiente, `AGENTS.md` §6.4). Los registros salen por la salida estándar de Railway.
 
 ## Ejecutar
 
@@ -273,7 +298,7 @@ Las pruebas no necesitan base de datos. Cubren el orden del pipeline de MediatR 
 
 ## Registros
 
-Serilog escribe archivos de texto en `Logs/log-AAAAMMDD.log`, relativos al directorio de trabajo de la aplicación, con rotación diaria y un máximo de 7 archivos. En desarrollo, los registros también se muestran en la consola. Cada línea incluye un `CorrelationId` por petición HTTP o por circuito de Blazor. Nunca se registra el contenido de los comandos, solo su nombre y su duración.
+Serilog escribe archivos de texto en `Logs/log-AAAAMMDD.log`, relativos al directorio de trabajo de la aplicación, con rotación diaria y un máximo de 7 archivos. Los registros también se muestran en la consola en todos los entornos, con la misma plantilla (Railway lee la salida estándar). Cada línea incluye un `CorrelationId` por petición HTTP o por circuito de Blazor. Nunca se registra el contenido de los comandos, solo su nombre y su duración.
 
 ## Estilos
 

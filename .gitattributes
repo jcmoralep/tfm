@@ -5,3 +5,5 @@ tests/RutaProducto.Infrastructure.Tests/Artifacts/Goldens/*.md text eol=lf
 ' errors after a Windows checkout.
 *.sh text eol=lf
 *.py text eol=lf
+Dockerfile text eol=lf
+.dockerignore text eol=lf
