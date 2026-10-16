@@ -1,7 +1,9 @@
 using RutaProducto.Application.Abstractions.Authentication;
 using RutaProducto.Domain.Common;
 using RutaProducto.Domain.Context;
+using RutaProducto.Application.Features.Initiatives.RecordInitiativeActivity;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace RutaProducto.Application.Features.Context.AddNoteAttachment;
 
@@ -10,7 +12,8 @@ public sealed class AddNoteAttachmentCommandHandler(
     IAttachmentRepository repository,
     ICurrentUser currentUser,
     TimeProvider timeProvider,
-    ContextLimits limits) : IRequestHandler<AddNoteAttachmentCommand, ContextView>
+    ContextLimits limits,
+    ILogger<AddNoteAttachmentCommandHandler> logger) : IRequestHandler<AddNoteAttachmentCommand, ContextView>
 {
     public async Task<ContextView> Handle(AddNoteAttachmentCommand request, CancellationToken cancellationToken)
     {
@@ -28,6 +31,8 @@ public sealed class AddNoteAttachmentCommandHandler(
         await repository.AddAsync(
             Attachment.CreateNote(initiative.Id, ownerId, request.Title, request.Text, timeProvider.GetUtcNow()),
             cancellationToken);
+
+        await sender.RecordActivityAsync(logger, initiative.Id, cancellationToken);
 
         return ContextView.From(await repository.ListAsync(initiative.Id, ownerId, cancellationToken), limits);
     }

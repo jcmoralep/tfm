@@ -1,0 +1,35 @@
+@using RutaProducto.Application.Features.Initiatives.GetDashboard
+
+<section aria-labelledby="resume-title" class="h-full rounded-card border border-line bg-surface-raised p-5 shadow-card">
+    <h2 id="resume-title" class="text-lg font-semibold text-ink">Retome donde lo dejó</h2>
+
+    @if (Items.Count == 0)
+    {
+        <p class="mt-3 text-sm text-ink-muted">No tiene iniciativas pendientes. Todas están listas para construir.</p>
+    }
+    else
+    {
+        <ul class="mt-3 divide-y divide-line">
+            @foreach (var item in Items)
+            {
+                var step = DashboardLabels.NextStep(item.Id, item.Status);
+                <li class="py-3">
+                    <p class="break-words font-medium text-ink">@item.Name</p>
+                    <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                        <StatusBadge Status="item.Status" />
+                        <span class="text-ink-muted">@DashboardLabels.RelativeTime(item.ActivityAt, Now)</span>
+                    </div>
+                    <a href="@step.Href" class="mt-2 inline-block text-sm font-semibold text-primary-ink hover:underline">@step.Label<span class="sr-only"> de @item.Name</span></a>
+                </li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<DashboardItem> Items { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public DateTimeOffset Now { get; set; }
+}

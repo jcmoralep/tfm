@@ -9,6 +9,7 @@ using RutaProducto.Application.Features.Context.GetContext;
 using RutaProducto.Application.Features.Context.GetContextForAssistant;
 using RutaProducto.Application.Features.Initiatives.GetInitiative;
 using RutaProducto.Application.Features.Initiatives.MarkReadyToBuild;
+using RutaProducto.Application.Features.Initiatives.RecordInitiativeActivity;
 using RutaProducto.Application.Features.Initiatives.ReopenPlanning;
 using RutaProducto.Application.Features.Initiatives.SetInitiativeDepth;
 using RutaProducto.Application.Features.Initiatives.StartPlanning;
@@ -71,12 +72,14 @@ public sealed class ModulesSender(
                 return (TResponse)(object)file;
             case AddLinkAttachmentCommand command when context is not null:
                 var link = await new AddLinkAttachmentCommandHandler(
-                    this, context.Attachments, currentUser, timeProvider, context.Limits).Handle(command, cancellationToken);
+                    this, context.Attachments, currentUser, timeProvider, context.Limits,
+                    context.Loggers.CreateLogger<AddLinkAttachmentCommandHandler>()).Handle(command, cancellationToken);
 
                 return (TResponse)(object)link;
             case AddNoteAttachmentCommand command when context is not null:
                 var note = await new AddNoteAttachmentCommandHandler(
-                    this, context.Attachments, currentUser, timeProvider, context.Limits).Handle(command, cancellationToken);
+                    this, context.Attachments, currentUser, timeProvider, context.Limits,
+                    context.Loggers.CreateLogger<AddNoteAttachmentCommandHandler>()).Handle(command, cancellationToken);
 
                 return (TResponse)(object)note;
             case DeleteAttachmentCommand command when context is not null:
@@ -111,6 +114,9 @@ public sealed class ModulesSender(
                 break;
             case MarkReadyToBuildCommand command:
                 await new MarkReadyToBuildCommandHandler(initiatives, currentUser, timeProvider).Handle(command, cancellationToken);
+                break;
+            case RecordInitiativeActivityCommand command:
+                await new RecordInitiativeActivityCommandHandler(initiatives, currentUser, timeProvider).Handle(command, cancellationToken);
                 break;
             case ReopenPlanningCommand command:
                 await new ReopenPlanningCommandHandler(initiatives, currentUser, timeProvider).Handle(command, cancellationToken);

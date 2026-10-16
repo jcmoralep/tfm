@@ -14,6 +14,7 @@ using RutaProducto.Application.Tests.Features.Initiatives;
 using RutaProducto.Application.Tests.TestDoubles;
 using RutaProducto.Domain.Artifacts;
 using RutaProducto.Domain.Initiatives;
+using Microsoft.Extensions.Logging;
 
 namespace RutaProducto.Application.Tests.Features.Artifacts;
 
@@ -43,24 +44,26 @@ public sealed class ArtifactTestContext
 
     public FixedTimeProvider Clock => Initiatives.Clock;
 
+    private ILogger<T> Log<T>() => Assistant.ContextRoutes.Loggers.CreateLogger<T>();
+
     public Task<ArtifactView> Generate(Guid id, ArtifactType type) =>
-        new GenerateArtifactCommandHandler(Sender, Artifacts, Drafter, User, Clock)
+        new GenerateArtifactCommandHandler(Sender, Artifacts, Drafter, User, Clock, Log<GenerateArtifactCommandHandler>())
             .Handle(new GenerateArtifactCommand(id, type), default);
 
     public Task<ArtifactView> Save(Guid id, ArtifactType type, int expectedVersion, string content) =>
-        new SaveArtifactContentCommandHandler(Sender, Artifacts, User, Clock)
+        new SaveArtifactContentCommandHandler(Sender, Artifacts, User, Clock, Log<SaveArtifactContentCommandHandler>())
             .Handle(new SaveArtifactContentCommand(id, type, expectedVersion, content), default);
 
     public Task<ArtifactView> Regenerate(Guid id, ArtifactType type, int expectedVersion, bool confirmed = true) =>
-        new RegenerateArtifactCommandHandler(Sender, Artifacts, Drafter, User, Clock)
+        new RegenerateArtifactCommandHandler(Sender, Artifacts, Drafter, User, Clock, Log<RegenerateArtifactCommandHandler>())
             .Handle(new RegenerateArtifactCommand(id, type, expectedVersion, confirmed), default);
 
     public Task<ArtifactView> Approve(Guid id, ArtifactType type, int expectedVersion) =>
-        new ApproveArtifactCommandHandler(Sender, Artifacts, User, Clock)
+        new ApproveArtifactCommandHandler(Sender, Artifacts, User, Clock, Log<ApproveArtifactCommandHandler>())
             .Handle(new ApproveArtifactCommand(id, type, expectedVersion), default);
 
     public Task<ArtifactView> Assign(Guid id, ArtifactType type, int expectedVersion, params QuestionAssignment[] assignments) =>
-        new AssignQuestionOwnersCommandHandler(Sender, Artifacts, User, Clock)
+        new AssignQuestionOwnersCommandHandler(Sender, Artifacts, User, Clock, Log<AssignQuestionOwnersCommandHandler>())
             .Handle(new AssignQuestionOwnersCommand(id, type, expectedVersion, assignments), default);
 
     public Task<ArtifactView?> Get(Guid id, ArtifactType type) =>

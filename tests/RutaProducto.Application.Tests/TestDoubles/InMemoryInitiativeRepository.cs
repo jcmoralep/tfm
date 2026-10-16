@@ -1,6 +1,7 @@
 using System.Reflection;
 using RutaProducto.Application.Common.Exceptions;
 using RutaProducto.Application.Features.Initiatives;
+using RutaProducto.Application.Features.Initiatives.GetDashboard;
 using RutaProducto.Domain.Initiatives;
 
 namespace RutaProducto.Application.Tests.TestDoubles;
@@ -14,6 +15,9 @@ namespace RutaProducto.Application.Tests.TestDoubles;
 public sealed class InMemoryInitiativeRepository : IInitiativeRepository
 {
     private readonly List<Initiative> stored = [];
+
+    // LastActivityAt has a private setter: production writes it through the repository's targeted update, so the double does the same.
+    private static readonly PropertyInfo LastActivityProperty = typeof(Initiative).GetProperty(nameof(Initiative.LastActivityAt))!;
 
     private static readonly MethodInfo MemberwiseCloneMethod =
         typeof(object).GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic)!;
@@ -48,6 +52,18 @@ public sealed class InMemoryInitiativeRepository : IInitiativeRepository
             .OrderByDescending(i => i.UpdatedAt)
             .ThenByDescending(i => i.Id)
             .Select(i => new InitiativeSummary(i.Id, i.Name, i.Status, i.DepthMode, i.Depth, i.UpdatedAt))
+            .ToList();
+
+        return Task.FromResult(result);
+    }
+
+    public Task<IReadOnlyList<DashboardInitiative>> ListDashboardSnapshotsAsync(
+        IReadOnlyCollection<string> ownerIds,
+        CancellationToken cancellationToken)
+    {
+        IReadOnlyList<DashboardInitiative> result = stored
+            .Where(i => ownerIds.Contains(i.CreatedByUserId) && i.DeletedAt is null)
+            .Select(i => new DashboardInitiative(i.Id, i.Name, i.Status, i.Depth, i.CreatedAt, i.UpdatedAt, i.ReadyToBuildAt, i.LastActivityAt))
             .ToList();
 
         return Task.FromResult(result);
@@ -97,6 +113,27 @@ public sealed class InMemoryInitiativeRepository : IInitiativeRepository
         UpdateCount++;
 
         return Task.CompletedTask;
+    }
+
+    public Task<bool> RecordActivityAsync(
+        string ownerId,
+        Guid initiativeId,
+        DateTimeOffset now,
+        TimeSpan minimumInterval,
+        CancellationToken cancellationToken)
+    {
+        var record = Visible(ownerId).FirstOrDefault(i => i.Id == initiativeId);
+
+        // Same rule as the SQL: the activity must be at least minimumInterval old. Only LastActivityAt changes.
+        if (record is null || now - (record.LastActivityAt ?? record.UpdatedAt) < minimumInterval)
+        {
+            return Task.FromResult(false);
+        }
+
+        LastActivityProperty.SetValue(record, now);
+        UpdateCount++;
+
+        return Task.FromResult(true);
     }
 
     // The aggregate only holds value types and strings, so a shallow copy is a full detached copy.

@@ -287,7 +287,7 @@ Pasos:
 dotnet run --project src/RutaProducto.Web
 ```
 
-La aplicación queda disponible en `http://localhost:5080` (perfil `http`) o `https://localhost:7080` (perfil `https`). La página de inicio requiere sesión; sin ella, redirige a `/login`.
+La aplicación queda disponible en `http://localhost:5080` (perfil `http`) o `https://localhost:7080` (perfil `https`). La página de inicio requiere sesión; sin ella, redirige a `/login`. Una vez dentro, es un panel con el número de iniciativas por estado, cifras clave, las iniciativas por retomar, la actividad de las últimas 8 semanas y el reparto por profundidad (RF-90); usa solo las iniciativas de la persona. «Sin movimiento», las iniciativas por retomar y la actividad reciente se basan en la última actividad real (mensajes al asistente, cambios y aprobaciones de documentos, adjuntos y cambios de la propia iniciativa; RF-92).
 
 ## Pruebas
 

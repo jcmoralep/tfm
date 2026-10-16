@@ -1,0 +1,53 @@
+@using RutaProducto.Application.Features.Initiatives.GetDashboard
+
+<section aria-labelledby="chart-title" class="h-full rounded-card border border-line bg-surface-raised p-5 shadow-card">
+    <h2 id="chart-title" class="text-lg font-semibold text-ink">Actividad por semana</h2>
+    <p class="mt-1 text-sm text-ink-muted">Las últimas @Weeks.Count semanas, de lunes a domingo.</p>
+
+    <ul class="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink">
+        <li class="flex items-center gap-2"><span class="size-3 rounded-sm bg-primary" aria-hidden="true"></span>Creadas</li>
+        <li class="flex items-center gap-2"><span class="size-3 rounded-sm bg-success-ink" aria-hidden="true"></span>Listas para construir</li>
+    </ul>
+
+    @* The bars are decoration for the eye; the aria-label carries every value for assistive technology. *@
+    <div role="img" aria-label="@DashboardLabels.ChartSummary(Weeks)" class="mt-4 grid grid-cols-8 gap-1">
+        @foreach (var week in Weeks)
+        {
+            <div class="min-w-0 text-center">
+                <div class="flex h-32 items-end justify-center gap-1 border-b border-line">
+                    <div class="@HeightClass(week.Created) w-2.5 rounded-t-sm bg-primary sm:w-4"></div>
+                    <div class="@HeightClass(week.Ready) w-2.5 rounded-t-sm bg-success-ink sm:w-4"></div>
+                </div>
+                <p class="mt-1 text-xs font-medium">
+                    <span class="text-primary-ink">@week.Created</span>
+                    <span class="text-ink-muted" aria-hidden="true">·</span>
+                    <span class="text-success-ink">@week.Ready</span>
+                </p>
+                <p class="text-xs text-ink-muted">@DashboardLabels.WeekLabel(week.WeekStart)</p>
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<DashboardWeek> Weeks { get; set; } = [];
+
+    private int Max => Weeks.Count == 0 ? 0 : Weeks.Max(week => Math.Max(week.Created, week.Ready));
+
+    // Literal class names, so Tailwind finds each one at build time.
+    private string HeightClass(int value) => DashboardLabels.BarLevel(value, Max) switch
+    {
+        1 => "h-[10%]",
+        2 => "h-[20%]",
+        3 => "h-[30%]",
+        4 => "h-[40%]",
+        5 => "h-[50%]",
+        6 => "h-[60%]",
+        7 => "h-[70%]",
+        8 => "h-[80%]",
+        9 => "h-[90%]",
+        10 => "h-full",
+        _ => "h-0",
+    };
+}

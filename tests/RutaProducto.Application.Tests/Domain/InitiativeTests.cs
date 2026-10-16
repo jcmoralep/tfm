@@ -295,6 +295,7 @@ public sealed class InitiativeTests
         initiative.MarkReadyToBuild(T1);
 
         Assert.Equal(InitiativeStatus.ReadyToBuild, initiative.Status);
+        Assert.Equal(T1, initiative.ReadyToBuildAt);
         Assert.Equal("App de pagos", initiative.Name);
         Assert.Equal(DepthMode.Manual, initiative.DepthMode);
         Assert.Equal(InitiativeDepth.Standard, initiative.Depth);
@@ -311,6 +312,7 @@ public sealed class InitiativeTests
 
         Assert.Equal(InitiativeStatus.ReadyToBuild, initiative.Status);
         Assert.Equal(T1, initiative.UpdatedAt);
+        Assert.Equal(T1, initiative.ReadyToBuildAt);
     }
 
     [Theory]
@@ -331,11 +333,13 @@ public sealed class InitiativeTests
     [Fact]
     public void ReopenPlanning_moves_a_ready_initiative_back_and_refreshes_updated_at()
     {
-        var initiative = InStatus(InitiativeStatus.ReadyToBuild);
+        var initiative = InStatus(InitiativeStatus.Planning);
+        initiative.MarkReadyToBuild(T0);
 
         initiative.ReopenPlanning(T1);
 
         Assert.Equal(InitiativeStatus.Planning, initiative.Status);
+        Assert.Null(initiative.ReadyToBuildAt);
         Assert.Equal(DepthMode.Manual, initiative.DepthMode);
         Assert.Equal(InitiativeDepth.Standard, initiative.Depth);
         Assert.Equal(T1, initiative.UpdatedAt);
@@ -415,5 +419,41 @@ public sealed class InitiativeTests
 
         Assert.Equal(T1, initiative.DeletedAt);
         Assert.Equal(T1, initiative.UpdatedAt);
+    }
+
+    [Fact]
+    public void A_new_initiative_starts_its_activity_at_creation()
+    {
+        var initiative = NewDraft();
+
+        Assert.Equal(T0, initiative.LastActivityAt);
+    }
+
+    [Fact]
+    public void Every_mutator_that_changes_the_initiative_refreshes_both_dates()
+    {
+        var initiative = NewDraft();
+        var step = T0;
+
+        var mutators = new Action<DateTimeOffset>[]
+        {
+            now => initiative.Rename("Otro", null, now),
+            now => initiative.SetDepth(DepthMode.Manual, InitiativeDepth.Small, now),
+            now => initiative.MoveToStep(CreationStep.Depth, now),
+            initiative.Complete,
+            initiative.StartPlanning,
+            initiative.MarkReadyToBuild,
+            initiative.ReopenPlanning,
+            initiative.Delete,
+        };
+
+        foreach (var mutate in mutators)
+        {
+            step = step.AddMinutes(1);
+
+            mutate(step);
+
+            Assert.Equal((step, step), (initiative.UpdatedAt, initiative.LastActivityAt));
+        }
     }
 }

@@ -1,5 +1,6 @@
 using RutaProducto.Application.Common.Exceptions;
 using RutaProducto.Application.Features.Initiatives;
+using RutaProducto.Application.Features.Initiatives.GetDashboard;
 using RutaProducto.Domain.Initiatives;
 using RutaProducto.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -49,6 +50,27 @@ internal sealed class InitiativeRepository(IDbContextFactory<ApplicationDbContex
                 initiative.DepthMode,
                 initiative.Depth,
                 initiative.UpdatedAt))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<DashboardInitiative>> ListDashboardSnapshotsAsync(
+        IReadOnlyCollection<string> ownerIds,
+        CancellationToken cancellationToken)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        return await context.Set<Initiative>()
+            .AsNoTracking()
+            .Where(initiative => ownerIds.Contains(initiative.CreatedByUserId))
+            .Select(initiative => new DashboardInitiative(
+                initiative.Id,
+                initiative.Name,
+                initiative.Status,
+                initiative.Depth,
+                initiative.CreatedAt,
+                initiative.UpdatedAt,
+                initiative.ReadyToBuildAt,
+                initiative.LastActivityAt))
             .ToListAsync(cancellationToken);
     }
 
@@ -104,5 +126,28 @@ internal sealed class InitiativeRepository(IDbContextFactory<ApplicationDbContex
 
         context.Entry(tracked).CurrentValues.SetValues(initiative);
         await context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<bool> RecordActivityAsync(
+        string ownerId,
+        Guid initiativeId,
+        DateTimeOffset now,
+        TimeSpan minimumInterval,
+        CancellationToken cancellationToken)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var threshold = now - minimumInterval;
+
+        // One statement that touches only LastActivityAt: it cannot revert a rename or state change made elsewhere.
+        // The global filter already excludes deleted records; the debounce lives in the WHERE clause.
+        var changed = await context.Set<Initiative>()
+            .Where(initiative => initiative.Id == initiativeId
+                && initiative.CreatedByUserId == ownerId
+                && initiative.DeletedAt == null
+                && (initiative.LastActivityAt ?? initiative.UpdatedAt) <= threshold)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(initiative => initiative.LastActivityAt, now), cancellationToken);
+
+        return changed > 0;
     }
 }

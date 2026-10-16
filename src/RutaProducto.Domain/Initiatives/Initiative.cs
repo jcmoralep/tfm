@@ -4,7 +4,7 @@ namespace RutaProducto.Domain.Initiatives;
 
 /// <summary>
 /// A product idea owned by the user who created it. Every mutator receives the current time so the
-/// aggregate never reads the clock, and every mutator refreshes <see cref="UpdatedAt"/>.
+/// aggregate never reads the clock, and every mutator refreshes <see cref="UpdatedAt"/> and <see cref="LastActivityAt"/>.
 /// </summary>
 public sealed class Initiative
 {
@@ -37,6 +37,16 @@ public sealed class Initiative
     public DateTimeOffset CreatedAt { get; private set; }
 
     public DateTimeOffset UpdatedAt { get; private set; }
+
+    /// <summary>
+    /// When the person last worked on the initiative: its own changes (every mutator) plus messages, documents and attachments,
+    /// which the repository records with one targeted update (<c>IInitiativeRepository.RecordActivityAsync</c>) that never touches
+    /// <see cref="UpdatedAt"/>. Null on records that predate the column: readers fall back to <see cref="UpdatedAt"/>.
+    /// </summary>
+    public DateTimeOffset? LastActivityAt { get; private set; }
+
+    /// <summary>When the initiative last became ReadyToBuild; null in any other status (reopening clears it).</summary>
+    public DateTimeOffset? ReadyToBuildAt { get; private set; }
 
     public DateTimeOffset? DeletedAt { get; private set; }
 
@@ -78,7 +88,7 @@ public sealed class Initiative
 
         Name = trimmedName;
         Description = string.IsNullOrWhiteSpace(description) ? null : description;
-        UpdatedAt = now;
+        Touch(now);
     }
 
     /// <summary>
@@ -113,7 +123,7 @@ public sealed class Initiative
 
         DepthMode = mode;
         Depth = depth;
-        UpdatedAt = now;
+        Touch(now);
     }
 
     /// <summary>Records the wizard step to reopen. Only drafts have a wizard.</summary>
@@ -125,7 +135,7 @@ public sealed class Initiative
         }
 
         CreationStep = step;
-        UpdatedAt = now;
+        Touch(now);
     }
 
     /// <summary>Finishes the wizard: Draft becomes Clarifying.</summary>
@@ -148,7 +158,7 @@ public sealed class Initiative
 
         Status = InitiativeStatus.Clarifying;
         CreationStep = CreationStep.Review;
-        UpdatedAt = now;
+        Touch(now);
     }
 
     /// <summary>
@@ -173,7 +183,7 @@ public sealed class Initiative
         }
 
         Status = InitiativeStatus.Planning;
-        UpdatedAt = now;
+        Touch(now);
     }
 
     /// <summary>
@@ -193,7 +203,8 @@ public sealed class Initiative
         }
 
         Status = InitiativeStatus.ReadyToBuild;
-        UpdatedAt = now;
+        ReadyToBuildAt = now;
+        Touch(now);
     }
 
     /// <summary>
@@ -213,7 +224,8 @@ public sealed class Initiative
         }
 
         Status = InitiativeStatus.Planning;
-        UpdatedAt = now;
+        ReadyToBuildAt = null;
+        Touch(now);
     }
 
     /// <summary>Soft delete. Deleting an already deleted initiative changes nothing.</summary>
@@ -225,6 +237,12 @@ public sealed class Initiative
         }
 
         DeletedAt = now;
+        Touch(now);
+    }
+
+    private void Touch(DateTimeOffset now)
+    {
         UpdatedAt = now;
+        LastActivityAt = now;
     }
 }

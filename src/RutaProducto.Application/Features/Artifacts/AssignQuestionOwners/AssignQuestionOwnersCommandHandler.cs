@@ -2,6 +2,7 @@ using RutaProducto.Application.Abstractions.Authentication;
 using RutaProducto.Application.Features.Artifacts.Markdown;
 using RutaProducto.Domain.Artifacts;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace RutaProducto.Application.Features.Artifacts.AssignQuestionOwners;
 
@@ -13,7 +14,8 @@ public sealed class AssignQuestionOwnersCommandHandler(
     ISender sender,
     IArtifactRepository repository,
     ICurrentUser currentUser,
-    TimeProvider timeProvider) : IRequestHandler<AssignQuestionOwnersCommand, ArtifactView>
+    TimeProvider timeProvider,
+    ILogger<AssignQuestionOwnersCommandHandler> logger) : IRequestHandler<AssignQuestionOwnersCommand, ArtifactView>
 {
     public async Task<ArtifactView> Handle(AssignQuestionOwnersCommand request, CancellationToken cancellationToken)
     {
@@ -28,7 +30,7 @@ public sealed class AssignQuestionOwnersCommandHandler(
 
         var content = Artifact.NormalizeContent(QuestionOwners.Apply(artifact.Content, request.Assignments));
 
-        await ArtifactGuards.SaveEditAsync(sender, repository, timeProvider, initiative, artifact, content, request.ExpectedVersion, cancellationToken);
+        await ArtifactGuards.SaveEditAsync(sender, repository, timeProvider, logger, initiative, artifact, content, request.ExpectedVersion, cancellationToken);
 
         return await ArtifactGuards.ReloadViewAsync(sender, repository, ownerId, initiative.Id, request.Type, cancellationToken);
     }

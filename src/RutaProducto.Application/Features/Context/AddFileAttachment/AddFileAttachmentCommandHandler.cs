@@ -2,6 +2,7 @@ using RutaProducto.Application.Abstractions.Authentication;
 using RutaProducto.Application.Abstractions.Storage;
 using RutaProducto.Domain.Common;
 using RutaProducto.Domain.Context;
+using RutaProducto.Application.Features.Initiatives.RecordInitiativeActivity;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -65,6 +66,8 @@ public sealed class AddFileAttachmentCommandHandler(
 
             throw;
         }
+
+        await sender.RecordActivityAsync(logger, initiative.Id, cancellationToken);
 
         return ContextView.From(await repository.ListAsync(initiative.Id, ownerId, cancellationToken), limits);
     }

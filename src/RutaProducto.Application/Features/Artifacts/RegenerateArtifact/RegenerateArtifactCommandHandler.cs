@@ -3,6 +3,8 @@ using RutaProducto.Application.Features.Initiatives.ReopenPlanning;
 using RutaProducto.Domain.Artifacts;
 using RutaProducto.Domain.Common;
 using RutaProducto.Domain.Initiatives;
+using RutaProducto.Application.Features.Initiatives.RecordInitiativeActivity;
+using Microsoft.Extensions.Logging;
 using MediatR;
 
 namespace RutaProducto.Application.Features.Artifacts.RegenerateArtifact;
@@ -16,7 +18,8 @@ public sealed class RegenerateArtifactCommandHandler(
     IArtifactRepository repository,
     IArtifactDrafter drafter,
     ICurrentUser currentUser,
-    TimeProvider timeProvider) : IRequestHandler<RegenerateArtifactCommand, ArtifactView>
+    TimeProvider timeProvider,
+    ILogger<RegenerateArtifactCommandHandler> logger) : IRequestHandler<RegenerateArtifactCommand, ArtifactView>
 {
     public async Task<ArtifactView> Handle(RegenerateArtifactCommand request, CancellationToken cancellationToken)
     {
@@ -49,6 +52,7 @@ public sealed class RegenerateArtifactCommandHandler(
 
         artifact.Replace(content, timeProvider.GetUtcNow());
         await repository.SaveAsync(artifact, request.ExpectedVersion, cancellationToken);
+        await sender.RecordActivityAsync(logger, initiative.Id, cancellationToken);
 
         return await ArtifactGuards.ReloadViewAsync(sender, repository, ownerId, initiative.Id, request.Type, cancellationToken);
     }

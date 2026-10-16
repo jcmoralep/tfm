@@ -1,6 +1,7 @@
 using RutaProducto.Application.Features.Context;
 using RutaProducto.Application.Features.Context.GetContextForAssistant;
 using RutaProducto.Application.Features.Initiatives.GetInitiative;
+using RutaProducto.Application.Features.Initiatives.RecordInitiativeActivity;
 using RutaProducto.Application.Features.Initiatives.SetInitiativeDepth;
 using RutaProducto.Application.Features.Initiatives.StartPlanning;
 using MediatR;
@@ -64,6 +65,9 @@ public sealed class InitiativesSender(
                 break;
             case SetInitiativeDepthCommand command:
                 await new SetInitiativeDepthCommandHandler(repository, currentUser, timeProvider).Handle(command, cancellationToken);
+                break;
+            case RecordInitiativeActivityCommand command:
+                await new RecordInitiativeActivityCommandHandler(repository, currentUser, timeProvider).Handle(command, cancellationToken);
                 break;
             default:
                 throw new NotSupportedException($"{request.GetType().Name} is not routed by this double.");

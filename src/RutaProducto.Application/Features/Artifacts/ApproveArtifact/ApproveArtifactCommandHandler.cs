@@ -4,6 +4,8 @@ using RutaProducto.Application.Features.Initiatives.MarkReadyToBuild;
 using RutaProducto.Domain.Artifacts;
 using RutaProducto.Domain.Common;
 using RutaProducto.Domain.Initiatives;
+using RutaProducto.Application.Features.Initiatives.RecordInitiativeActivity;
+using Microsoft.Extensions.Logging;
 using MediatR;
 
 namespace RutaProducto.Application.Features.Artifacts.ApproveArtifact;
@@ -19,7 +21,8 @@ public sealed class ApproveArtifactCommandHandler(
     ISender sender,
     IArtifactRepository repository,
     ICurrentUser currentUser,
-    TimeProvider timeProvider) : IRequestHandler<ApproveArtifactCommand, ArtifactView>
+    TimeProvider timeProvider,
+    ILogger<ApproveArtifactCommandHandler> logger) : IRequestHandler<ApproveArtifactCommand, ArtifactView>
 {
     public async Task<ArtifactView> Handle(ApproveArtifactCommand request, CancellationToken cancellationToken)
     {
@@ -46,6 +49,7 @@ public sealed class ApproveArtifactCommandHandler(
 
             artifact.Approve(timeProvider.GetUtcNow());
             await repository.SaveAsync(artifact, request.ExpectedVersion, cancellationToken);
+            await sender.RecordActivityAsync(logger, initiative.Id, cancellationToken);
         }
 
         var summaries = await repository.ListAsync(initiative.Id, ownerId, cancellationToken);

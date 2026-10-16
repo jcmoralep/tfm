@@ -1,6 +1,7 @@
 using RutaProducto.Application.Abstractions.Authentication;
 using RutaProducto.Domain.Artifacts;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace RutaProducto.Application.Features.Artifacts.SaveArtifactContent;
 
@@ -12,7 +13,8 @@ public sealed class SaveArtifactContentCommandHandler(
     ISender sender,
     IArtifactRepository repository,
     ICurrentUser currentUser,
-    TimeProvider timeProvider) : IRequestHandler<SaveArtifactContentCommand, ArtifactView>
+    TimeProvider timeProvider,
+    ILogger<SaveArtifactContentCommandHandler> logger) : IRequestHandler<SaveArtifactContentCommand, ArtifactView>
 {
     public async Task<ArtifactView> Handle(SaveArtifactContentCommand request, CancellationToken cancellationToken)
     {
@@ -28,7 +30,7 @@ public sealed class SaveArtifactContentCommandHandler(
         // Validated before anything is written, so a rejected text cannot leave the initiative reopened.
         var content = Artifact.NormalizeContent(request.Content);
 
-        await ArtifactGuards.SaveEditAsync(sender, repository, timeProvider, initiative, artifact, content, request.ExpectedVersion, cancellationToken);
+        await ArtifactGuards.SaveEditAsync(sender, repository, timeProvider, logger, initiative, artifact, content, request.ExpectedVersion, cancellationToken);
 
         return await ArtifactGuards.ReloadViewAsync(sender, repository, ownerId, initiative.Id, request.Type, cancellationToken);
     }
