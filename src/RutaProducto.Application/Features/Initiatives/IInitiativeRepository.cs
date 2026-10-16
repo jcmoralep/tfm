@@ -32,4 +32,16 @@ public interface IInitiativeRepository
     /// so a stale edit never brings a deleted initiative back.
     /// </summary>
     Task UpdateAsync(Initiative initiative, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Sets only <c>LastActivityAt</c> to <paramref name="now"/> in one atomic statement, so a concurrent edit is never
+    /// overwritten. Applies only to the owner's non-deleted initiative whose effective activity (last activity, or last
+    /// change when there is none) is at least <paramref name="minimumInterval"/> old. Returns whether a row changed.
+    /// </summary>
+    Task<bool> RecordActivityAsync(
+        string ownerId,
+        Guid initiativeId,
+        DateTimeOffset now,
+        TimeSpan minimumInterval,
+        CancellationToken cancellationToken);
 }

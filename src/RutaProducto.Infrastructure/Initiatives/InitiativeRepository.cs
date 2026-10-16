@@ -127,4 +127,27 @@ internal sealed class InitiativeRepository(IDbContextFactory<ApplicationDbContex
         context.Entry(tracked).CurrentValues.SetValues(initiative);
         await context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<bool> RecordActivityAsync(
+        string ownerId,
+        Guid initiativeId,
+        DateTimeOffset now,
+        TimeSpan minimumInterval,
+        CancellationToken cancellationToken)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var threshold = now - minimumInterval;
+
+        // One statement that touches only LastActivityAt: it cannot revert a rename or state change made elsewhere.
+        // The global filter already excludes deleted records; the debounce lives in the WHERE clause.
+        var changed = await context.Set<Initiative>()
+            .Where(initiative => initiative.Id == initiativeId
+                && initiative.CreatedByUserId == ownerId
+                && initiative.DeletedAt == null
+                && (initiative.LastActivityAt ?? initiative.UpdatedAt) <= threshold)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(initiative => initiative.LastActivityAt, now), cancellationToken);
+
+        return changed > 0;
+    }
 }

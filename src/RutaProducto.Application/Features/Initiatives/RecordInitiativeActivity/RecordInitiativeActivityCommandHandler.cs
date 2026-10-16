@@ -1,5 +1,4 @@
 using RutaProducto.Application.Abstractions.Authentication;
-using RutaProducto.Application.Common.Exceptions;
 using MediatR;
 
 namespace RutaProducto.Application.Features.Initiatives.RecordInitiativeActivity;
@@ -7,7 +6,8 @@ namespace RutaProducto.Application.Features.Initiatives.RecordInitiativeActivity
 /// <summary>
 /// Stores "last activity" on the caller's own initiative. Someone else's, deleted or unknown initiatives are ignored
 /// without an error, so the command reveals nothing. A recent activity (under a minute) is not written again: a chat
-/// of many messages costs one write a minute, not one per message.
+/// of many messages costs one write a minute, not one per message. The check and the write are one atomic statement
+/// that touches only the activity date, so a concurrent rename or state change is never reverted.
 /// </summary>
 public sealed class RecordInitiativeActivityCommandHandler(
     IInitiativeRepository repository,
@@ -20,29 +20,11 @@ public sealed class RecordInitiativeActivityCommandHandler(
     {
         var ownerId = await currentUser.GetRequiredIdAsync(cancellationToken);
 
-        var initiative = await repository.GetAsync(request.InitiativeId, ownerId, cancellationToken);
-
-        if (initiative is null)
-        {
-            return;
-        }
-
-        var now = timeProvider.GetUtcNow();
-
-        if (now - initiative.EffectiveActivityAt < DebounceWindow)
-        {
-            return;
-        }
-
-        initiative.RecordActivity(now);
-
-        try
-        {
-            await repository.UpdateAsync(initiative, cancellationToken);
-        }
-        catch (NotFoundException)
-        {
-            // Deleted between the read and the write: nothing left to note.
-        }
+        await repository.RecordActivityAsync(
+            ownerId,
+            request.InitiativeId,
+            timeProvider.GetUtcNow(),
+            DebounceWindow,
+            cancellationToken);
     }
 }

@@ -112,6 +112,27 @@ public sealed class InMemoryInitiativeRepository : IInitiativeRepository
         return Task.CompletedTask;
     }
 
+    public Task<bool> RecordActivityAsync(
+        string ownerId,
+        Guid initiativeId,
+        DateTimeOffset now,
+        TimeSpan minimumInterval,
+        CancellationToken cancellationToken)
+    {
+        var record = Visible(ownerId).FirstOrDefault(i => i.Id == initiativeId);
+
+        // Same rule as the SQL: the activity must be at least minimumInterval old. Only LastActivityAt changes.
+        if (record is null || now - record.EffectiveActivityAt < minimumInterval)
+        {
+            return Task.FromResult(false);
+        }
+
+        record.RecordActivity(now);
+        UpdateCount++;
+
+        return Task.FromResult(true);
+    }
+
     // The aggregate only holds value types and strings, so a shallow copy is a full detached copy.
     private static Initiative Copy(Initiative source) => (Initiative)MemberwiseCloneMethod.Invoke(source, null)!;
 
