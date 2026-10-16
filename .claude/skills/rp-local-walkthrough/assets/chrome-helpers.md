@@ -58,4 +58,4 @@ Document generation can exceed the 120 s MCP limit; the call then moves to the b
 
 ## POSTs that must reach the rate limiter
 
-Fetch the form first, take `__RequestVerificationToken`, and post it. The limiter runs before antiforgery and counts tokenless POSTs too, but they are answered 400 by the endpoint, so only tokened POSTs show the 429 page.
+Fetch the form first, take `__RequestVerificationToken`, and post it. Tokenless POSTs are answered 400 and, as measured on 2026-10-16, never turn into 429 (11 in a row gave 11 × 400), so only tokened POSTs show the 429 page. Send the antiforgery cookie too (a cookie jar).

@@ -4,7 +4,7 @@ description: "Trigger: build, test, gate, compilar, correr pruebas, before commi
 license: Apache-2.0
 metadata:
   author: "jcmoralep"
-  version: "1.1"
+  version: "1.2"
 ---
 
 ## Activation Contract
@@ -23,7 +23,7 @@ Load before any commit, PR, merge or "done" claim in this repo, and whenever a c
 
 | Situation | Action |
 |---|---|
-| Plain restore fails on an unreachable feed | Retry with `--ignore-failed-sources -p:NuGetAudit=false -p:WarningsNotAsErrors=NU1507`, and say in the report that the vulnerability audit was skipped (CI will still run it) |
+| Plain restore fails on an unreachable feed | Prefer a nuget.org-only config: `dotnet restore RutaProducto.slnx --configfile <config with only https://api.nuget.org/v3/index.json>`; it keeps the vulnerability audit that CI runs. Only if that is impossible use `--ignore-failed-sources -p:NuGetAudit=false -p:WarningsNotAsErrors=NU1507` and say the audit was skipped (PR #57 failed CI on advisories the offline flags hid) |
 | `Stop-Process` command exits 255 | Expected: verify the port is free (`netstat -ano`) and continue in a new command |
 | Only a `.razor`/Web file changed and the app must restart quickly | `dotnet build src/RutaProducto.Web -c Release --no-restore`, then still run the full gate before commit |
 | A migration was added | Also run `dotnet ef database update` in a walkthrough (see `rp-local-walkthrough`) |
@@ -31,7 +31,7 @@ Load before any commit, PR, merge or "done" claim in this repo, and whenever a c
 ## Execution Steps
 
 1. Stop the app (PowerShell): `Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*RutaProducto.Web.dll*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }`.
-2. `dotnet restore RutaProducto.slnx` (as CI); only on a feed error use the fallback flags from the gate table.
+2. `dotnet restore RutaProducto.slnx` (as CI); on a feed error follow the first row of the gate table.
 3. `dotnet build RutaProducto.slnx -c Release --no-restore`
 4. `dotnet test RutaProducto.slnx -c Release --no-build`
 5. On failure, read the first error, fix the cause, rerun from step 3.

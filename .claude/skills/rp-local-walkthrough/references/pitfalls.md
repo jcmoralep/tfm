@@ -10,7 +10,9 @@
 | Sink writes nothing | Windows Python got a `/c/...` path | Pass `cygpath -m` paths |
 | Stop command exits 255 | PowerShell `Stop-Process` quirk in Git Bash | Check the port, continue in a new command |
 | Page redirects to Inicio instead of `/registro` | Old auth cookie in the shared Chrome profile | Use an isolated context |
-| Tokenless POSTs to `/login` answer 400, never 429 | The limiter runs before antiforgery and counts them, but the endpoint answers 400; in the 2026-10-15 run 12 tokenless POSTs gave 400 and the next tokened ones 429 at once | Send the antiforgery token to observe the 429 page |
+| Tokenless POSTs to `/login` answer 400 and never turn into 429 | Measured 2026-10-16: 11 tokenless POSTs in a row gave 11 × 400 and no 429; with the token the 11th gave 429. The tokenless ones do no account work | Send the antiforgery token (and its cookie) to observe the 429 page |
 | "Algo salió mal" after approving | Focus restored to a button that was removed | Fixed in PR #55 (`TryFocusAsync` tolerates `JSException`); watch for the pattern |
 | Email-off pages answer 500 | `Navigation.NotFound()` in static SSR with status-code re-execute | Redirect to `/not-found?codigo=404` (PR #51) |
+| `/login` answers 500 in a container with `ASPNETCORE_ENVIRONMENT=Production` over plain http | The antiforgery cookie was forced `Secure` (`Always`); the framework refuses to issue it over http | Keep antiforgery on `SameAsRequest` (fixed in PR #58). Production containers also drop the `Secure` session cookie over http: test with `X-Forwarded-Proto: https` + `ForwardedHeaders__Enabled=true`, or use Development |
+| Plain `dotnet restore` passes locally but CI fails with NU1902/NU1903 | The local feed is unreachable, so the offline flags skip the vulnerability audit | Reproduce the audit with `dotnet restore RutaProducto.slnx --configfile <nuget.org-only config>` before pushing (see `rp-build-gate`) |
 | Draft fails with 503 while turns work | Gemini default model overloaded | See `rp-gemini-live-check` (fallback model) |
