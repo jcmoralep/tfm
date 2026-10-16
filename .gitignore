@@ -29,6 +29,7 @@ secrets.json
 
 # Local Claude Code settings
 .claude/settings.local.json
+.claude/worktrees/
 
 # Tailwind standalone CLI (downloaded by Tailwind.targets) and its generated CSS
 .tools/
