@@ -64,7 +64,7 @@ Sistemas y equipos con los que debe coordinarse la solución.
 
 ### 6.1 Dentro
 
-- Todas las funcionalidades de la sección 4.
+- Las funcionalidades de la sección 4, salvo lo que quede fuera según «Fuera» (6.2).
 - **Prioridad**: Primero consultar el estado y, después, recibir avisos.
 
 ### 6.2 Fuera

@@ -123,6 +123,19 @@ public sealed class GeminiArtifactDrafterTests
         Assert.Matches(@"\[ASSUMPTION: A-1\] Supuesto de ", markdown);
     }
 
+    [Fact]
+    public async Task An_assumption_with_an_invented_figure_becomes_an_open_question_in_the_document()
+    {
+        var markdown = await DraftPrd(
+            Reply(ArtifactType.Prd, (AssistantScript.Keys.Constraints, [("Disponibilidad del 99 %.", "assumption"), ("Se pide por correo.", "assumption")])),
+            null);
+
+        Assert.DoesNotContain("99", markdown, StringComparison.Ordinal);
+        Assert.Contains("¿Qué valor o meta se espera para «Requisitos no funcionales»?", markdown, StringComparison.Ordinal);
+        Assert.Contains("Se pide por correo.", markdown, StringComparison.Ordinal);
+        Assert.Empty(ArtifactFormatChecker.Check(ArtifactType.Prd, markdown));
+    }
+
     [Theory]
     [InlineData("FR-9 Debe exportar", "Debe exportar")]
     [InlineData("[ASSUMPTION: A-7] algo", "algo")]

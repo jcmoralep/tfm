@@ -55,6 +55,17 @@ public sealed class GeminiArtifactDrafter(GeminiClient client, ILogger<GeminiArt
             throw new AssistantUnavailableException(ArtifactTexts.DraftMalformed, AssistantUnavailableReason.Malformed);
         }
 
+        // An assumption may not bring a figure nobody gave: it becomes an open question about its section (counts only in the log).
+        if (type is not (ArtifactType.Architecture or ArtifactType.EpicsAndStories))
+        {
+            items = FigureGuard.Filter(items, slots, FigureInputs(request), out var converted);
+
+            if (converted > 0)
+            {
+                logger.LogInformation("{Count} assumption(s) with figures not given by the person became open questions in the draft of a {Type}.", converted, request.Type);
+            }
+        }
+
         // The PRD builds on the approved Brief: its assumptions stay assumptions and its open questions stay open.
         if (request.Type == ArtifactType.Prd && !string.IsNullOrWhiteSpace(request.BriefMarkdown))
         {
@@ -63,6 +74,13 @@ public sealed class GeminiArtifactDrafter(GeminiClient client, ILogger<GeminiArt
 
         return DraftRenderer.Render(request, items);
     }
+
+    // Every text the person wrote or approved, the only place a figure of the draft may come from.
+    private static IEnumerable<string?> FigureInputs(DraftRequest request) =>
+        new[] { request.InitiativeName, request.Description }
+            .Concat(request.Answers.Where(a => !a.IsUnknown && !a.IsNone).Select(a => a.Text))
+            .Concat(request.Type == ArtifactType.Prd ? [request.BriefMarkdown] : [])
+            .Concat((request.Context ?? []).SelectMany(c => new[] { c.Title, c.Text }));
 
     // A section the document does not have, or a source outside the three, makes the whole draft unusable.
     private static bool TryParse(JsonNode json, IReadOnlyList<DraftSlot> slots, out DraftItems items)

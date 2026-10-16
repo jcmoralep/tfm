@@ -158,6 +158,7 @@ Reglas de dependencia: Web → Application → Domain; Infrastructure → Applic
   - `PdfArtifactExporter`: **no existe por ahora** (decisión 2026-10-12, RF-21): el PDF es la impresión del navegador sobre la misma vista del documento.
 - Librería de PDF: **ninguna por ahora**. Si se vuelve a necesitar un PDF generado en el servidor, verificar licencia vigente y compatibilidad con el servidor antes de decidir; preguntar al usuario.
 - Cadena de documentos (nivel Grande): la Arquitectura exige el PRD aprobado y las Épicas exigen la Arquitectura aprobada; ambas se redactan solo desde el texto aprobado del documento anterior (sin respuestas del asistente) y el código numera `AD-n`, `Epic N` y `Story N.M`, filtra toda cita contra el PRD y calcula el mapa de capacidades y el de cobertura (RF-73, RF-74). Si el documento anterior cambia después, la página del dependiente solo muestra un aviso ámbar (RF-54); invalidar en cascada queda en `docs/mejoras-posteriores.md`.
+- Fidelidad del borrador (RF-93): una suposición con una cifra que no está en los textos de la persona se sustituye por una pregunta abierta fija (solo se registra cuántas, sin contenido), y lo que la persona dice que puede esperar va solo a «No objetivos» como pospuesto; fuente BMAD 6.12.1, `bmad-prd/references/headless.md` («Do not invent user detail, success metrics, or scope decisions to fill gaps — record them») y `prd-template.md` §6.2 («Mark items deferred to v2/v3 explicitly»).
 - Aprobación manual del usuario antes de marcar un artefacto como final.
 
 ### 4.10 Idioma
