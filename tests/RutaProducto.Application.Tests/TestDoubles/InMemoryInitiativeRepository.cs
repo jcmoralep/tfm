@@ -16,6 +16,9 @@ public sealed class InMemoryInitiativeRepository : IInitiativeRepository
 {
     private readonly List<Initiative> stored = [];
 
+    // LastActivityAt has a private setter: production writes it through the repository's targeted update, so the double does the same.
+    private static readonly PropertyInfo LastActivityProperty = typeof(Initiative).GetProperty(nameof(Initiative.LastActivityAt))!;
+
     private static readonly MethodInfo MemberwiseCloneMethod =
         typeof(object).GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic)!;
 
@@ -122,12 +125,12 @@ public sealed class InMemoryInitiativeRepository : IInitiativeRepository
         var record = Visible(ownerId).FirstOrDefault(i => i.Id == initiativeId);
 
         // Same rule as the SQL: the activity must be at least minimumInterval old. Only LastActivityAt changes.
-        if (record is null || now - record.EffectiveActivityAt < minimumInterval)
+        if (record is null || now - (record.LastActivityAt ?? record.UpdatedAt) < minimumInterval)
         {
             return Task.FromResult(false);
         }
 
-        record.RecordActivity(now);
+        LastActivityProperty.SetValue(record, now);
         UpdateCount++;
 
         return Task.FromResult(true);

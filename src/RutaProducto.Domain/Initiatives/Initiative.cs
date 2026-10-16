@@ -39,13 +39,11 @@ public sealed class Initiative
     public DateTimeOffset UpdatedAt { get; private set; }
 
     /// <summary>
-    /// When the person last worked on the initiative: its own changes plus messages, documents and attachments
-    /// (<see cref="RecordActivity"/>). Null on records that predate the column; <see cref="EffectiveActivityAt"/> covers it.
+    /// When the person last worked on the initiative: its own changes (every mutator) plus messages, documents and attachments,
+    /// which the repository records with one targeted update (<c>IInitiativeRepository.RecordActivityAsync</c>) that never touches
+    /// <see cref="UpdatedAt"/>. Null on records that predate the column: readers fall back to <see cref="UpdatedAt"/>.
     /// </summary>
     public DateTimeOffset? LastActivityAt { get; private set; }
-
-    /// <summary>The last real activity, falling back to <see cref="UpdatedAt"/> when none was recorded.</summary>
-    public DateTimeOffset EffectiveActivityAt => LastActivityAt ?? UpdatedAt;
 
     /// <summary>When the initiative last became ReadyToBuild; null in any other status (reopening clears it).</summary>
     public DateTimeOffset? ReadyToBuildAt { get; private set; }
@@ -241,12 +239,6 @@ public sealed class Initiative
         DeletedAt = now;
         Touch(now);
     }
-
-    /// <summary>
-    /// Notes work around the initiative (an assistant turn, a document, an attachment) without changing its own data,
-    /// so <see cref="UpdatedAt"/> stays as it was and keeps ordering the list.
-    /// </summary>
-    public void RecordActivity(DateTimeOffset now) => LastActivityAt = now;
 
     private void Touch(DateTimeOffset now)
     {

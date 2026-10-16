@@ -427,28 +427,6 @@ public sealed class InitiativeTests
         var initiative = NewDraft();
 
         Assert.Equal(T0, initiative.LastActivityAt);
-        Assert.Equal(T0, initiative.EffectiveActivityAt);
-    }
-
-    [Fact]
-    public void Recording_activity_sets_only_the_activity_date()
-    {
-        var initiative = NewDraft();
-
-        initiative.RecordActivity(T1);
-
-        Assert.Equal(T1, initiative.LastActivityAt);
-        Assert.Equal(T0, initiative.UpdatedAt);
-        Assert.Equal(T1, initiative.EffectiveActivityAt);
-    }
-
-    [Fact]
-    public void Without_a_recorded_activity_the_last_change_stands_in()
-    {
-        var initiative = NewDraft();
-        typeof(Initiative).GetProperty(nameof(Initiative.LastActivityAt))!.SetValue(initiative, null);
-
-        Assert.Equal(T0, initiative.EffectiveActivityAt);
     }
 
     [Fact]
