@@ -279,6 +279,7 @@ Pasos:
 2. **Comando previo al despliegue** (`pre-deploy command`): `dotnet RutaProducto.Web.dll --migrate`. Aplica las migraciones pendientes con la cadena de conexión configurada y termina con código 0, o con código distinto de cero y un error registrado; no arranca el servidor ni siembra usuarios. El arranque normal no migra.
 3. **Ruta de comprobación de salud** (`healthcheck path`): `/health`. Responde 200 `ok` sin autenticación ni consulta a la base de datos (solo comprueba que el proceso vive).
 4. El disco del contenedor es efímero: los **archivos adjuntos locales se pierden en cada despliegue** hasta que exista almacenamiento S3 (pendiente, `AGENTS.md` §6.4). Los registros salen por la salida estándar de Railway.
+5. **Cookies `Secure`:** fuera de Development, la cookie de sesión se emite siempre con `Secure` (RF-89), también cuando el proxy entrega http plano al contenedor; la de antiforgery sale `Secure` solo si la petición se ve como https, por eso en Railway hay que definir `ForwardedHeaders__Enabled=true`. Consecuencia local: una imagen ejecutada con `ASPNETCORE_ENVIRONMENT=Production` sobre http no conserva la sesión, porque el navegador (o `curl`) no envía una cookie `Secure` por http; use https o `ASPNETCORE_ENVIRONMENT=Development`.
 
 ## Ejecutar
 

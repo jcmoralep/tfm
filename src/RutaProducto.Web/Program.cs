@@ -62,10 +62,17 @@ try
         })
         .AddIdentityCookies();
 
+    var cookieSecurePolicy = CookieSecurity.PolicyFor(builder.Environment);
+
+    // Antiforgery: follow the request scheme (Secure once forwarded headers restore https). Never Always: over plain http the
+    // framework would refuse to issue the cookie and every form page would answer 500.
+    builder.Services.AddAntiforgery(options => options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest);
+
     builder.Services.ConfigureApplicationCookie(options =>
     {
         options.Cookie.Name = "RutaProducto.Auth";
         options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = cookieSecurePolicy;
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.LoginPath = AuthenticationEndpoints.LoginPath;
         options.AccessDeniedPath = AuthenticationEndpoints.LoginPath;
