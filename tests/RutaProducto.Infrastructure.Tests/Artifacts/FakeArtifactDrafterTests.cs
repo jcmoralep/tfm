@@ -216,7 +216,7 @@ public sealed partial class FakeArtifactDrafterTests
 
         Assert.Equal(["- **FR-1**: Buscar un pedido", "- **FR-2**: Debe integrarse con Sistema de inventario", "- **FR-3**: Debe integrarse con Equipo de logística"], Definitions(prd, "FR"));
         Assert.Contains("### Integraciones", prd, StringComparison.Ordinal);
-        Assert.Contains("Todas las funcionalidades de la sección 4.", Section(prd, "6.1 Dentro"), StringComparison.Ordinal);
+        Assert.Contains("Las funcionalidades de la sección 4, salvo lo que quede fuera según «Fuera» (6.2).", Section(prd, "6.1 Dentro"), StringComparison.Ordinal);
     }
 
     [Fact]

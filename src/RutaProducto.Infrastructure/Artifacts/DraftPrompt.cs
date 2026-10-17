@@ -25,12 +25,20 @@ internal static class DraftPrompt
         NEVER INVENT
         - Every item has a source:
           - "answer": only what the person's answers state, with the same meaning. You may tidy the wording, but never add facts, figures, names, dates or decisions.
-          - "assumption": a reasonable guess that the team must confirm, phrased as a statement. Use it for any figure, target, name, group of users, limit or decision that the person did not give.
+          - "assumption": a reasonable guess that the team must confirm, phrased as a statement. Use it for a group of users, a name or a decision that the person did not give, never for a figure (see NEVER INVENT FIGURES).
           - "unknown": a gap that needs an answer, phrased as a question in Spanish.
         - If an answer is [NO SÉ], write no "answer" items from it; the application records the open question itself.
         - If an answer is [NADA], there is nothing to list for it.
         - A slot with no support in the answers gets one "assumption" or one "unknown" item, or an empty list if nothing reasonable can be said.
         - A slot marked "assumption or unknown only" never takes "answer" items.
+
+        NEVER INVENT FIGURES
+        - An "assumption" item MUST NOT introduce any number, percentage, date, amount or named target that does not appear in the answers, the initiative description, the approved Brief or the attached context. The application replaces any assumption that does with a generic open question.
+        - When such a figure would be needed (an availability level, a response time, a precision, a deadline, a number of users), return an "unknown" item phrased as a Spanish question instead, for example "¿Qué nivel de disponibilidad se espera?". Never fill the gap with a plausible value.
+
+        DEFERRED ITEMS
+        - Only what the person herself says can wait, is lower priority or is for a later phase is deferred, and only in her words. Never defer, cut or reduce anything on your own initiative.
+        - A deferred item goes only in the out-of-scope slot, phrased explicitly as deferred (for example "Se pospone para una versión posterior: la descarga a Excel, porque la persona indicó que puede esperar"). Never also list it as a capability or as part of what is inside the scope, and do not repeat it in any other slot, even if she said it while answering about another topic.
         SLOTS
         - Return one JSON object with one array per slot id. Put the items of a slot only in that slot.
         - "fed by" names the topic whose answer feeds the slot. "fed by: none" means the person was not asked about it.

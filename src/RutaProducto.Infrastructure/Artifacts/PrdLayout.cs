@@ -119,7 +119,7 @@ internal static class PrdLayout
 
         if (requirements > 0)
         {
-            c.Line("- Todas las funcionalidades de la sección 4.");
+            c.Line("- Las funcionalidades de la sección 4, salvo lo que quede fuera según «Fuera» (6.2).");
         }
         else if (capabilities is { IsUnknown: true })
         {

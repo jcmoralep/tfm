@@ -89,6 +89,13 @@ Notas de la ejecución del 2026-10-14: `bmad-build` necesita `uv` en el PATH (si
 | Paso 1 de épicas sobre el PRD y la Arquitectura exportados | contenido bien, **descubrimiento falla** | Los patrones del paso (`*prd*.md`, `*prd*/index.md`, `*architecture*.md`, `*architecture*/index.md`) no son recursivos: no encuentran `prds/prd-x/prd.md` ni `architecture/architecture-x/ARCHITECTURE-SPINE.md`. Con las rutas a mano mantuvo `FR-n`, `NFR-n` y `AD-n` con guion y los mismos números, y aceptó el español. La nota de uso de la Arquitectura ahora indica copiar los archivos sueltos a `planning-artifacts/` o dar las rutas. |
 | `epics.md` exportado frente a `bmad-build` y a la lista de validación del paso 4 | cumple, con notas | `bmad-build` lo toma como intención inicial; `status: approved` no está en su lista (`draft`, `ready-for-dev`, `in-progress`, `in-review`, `done`) y se ignora; `stepsCompleted` e `inputDocuments` no se leen. BMAD escribe `inputDocuments` con rutas relativas completas y `status: draft`; nuestra exportación usa nombres de archivo y `approved`. La lista de validación marcó cosas de contenido de la muestra (una épica técnica, criterios débiles), no de formato. |
 
+## 7 ter. Reglas de BMAD sobre cifras inventadas y alcance diferido (6.12.1, cambio `fix/draft-fidelity`)
+
+| Regla de BMAD | Fuente | Cómo se aplica aquí |
+|---|---|---|
+| «Do not invent user detail, success metrics, or scope decisions to fill gaps — record them»; `assumptions[]` son valores inferidos sin confirmación directa y `open_questions[]` cada hueco que necesita una decisión humana | `bmad-prd/references/headless.md` | Una suposición con una cifra ajena a los textos de la persona se convierte en una pregunta abierta fija sobre la sección (RF-93), no se descarta en silencio |
+| «Mark items deferred to v2/v3 explicitly» (6.2 «Out of Scope for MVP») y «De-scoping proposed honestly, not done silently» (lista de validación, sección 5) | `prd-template.md`, `prd-validation-checklist.md` | Solo lo que la persona dice que puede esperar se registra como pospuesto en «No objetivos»/«Fuera»; el modelo no recorta alcance por su cuenta (RF-93) |
+
 ## 8. Cierre de conformidad del cambio `bmad-alignment`
 
 Resultado: **cumple con notas** (comparación por lectura de los cuatro documentos de ejemplo `Goldens/` contra las secciones 2 y 4 de este documento y contra la regla de cierre de `bmad-prd`, paso Finalize 4: lo que no bloquea se difiere con responsable y condición de revisión). No se ejecutó BMAD.

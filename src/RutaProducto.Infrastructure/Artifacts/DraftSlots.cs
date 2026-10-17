@@ -32,8 +32,8 @@ internal static class DraftSlots
         Topic(AssistantScript.Keys.Idea, "Por qué", "The idea in one or two plain sentences."),
         Topic(AssistantScript.Keys.Users, "Por qué", "Who will use it: the roles or groups of people, in one or two items."),
         Topic(AssistantScript.Keys.Problem, "Por qué", "The problem or pain that this solves."),
-        Topic(AssistantScript.Keys.Capabilities, "Capacidades", "What a person must be able to do, one capability per item."),
-        Topic(AssistantScript.Keys.OutOfScope, "No objetivos", "What is explicitly left out for now. At least one item."),
+        Topic(AssistantScript.Keys.Capabilities, "Capacidades", "What a person must be able to do, one capability per item. Leave out anything the person said can wait: it goes to the out-of-scope slot."),
+        Topic(AssistantScript.Keys.OutOfScope, "No objetivos", "What is explicitly left out for now, plus anything the person herself said can wait, phrased as deferred. At least one item."),
         Topic(AssistantScript.Keys.Success, "Señal de éxito", "How success will be noticed. " + MetricRule),
         Open(AssistantScript.Keys.Constraints, "Restricciones", true, "Rules, limits or deadlines. Small initiatives are not asked about them: use answer only if the answers already state one."),
     ];
@@ -44,7 +44,7 @@ internal static class DraftSlots
         Topic(AssistantScript.Keys.Idea, "La solución", "The proposed solution in plain words."),
         Topic(AssistantScript.Keys.Users, "A quién sirve", "The people or groups who will use it."),
         Topic(AssistantScript.Keys.Success, "Criterios de éxito", "How success will be noticed. " + MetricRule),
-        Topic(AssistantScript.Keys.OutOfScope, "Alcance, fuera", "What is explicitly left out for now."),
+        Topic(AssistantScript.Keys.OutOfScope, "Alcance, fuera", "What is explicitly left out for now, plus anything the person herself said can wait, phrased as deferred."),
         Open(Differentiator, "Qué lo hace distinto", false, "What sets this apart from other options. The person was never asked: assumption or unknown only."),
         Open(ScopeInside, "Alcance, dentro", true, "What is inside the scope. Use answer only for what the answers state."),
         Open(Vision, "Visión", true, "The long-term vision. Use answer only for what the answers state."),
@@ -57,10 +57,10 @@ internal static class DraftSlots
         Topic(AssistantScript.Keys.Problem, "Trabajos por hacer", "The jobs people need to get done, each tied to the problem."),
         Open(NonUsers, "No usuarios", false, "Who will not use it. The person was never asked: assumption or unknown only."),
         Open(Glossary, "Glosario", false, "Terms specific to the initiative. The person was never asked: assumption or unknown only."),
-        Topic(AssistantScript.Keys.Capabilities, "Funcionalidades", "What a person must be able to do, one capability per item."),
+        Topic(AssistantScript.Keys.Capabilities, "Funcionalidades", "What a person must be able to do, one capability per item. Leave out anything the person said can wait: it goes to the out-of-scope slot."),
         Topic(AssistantScript.Keys.Constraints, "Requisitos no funcionales", "Rules, limits or deadlines the solution must respect, one per item. Bounds and numbers the person did not give are assumptions or unknowns."),
-        Topic(AssistantScript.Keys.OutOfScope, "No objetivos", "What is explicitly left out for now. At least one item."),
-        Topic(AssistantScript.Keys.Priorities, "Alcance del MVP", "What matters most and what comes first."),
+        Topic(AssistantScript.Keys.OutOfScope, "No objetivos", "What is explicitly left out for now, plus anything the person herself said can wait, phrased as deferred. At least one item."),
+        Topic(AssistantScript.Keys.Priorities, "Alcance del MVP", "What matters most and what comes first. Do not restate deferred items here."),
         Topic(AssistantScript.Keys.Success, "Métricas de éxito", "How success will be noticed. " + MetricRule),
     ];
 

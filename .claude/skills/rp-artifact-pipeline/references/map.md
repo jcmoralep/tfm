@@ -15,4 +15,4 @@
 | UI | Document page, questions panel, downloads, print | `Web/Components/Pages/Artifacts/ArtifactDocument.razor`, `Web/Components/Artifacts/` |
 | Goldens | Expected Markdown per type | `tests/RutaProducto.Infrastructure.Tests/Artifacts/Goldens/` (`spec-small`, `brief-standard`, `prd-standard`, `prd-large`, `architecture-large`, `epics-large`) |
 
-Known model-quality gaps (recorded in `docs/mejoras-posteriores.md`, 2026-10-15): features the person said could wait still appear; invented assumptions (99% availability); awkward integration lines; technical epics; "Suposición A-n" prefixes inside decisions.
+Known model-quality gaps (recorded in `docs/mejoras-posteriores.md`): a feature the person said could wait can still appear as an FR next to its "se pospone" line (the deferral rule is prompt-only, RF-93b; the fix is an optional per-capability "deferred" flag in the reply); awkward integration lines; technical epics; "Suposición A-n" prefixes inside decisions. Invented figures are handled in code (`FigureGuard`, RF-93a).
