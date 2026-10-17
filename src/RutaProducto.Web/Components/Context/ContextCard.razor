@@ -37,22 +37,22 @@
                 @foreach (var item in view.Items)
                 {
                     <li class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3 py-2.5">
-                        <div class="min-w-0 flex-1">
+                        <div class="min-w-0 flex-1 basis-40">
                             @if (item.Kind == AttachmentKind.Note)
                             {
                                 <details>
-                                    <summary class="cursor-pointer break-words text-sm font-medium text-ink">@item.Label</summary>
+                                    <summary class="cursor-pointer [overflow-wrap:anywhere] text-sm font-medium text-ink">@item.Label</summary>
                                     <p class="mt-2 whitespace-pre-line break-words text-sm text-ink">@item.NoteText</p>
                                 </details>
                             }
                             else if (item.Kind == AttachmentKind.Link && ContextLabels.IsWebUrl(item.Url))
                             {
                                 <a href="@item.Url" target="_blank" rel="noopener noreferrer"
-                                   class="break-words text-sm font-medium text-primary-ink underline hover:no-underline">@item.Label</a>
+                                   class="[overflow-wrap:anywhere] text-sm font-medium text-primary-ink underline hover:no-underline">@item.Label</a>
                             }
                             else
                             {
-                                <p class="break-words text-sm font-medium text-ink">@item.Label</p>
+                                <p class="[overflow-wrap:anywhere] text-sm font-medium text-ink">@item.Label</p>
                             }
                             <p class="mt-0.5 text-xs text-ink-muted">@ContextLabels.RowDetail(item)</p>
                         </div>
