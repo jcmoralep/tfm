@@ -217,6 +217,7 @@ Viven en `.claude/` y se versionan con el código. Las skills son contratos de e
 | `rp-security-privacy` | Autenticación, correo, registros, secretos, adjuntos y descargas |
 | `rp-lean-tests` | Pruebas unitarias austeras (§4.1) |
 | `rp-artifact-pipeline` | Cambios en la cadena de documentos: borrador, numeración, exportación |
+| `rp-railway-deploy` | Desplegar y operar en Railway con el CLI local del proyecto: variables, dominio, verificación, apagar y encender para no gastar crédito |
 
 ### Agentes (`.claude/agents/<nombre>.md`)
 
