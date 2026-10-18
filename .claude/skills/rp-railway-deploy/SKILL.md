@@ -18,6 +18,7 @@ Load for any Railway action: first deploy, redeploy, variables, domain, logs, tu
 - Secrets: random values generated inline (`$(openssl rand -hex 16)`), never printed. The database secret reaches the app only as a reference variable. The user's own values go through the Railway dashboard or a value they choose to share (the invite code is meant to be shared).
 - Never deploy the app publicly without `Registration__InviteCode` set (registration is open without it) and never load real company data (AGENTS §4.8, 2026-10-16 decision).
 - The Dockerfile restore step MUST keep `-p:RequiresAspNetWebAssets=true`: without it the image lacks `_framework/blazor.web.js` and every interactive control stays disabled.
+- Every merged PR is published (rule in `rp-ship-pr`, 2026-10-18).
 - After every deploy verify from outside: `/health` 200, the `<script src>` of `/login` answers 200, the cookie flags, and the registration page.
 
 ## Decision Gates
