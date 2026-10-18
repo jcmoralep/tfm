@@ -133,7 +133,8 @@ Límites por iniciativa: 20 elementos y 50 MB de archivos. Se rechazan los archi
 
 - **En Railway el disco del contenedor es efímero:** los archivos locales se pierden en cada nuevo despliegue hasta que exista el almacenamiento S3.
 - Una barra final en `Storage:LocalRootPath` (por ejemplo `/data/`) se ignora. Si un proceso se cae durante una subida puede quedar un archivo temporal `*.part` en la carpeta; no se lista, no cuenta en los límites y no se descarga, y se puede borrar a mano.
-- **Contexto de texto y Gemini.** Con `Assistant:Provider=Gemini`, las notas y los archivos de texto (`.txt`, `.md`, `.markdown`, `.csv`) se envían a Gemini como datos de referencia, igual que el resto de la conversación, y por tanto a la capa gratuita descrita en la advertencia de arriba (la interfaz no avisa, RN-05). Con `Fake` no sale nada. Los enlaces, PDF, imágenes y demás archivos solo se guardan.
+- **Contexto de texto y Gemini.** Con `Assistant:Provider=Gemini`, las notas, los archivos de texto (`.txt`, `.md`, `.markdown`, `.csv`) y los archivos de Word `.docx` y `.pdf` (por su texto extraído) se envían a Gemini como datos de referencia, igual que el resto de la conversación, y por tanto a la capa gratuita descrita en la advertencia de arriba (la interfaz no avisa, RN-05). Con `Fake` no sale nada. Los enlaces, imágenes, `.doc` antiguos y demás archivos solo se guardan. Tope por iniciativa: 10 elementos, 15.000 caracteres por elemento y 60.000 en total (el último elemento recortado termina en `[recortado]`).
+- **Archivos de Word (`.docx`) y PDF leídos en el servidor (RF-94).** Al subir un `.docx`, el servidor extrae su texto y lo guarda como Markdown (títulos, párrafos, listas, tablas y texto de los hipervínculos; sin imágenes, comentarios, encabezados ni macros; de los cambios con control de cambios solo el texto insertado) hasta 200.000 caracteres, con un plazo de 15 segundos. Si no se puede leer (dañado, con contraseña, vacío o demasiado grande), el archivo se guarda igual y la tarjeta avisa «No se pudo leer el texto de este archivo.». **El archivo original sigue en el disco** (efímero en Railway, ver arriba), pero **el texto extraído vive en MySQL**, así que Gemini lo sigue leyendo después de un redespliegue. El archivo se trata como no confiable: se rechaza si el zip tiene más de 2.000 entradas o más de 100 MB descomprimidos, o un XML con DTD; no se escribe en disco para leerlo ni se ejecuta nada. Los registros solo llevan el estado y el número de caracteres. **PDF (`.pdf`):** se lee con PdfPig, página por página y en orden de lectura, como párrafos de texto plano (sin títulos ni tablas inventados), hasta 200.000 caracteres; se rechaza si tiene más de 300 páginas y se corta a los 10 segundos de lectura. Un PDF escaneado (solo imágenes; no hay OCR), con contraseña o dañado queda sin leer y la tarjeta avisa «No se pudo leer el texto de este PDF. Si es un documento escaneado (solo imágenes), no se puede leer: copie el texto en una nota.». No hay claves nuevas de configuración.
 - **No hay análisis de malware.** La mitigación es la lista de bloqueo de extensiones y la descarga forzada como adjunto.
 
 ## Límite de intentos de acceso (RF-78)
@@ -313,3 +314,12 @@ Tailwind CSS se compila durante el build de .NET (`src/RutaProducto.Web/Tailwind
 
 - **EF Core 9.0.x sobre .NET 10:** `Pomelo.EntityFrameworkCore.MySql` 9.0.0 es la versión estable más reciente y solo admite EF Core 9. Cuando Pomelo publique una versión estable para EF Core 10, se actualizarán juntos Pomelo, EF Core e Identity.EntityFrameworkCore (`Directory.Packages.props`).
 - **MediatR 12.5.0:** es la última versión con licencia Apache-2.0. Desde la 13.0.0 la licencia es comercial.
+
+### Dependencias y licencias
+
+Solo bibliotecas gratuitas y de licencia permisiva (decisión del usuario, 2026-10-18):
+
+| Biblioteca | Uso | Licencia | Estado |
+|---|---|---|---|
+| `DocumentFormat.OpenXml` 3.5.1 | Leer el texto de los `.docx` (solo en Infrastructure) | MIT (Microsoft) | En uso |
+| `PdfPig` 0.1.16 (id de NuGet `PdfPig`, no el antiguo `UglyToad.PdfPig`) | Leer el texto de los `.pdf` (solo en Infrastructure; sin dependencias) | Apache-2.0 | En uso |

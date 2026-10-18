@@ -9,6 +9,8 @@ public sealed class ContextExcerptTests
 {
     private const string Marker = GetContextForAssistantQueryHandler.ClippedMarker;
 
+    private const string WordMarkdown = "# Titulo - texto del Word";
+
     private readonly ContextTestContext context = new();
 
     [Fact]
@@ -34,34 +36,68 @@ public sealed class ContextExcerptTests
         Assert.Equal(["texto de la nota", "markdown", "a,b", "plano", "md largo"], excerpts.Select(e => e.Text));
     }
 
-    [Fact]
-    public async Task A_long_note_is_cut_at_the_item_cap_and_ends_with_the_marker()
+    [Theory]
+    [InlineData(14_999, 14_999, false)]
+    [InlineData(15_000, 15_000, false)]
+    [InlineData(15_001, 15_000, true)]
+    public async Task An_item_is_cut_at_fifteen_thousand_characters_and_only_then_ends_with_the_marker(int length, int expected, bool clipped)
     {
         var id = await context.Initiatives.CreateDraft("App");
-        await context.AddFile(id, "grande.txt", Utf8(new string('x', 6_000)));
+        await context.AddFile(id, "grande.txt", Utf8(new string('x', length)));
 
         var excerpt = Assert.Single(await context.Excerpts(id));
 
-        Assert.Equal(GetContextForAssistantQueryHandler.MaxItemCharacters, excerpt.Text.Length);
-        Assert.EndsWith(Marker, excerpt.Text);
+        Assert.Equal(15_000, GetContextForAssistantQueryHandler.MaxItemCharacters);
+        Assert.Equal(expected, excerpt.Text.Length);
+        Assert.Equal(clipped, excerpt.Text.EndsWith(Marker, StringComparison.Ordinal));
     }
 
     [Fact]
-    public async Task The_total_never_passes_the_cap_the_oldest_are_kept_and_the_last_clipped_one_ends_with_the_marker()
+    public async Task The_total_never_passes_sixty_thousand_the_oldest_are_kept_and_the_last_clipped_one_ends_with_the_marker()
     {
         var id = await context.Initiatives.CreateDraft("App");
 
-        for (var index = 1; index <= 4; index++)
+        for (var index = 1; index <= 5; index++)
         {
-            await context.AddFile(id, $"{index}.txt", Utf8(new string((char)('a' + index), 6_000)));
+            await context.AddFile(id, $"{index}.txt", Utf8(new string((char)('a' + index), 14_000)));
         }
 
         var excerpts = await context.Excerpts(id);
 
-        Assert.Equal(["1.txt", "2.txt", "3.txt"], excerpts.Select(e => e.Title));
-        Assert.Equal(GetContextForAssistantQueryHandler.MaxTotalCharacters, excerpts.Sum(e => e.Text.Length));
-        Assert.All(excerpts, e => Assert.EndsWith(Marker, e.Text));
+        Assert.Equal(60_000, GetContextForAssistantQueryHandler.MaxTotalCharacters);
+        Assert.Equal(["1.txt", "2.txt", "3.txt", "4.txt", "5.txt"], excerpts.Select(e => e.Title));
+        Assert.Equal(60_000, excerpts.Sum(e => e.Text.Length));
+        Assert.Equal(4_000, excerpts[4].Text.Length);
+        Assert.EndsWith(Marker, excerpts[4].Text);
+        Assert.All(excerpts.Take(4), e => Assert.DoesNotContain(Marker, e.Text));
         Assert.StartsWith("b", excerpts[0].Text);
+    }
+
+    [Fact]
+    public async Task A_file_with_extracted_text_is_sent_with_that_text_and_an_unreadable_or_untouched_one_is_not()
+    {
+        var id = await context.Initiatives.CreateDraft("App");
+        var now = context.Clock.GetUtcNow();
+
+        Attachment Word(string name, ExtractionStatus status, string? text, int minute)
+        {
+            var file = Attachment.CreateFile(Guid.NewGuid(), id, ContextTestContext.UserA, name, "application/octet-stream", 100, now.AddMinutes(minute));
+            file.ApplyExtraction(status, text);
+
+            return file;
+        }
+
+        await context.Attachments.AddAsync(Word("lee.docx", ExtractionStatus.Extracted, WordMarkdown, 1), default);
+        await context.Attachments.AddAsync(Word("roto.docx", ExtractionStatus.Unreadable, null, 2), default);
+        await context.Attachments.AddAsync(Word("viejo.doc", ExtractionStatus.NotApplicable, null, 3), default);
+        await context.Attachments.AddAsync(Word("largo.docx", ExtractionStatus.Extracted, new string('w', 200_000), 4), default);
+
+        var excerpts = await context.Excerpts(id);
+
+        Assert.Equal(["lee.docx", "largo.docx"], excerpts.Select(e => e.Title));
+        Assert.Equal(WordMarkdown, excerpts[0].Text);
+        Assert.Equal(GetContextForAssistantQueryHandler.MaxItemCharacters, excerpts[1].Text.Length);
+        Assert.EndsWith(Marker, excerpts[1].Text);
     }
 
     [Fact]

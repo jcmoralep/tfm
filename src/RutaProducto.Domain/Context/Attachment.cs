@@ -72,6 +72,29 @@ public sealed class Attachment
 
     public DateTimeOffset CreatedAt { get; private set; }
 
+    /// <summary>Whether the server read the text of a file; <see cref="ExtractionStatus.NotApplicable"/> for everything else.</summary>
+    public ExtractionStatus ExtractionStatus { get; private set; } = ExtractionStatus.NotApplicable;
+
+    /// <summary>The Markdown read from a file; set only when <see cref="ExtractionStatus"/> is <c>Extracted</c>.</summary>
+    public string? ExtractedText { get; private set; }
+
+    /// <summary>Records the outcome of reading a file's text. Only files can carry it, and extracted text cannot be blank.</summary>
+    public void ApplyExtraction(ExtractionStatus status, string? text)
+    {
+        if (Kind != AttachmentKind.File)
+        {
+            throw new DomainException("Solo un archivo puede tener texto extraído.");
+        }
+
+        if (status == ExtractionStatus.Extracted && string.IsNullOrWhiteSpace(text))
+        {
+            throw new DomainException("El texto extraído no puede estar vacío.");
+        }
+
+        ExtractionStatus = status;
+        ExtractedText = status == ExtractionStatus.Extracted ? text : null;
+    }
+
     /// <summary>The opaque key by which file storage finds the bytes; built from ids only, never from a name.</summary>
     public static string StorageKeyFor(Guid initiativeId, Guid id) => $"{initiativeId:N}/{id:N}";
 

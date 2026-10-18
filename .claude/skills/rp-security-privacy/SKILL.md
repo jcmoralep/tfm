@@ -22,6 +22,7 @@ Load for any change in authentication, account flows, email, captcha, rate limit
 - Owner-only resources answer a uniform 404 with no body for every other case; downloads are `application/octet-stream`, `attachment`, `nosniff`, `no-store`.
 - Secrets only in user-secrets/env; startup failures name the key, never the value.
 - Treat uploaded files as hostile: blocklist executables, never execute, never render inline; text sent to the model is delimited and neutralized as data.
+- Parsing untrusted documents (.docx and .pdf): inspect before parsing (zip: at most 2,000 entries and 100 MB really decompressed, counted while decompressing because headers can lie; XML: no DTD, bounded depth; PDF: at most 300 pages, checked before reading any text, pages read one at a time), never write the file to disk, cap the extracted text (200,000 characters), run under a timeout (15 s) that also bounds an extractor ignoring its token, treat any failure as `Unreadable` without failing the upload, and never log file names, text or exception messages (exception type only).
 
 ## Decision Gates
 

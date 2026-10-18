@@ -10,4 +10,6 @@ public sealed record AttachmentItem(
     string? Url,
     string? NoteText,
     long? SizeBytes,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    ExtractionStatus ExtractionStatus = ExtractionStatus.NotApplicable,
+    int ExtractedCharacters = 0);

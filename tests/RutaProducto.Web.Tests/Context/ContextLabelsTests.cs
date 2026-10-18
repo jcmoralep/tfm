@@ -41,4 +41,21 @@ public sealed class ContextLabelsTests
         Assert.Equal("Archivo · 2 KB", ContextLabels.RowDetail(file));
         Assert.Equal("Nota", ContextLabels.RowDetail(note));
     }
+
+    [Theory]
+    [InlineData(1, "Texto extraído: 1 carácter")]
+    [InlineData(999, "Texto extraído: 999 caracteres")]
+    [InlineData(12_345, "Texto extraído: 12.345 caracteres")]
+    [InlineData(200_000, "Texto extraído: 200.000 caracteres")]
+    public void The_extracted_line_writes_thousands_with_a_dot(int characters, string expected) =>
+        Assert.Equal(expected, ContextLabels.ExtractedLine(characters));
+
+    [Theory]
+    [InlineData("informe.pdf", ContextLabels.PdfUnreadableLine)]
+    [InlineData("INFORME.PDF", ContextLabels.PdfUnreadableLine)]
+    [InlineData("informe.docx", ContextLabels.UnreadableLine)]
+    [InlineData("pdf", ContextLabels.UnreadableLine)]
+    [InlineData("informe.pdf.docx", ContextLabels.UnreadableLine)]
+    public void An_unreadable_pdf_gets_the_scanned_document_hint_and_the_rest_the_generic_sentence(string fileName, string expected) =>
+        Assert.Equal(expected, ContextLabels.UnreadableText(fileName));
 }

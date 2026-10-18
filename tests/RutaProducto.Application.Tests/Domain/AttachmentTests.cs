@@ -158,6 +158,25 @@ public sealed class AttachmentTests
         Assert.Equal(5_000, note.Text!.Length);
     }
 
+    [Fact]
+    public void A_new_file_is_not_applicable_and_extraction_is_recorded_only_for_files_with_real_text()
+    {
+        var file = File("informe.docx");
+        Assert.Equal(ExtractionStatus.NotApplicable, file.ExtractionStatus);
+
+        file.ApplyExtraction(ExtractionStatus.Extracted, "# Hola");
+        Assert.Equal("# Hola", file.ExtractedText);
+
+        Assert.Throws<DomainException>(() => file.ApplyExtraction(ExtractionStatus.Extracted, "  "));
+
+        file.ApplyExtraction(ExtractionStatus.Unreadable, "se descarta");
+        Assert.Equal(ExtractionStatus.Unreadable, file.ExtractionStatus);
+        Assert.Null(file.ExtractedText);
+
+        var note = Attachment.CreateNote(InitiativeId, "user-a", "Nota", "texto", Now);
+        Assert.Throws<DomainException>(() => note.ApplyExtraction(ExtractionStatus.Extracted, "x"));
+    }
+
     // A number stands for a string of that many characters, so the Theory stays readable.
     private static string Value(object value) => value is int length ? new string('x', length) : (string)value;
 }

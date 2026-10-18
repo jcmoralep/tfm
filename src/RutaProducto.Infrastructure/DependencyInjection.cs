@@ -3,6 +3,7 @@ using RutaProducto.Application.Features.Artifacts;
 using RutaProducto.Application.Abstractions.Storage;
 using RutaProducto.Application.Features.Artifacts.ExportArtifact;
 using RutaProducto.Application.Features.Assistant;
+using RutaProducto.Application.Abstractions.Documents;
 using RutaProducto.Application.Features.Context;
 using RutaProducto.Application.Features.Initiatives;
 using RutaProducto.Infrastructure.Artifacts;
@@ -10,6 +11,7 @@ using RutaProducto.Infrastructure.Assistant;
 using RutaProducto.Infrastructure.Captcha;
 using RutaProducto.Infrastructure.Registration;
 using RutaProducto.Infrastructure.Context;
+using RutaProducto.Infrastructure.Documents;
 using RutaProducto.Infrastructure.DataProtection;
 using RutaProducto.Infrastructure.Email;
 using RutaProducto.Infrastructure.Export;
@@ -87,6 +89,10 @@ public static class DependencyInjection
         var storage = StorageOptions.BindAndValidate(configuration);
         services.AddSingleton<IFileStorage>(_ => new LocalFileStorage(storage.LocalRootPath));
         services.AddSingleton(new ContextLimits(storage.MaxFileBytes));
+
+        // One extractor per document format; an upload uses the first whose Supports accepts the extension.
+        services.AddSingleton<IDocumentTextExtractor>(new DocxMarkdownExtractor(new DocxExtractionOptions()));
+        services.AddSingleton<IDocumentTextExtractor>(new PdfTextExtractor(new PdfExtractionOptions()));
 
         // DataProtection:Provider (Default by default) optionally keeps the key ring in the database (table dp_keys), so
         // cookies and email links survive a redeploy; an unknown value stops the app at startup.

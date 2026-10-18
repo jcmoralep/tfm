@@ -34,6 +34,14 @@ internal sealed class AttachmentConfiguration : IEntityTypeConfiguration<Attachm
         builder.Property(attachment => attachment.ContentType).HasMaxLength(Attachment.ContentTypeMaxLength);
         builder.Property(attachment => attachment.StorageKey).HasMaxLength(Attachment.StorageKeyMaxLength);
 
+        // Rows that existed before the extraction feature read back as NotApplicable (the column default).
+        builder.Property(attachment => attachment.ExtractionStatus)
+            .HasConversion<string>()
+            .HasMaxLength(EnumLength)
+            .HasDefaultValue(ExtractionStatus.NotApplicable);
+
+        builder.Property(attachment => attachment.ExtractedText).HasColumnType("longtext");
+
         // The list of one initiative, oldest first; no foreign key to ini_initiatives.
         builder.HasIndex(attachment => new { attachment.InitiativeId, attachment.CreatedAt });
     }

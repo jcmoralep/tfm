@@ -9,8 +9,9 @@ using Microsoft.Extensions.Logging;
 namespace RutaProducto.Application.Features.Context.GetContextForAssistant;
 
 /// <summary>
-/// Selects the notes and the text files (by normalized extension, never by content type), reads at most
-/// <see cref="MaxFileBytes"/> of each file as UTF-8 with replacement, and applies the caps. A file that cannot be
+/// Selects the notes, the text files (by normalized extension, never by content type) and the files whose text the
+/// server already extracted (their stored Markdown is the content). Reads at most <see cref="MaxFileBytes"/> of each
+/// text file as UTF-8 with replacement, and applies the caps. A file that cannot be
 /// read is skipped. Only counts are logged: no title, name or text.
 /// </summary>
 public sealed class GetContextForAssistantQueryHandler(
@@ -22,9 +23,9 @@ public sealed class GetContextForAssistantQueryHandler(
 {
     public const int MaxFileBytes = 20_000;
 
-    public const int MaxItemCharacters = 5_000;
+    public const int MaxItemCharacters = 15_000;
 
-    public const int MaxTotalCharacters = 15_000;
+    public const int MaxTotalCharacters = 60_000;
 
     public const int MaxItems = 10;
 
@@ -80,9 +81,13 @@ public sealed class GetContextForAssistantQueryHandler(
 
     private static bool IsTextLike(Attachment attachment) =>
         attachment.Kind == AttachmentKind.Note
+        || IsExtracted(attachment)
         || (attachment.Kind == AttachmentKind.File
             && attachment.StorageKey is not null
             && TextExtensions.Contains(AttachmentFileName.ExtensionOf(attachment.Name ?? string.Empty)));
+
+    private static bool IsExtracted(Attachment attachment) =>
+        attachment.Kind == AttachmentKind.File && attachment.ExtractionStatus == ExtractionStatus.Extracted;
 
     // The clipped text ends with the marker and the whole thing stays within the limit.
     private static string Clip(string text, int limit) =>
@@ -93,6 +98,11 @@ public sealed class GetContextForAssistantQueryHandler(
         if (attachment.Kind == AttachmentKind.Note)
         {
             return attachment.Text;
+        }
+
+        if (IsExtracted(attachment))
+        {
+            return attachment.ExtractedText;
         }
 
         try
