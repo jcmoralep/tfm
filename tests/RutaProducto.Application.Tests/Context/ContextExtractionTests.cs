@@ -14,7 +14,9 @@ public sealed class ContextExtractionTests
     [Theory]
     [InlineData("informe.docx")]
     [InlineData("INFORME.DOCX")]
-    public async Task A_docx_is_extracted_after_it_is_stored_and_the_original_file_is_kept_as_is(string name)
+    [InlineData("informe.pdf")]
+    [InlineData("INFORME.PDF")]
+    public async Task A_docx_or_pdf_is_extracted_after_it_is_stored_and_the_original_file_is_kept_as_is(string name)
     {
         var context = Context(extractor);
         var id = await context.Initiatives.CreateDraft("App");
@@ -33,7 +35,6 @@ public sealed class ContextExtractionTests
     }
 
     [Theory]
-    [InlineData("a.pdf")]
     [InlineData("a.doc")]
     [InlineData("a.docm")]
     [InlineData("a.txt")]
@@ -53,12 +54,17 @@ public sealed class ContextExtractionTests
     }
 
     [Theory]
-    [InlineData("throws")]
-    [InlineData("unreadable")]
-    [InlineData("blank")]
-    [InlineData("never-finishes")]
-    [InlineData("storage-fails")]
-    public async Task Any_failure_leaves_the_upload_successful_and_the_file_unreadable(string scenario)
+    [InlineData("throws", "informe.docx")]
+    [InlineData("unreadable", "informe.docx")]
+    [InlineData("blank", "informe.docx")]
+    [InlineData("never-finishes", "informe.docx")]
+    [InlineData("storage-fails", "informe.docx")]
+    [InlineData("throws", "informe.pdf")]
+    [InlineData("unreadable", "informe.pdf")]
+    [InlineData("blank", "informe.pdf")]
+    [InlineData("never-finishes", "informe.pdf")]
+    [InlineData("storage-fails", "informe.pdf")]
+    public async Task Any_failure_leaves_the_upload_successful_and_the_file_unreadable(string scenario, string name)
     {
         var context = Context(extractor, TimeSpan.FromMilliseconds(100));
         var id = await context.Initiatives.CreateDraft("App");
@@ -82,7 +88,7 @@ public sealed class ContextExtractionTests
                 break;
         }
 
-        var view = await context.AddFile(id, "informe.docx", Bytes);
+        var view = await context.AddFile(id, name, Bytes);
 
         var stored = Assert.Single(context.Attachments.Stored);
         Assert.Equal(ExtractionStatus.Unreadable, stored.ExtractionStatus);
@@ -92,9 +98,11 @@ public sealed class ContextExtractionTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task The_extraction_log_has_counts_and_never_the_file_name_the_text_or_an_exception_message(bool fails)
+    [InlineData(false, ".docx")]
+    [InlineData(true, ".docx")]
+    [InlineData(false, ".pdf")]
+    [InlineData(true, ".pdf")]
+    public async Task The_extraction_log_has_counts_and_never_the_file_name_the_text_or_an_exception_message(bool fails, string extension)
     {
         var context = Context(extractor);
         var id = await context.Initiatives.CreateDraft("App");
@@ -108,7 +116,7 @@ public sealed class ContextExtractionTests
             extractor.Result = DocumentTextResult.Extracted("TEXTO-DISTINTIVO");
         }
 
-        await context.AddFile(id, "NOMBRE-DISTINTIVO.docx", Bytes);
+        await context.AddFile(id, "NOMBRE-DISTINTIVO" + extension, Bytes);
 
         var entry = Assert.Single(context.Logs.Entries, e => e.Message.StartsWith("Text extraction"));
         Assert.DoesNotContain(context.Logs.Entries, e => e.AllText.Contains("DISTINTIVO", StringComparison.Ordinal));

@@ -92,6 +92,7 @@ public static class DependencyInjection
 
         // One extractor per document format; an upload uses the first whose Supports accepts the extension.
         services.AddSingleton<IDocumentTextExtractor>(new DocxMarkdownExtractor(new DocxExtractionOptions()));
+        services.AddSingleton<IDocumentTextExtractor>(new PdfTextExtractor(new PdfExtractionOptions()));
 
         // DataProtection:Provider (Default by default) optionally keeps the key ring in the database (table dp_keys), so
         // cookies and email links survive a redeploy; an unknown value stops the app at startup.

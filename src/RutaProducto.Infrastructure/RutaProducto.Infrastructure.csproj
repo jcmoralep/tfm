@@ -16,6 +16,8 @@
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
     <!-- Reads the text of uploaded .docx files (MIT). -->
     <PackageReference Include="DocumentFormat.OpenXml" />
+    <!-- Reads the text of uploaded .pdf files (Apache-2.0). -->
+    <PackageReference Include="PdfPig" />
     <!-- Persists the Data Protection keys in the database when DataProtection:Provider=Database. -->
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">

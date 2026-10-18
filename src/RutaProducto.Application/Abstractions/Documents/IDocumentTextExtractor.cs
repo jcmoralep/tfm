@@ -4,7 +4,7 @@ namespace RutaProducto.Application.Abstractions.Documents;
 
 /// <summary>
 /// Reads the text of one kind of uploaded document and returns it as Markdown. One implementation per format
-/// (.docx today); the upload picks the first one whose <see cref="Supports"/> accepts the file extension, so a new
+/// (.docx and .pdf); the upload picks the first one whose <see cref="Supports"/> accepts the file extension, so a new
 /// format only adds a class and its registration. The input is untrusted: implementations must never write it to
 /// disk, execute anything in it, or log its content.
 /// </summary>

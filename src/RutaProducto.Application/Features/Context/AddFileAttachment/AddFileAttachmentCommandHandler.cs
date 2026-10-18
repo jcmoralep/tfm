@@ -102,8 +102,8 @@ public sealed class AddFileAttachmentCommandHandler(
 
             if (content is not null)
             {
-                // WaitAsync also bounds an extractor that ignores its token.
-                result = await extractor.ExtractAsync(content, timeout.Token).WaitAsync(limits.ExtractionTimeout, cancellationToken);
+                // Task.Run keeps an extractor that blocks its thread from freezing the request, and WaitAsync bounds one that ignores its token.
+                result = await Task.Run(() => extractor.ExtractAsync(content, timeout.Token), timeout.Token).WaitAsync(limits.ExtractionTimeout, cancellationToken);
             }
         }
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)

@@ -2,7 +2,7 @@ using RutaProducto.Application.Abstractions.Documents;
 
 namespace RutaProducto.Application.Tests.TestDoubles;
 
-/// <summary>Extractor for .docx files whose outcome the test scripts: a result, an exception, or never finishing.</summary>
+/// <summary>Extractor for .docx and .pdf files whose outcome the test scripts: a result, an exception, or never finishing.</summary>
 public sealed class ScriptedDocumentTextExtractor : IDocumentTextExtractor
 {
     public DocumentTextResult Result { get; set; } = DocumentTextResult.Extracted("# Titulo\n\ntexto");
@@ -14,7 +14,7 @@ public sealed class ScriptedDocumentTextExtractor : IDocumentTextExtractor
 
     public int Calls { get; private set; }
 
-    public bool Supports(string extension) => string.Equals(extension, ".docx", StringComparison.OrdinalIgnoreCase);
+    public bool Supports(string extension) => extension.ToLowerInvariant() is ".docx" or ".pdf";
 
     public async Task<DocumentTextResult> ExtractAsync(Stream content, CancellationToken cancellationToken)
     {

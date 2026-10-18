@@ -65,6 +65,8 @@ public static class ContextLabels
 
     public const string UnreadableLine = "No se pudo leer el texto de este archivo.";
 
+    public const string PdfUnreadableLine = "No se pudo leer el texto de este PDF. Si es un documento escaneado (solo imágenes), no se puede leer: copie el texto en una nota.";
+
     /// <summary>Files per selection the card accepts. A UI guard only, not a product limit.</summary>
     public const int MaxFilesPerSelection = 5;
 
@@ -89,6 +91,10 @@ public static class ContextLabels
     /// <summary>"Texto extraído: 12.345 caracteres" (thousands with a dot).</summary>
     public static string ExtractedLine(int characters) =>
         $"Texto extraído: {characters.ToString("N0", Spanish)} {(characters == 1 ? "carácter" : "caracteres")}";
+
+    /// <summary>The warning for a file whose text could not be read: a PDF gets the scanned-document hint, the rest the generic sentence.</summary>
+    public static string UnreadableText(string fileName) =>
+        string.Equals(AttachmentFileName.ExtensionOf(fileName), ".pdf", StringComparison.OrdinalIgnoreCase) ? PdfUnreadableLine : UnreadableLine;
 
     public static string Counter(int count) => $"{count} de {ContextLimits.MaxItems} elementos";
 
