@@ -110,8 +110,30 @@ public static class ArtifactLabels
     public static string QuestionsSaved(int version) => $"Preguntas guardadas. Versión {version}.";
 
     /// <summary>The amber note under the header that says why Aprobar is disabled.</summary>
+    /// <summary>
+    /// A link to an element of the SAME page. The layout has a <c>&lt;base href&gt;</c>, so a bare <c>#id</c> resolves against
+    /// the site root and leaves the page; the current address (without any fragment) plus the fragment stays on it.
+    /// </summary>
+    public static string SamePageAnchor(string currentUri, string elementId) =>
+        new Uri(currentUri, UriKind.Absolute).GetLeftPart(UriPartial.Query) + "#" + elementId;
+
     public static string ApproveBlocked(IEnumerable<string> unassignedIds) =>
         $"{ArtifactTexts.UnassignedQuestions(unassignedIds)} Use el panel «{QuestionsTitle}».";
+
+    /// <summary>Closes the amber note: says where the missing fields are; the panel title in between is an in-page link.</summary>
+    public const string ApproveBlockedPointerLead = "Los campos que faltan están marcados en el panel «";
+
+    public const string ApproveBlockedPointerTail = "», más abajo.";
+
+    /// <summary>Shown under the owner input of a question while it is empty.</summary>
+    public const string OwnerMissingHint = "Falta el responsable: escriba quién responderá esta pregunta. Es necesario para aprobar.";
+
+    /// <summary>Shown under the revisit input of a question while it is empty; the example is the one in the placeholder.</summary>
+    public static readonly string RevisitMissingHint =
+        $"Falta la condición de revisión: indique cuándo se revisará, por ejemplo «{OwnerPlaceholderHint}». Es necesario para aprobar.";
+
+    /// <summary>Shown under Guardar when every question is filled but the changes are not saved yet.</summary>
+    public const string SaveToApproveHint = "Guarde los cambios para poder aprobar.";
 
     public static string EditCounter(int length) => $"{length} / {ContentLimitText}";
 

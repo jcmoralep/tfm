@@ -15,6 +15,7 @@
 @inject IMediator Mediator
 @inject MarkdownRenderer Renderer
 @inject ILogger<ArtifactDocument> Logger
+@inject NavigationManager Navigation
 
 @* Container of the document page. It decides nothing about the rules: the Can* flags of the view say what is allowed
    and the commands enforce the same rules. Reads happen in OnParametersSetAsync (safe while prerendering); every
@@ -131,7 +132,7 @@ else
 
         @if (!editing && ApproveBlocked)
         {
-            <p id="approve-blocked" class="mt-4 rounded-control bg-warning-soft px-3 py-2 text-sm text-warning-ink">@ArtifactLabels.ApproveBlocked(view.UnassignedQuestions)</p>
+            <p id="approve-blocked" class="mt-4 rounded-control bg-warning-soft px-3 py-2 text-sm text-warning-ink">@ArtifactLabels.ApproveBlocked(view.UnassignedQuestions) @ArtifactLabels.ApproveBlockedPointerLead<a href="@ArtifactLabels.SamePageAnchor(Navigation.Uri, "questions-title")" class="font-semibold underline">@ArtifactLabels.QuestionsTitle</a>@ArtifactLabels.ApproveBlockedPointerTail</p>
         }
 
         @if (view.Generated && view.StaleUpstream is { } staleUpstream)
