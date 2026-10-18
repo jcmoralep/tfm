@@ -253,6 +253,16 @@ namespace RutaProducto.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<string>("ExtractedText")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ExtractionStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasDefaultValue("NotApplicable");
+
                     b.Property<Guid>("InitiativeId")
                         .HasColumnType("char(36)");
 

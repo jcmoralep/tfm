@@ -21,5 +21,7 @@ public sealed record ContextView(IReadOnlyList<AttachmentItem> Items, long Total
         attachment.Url,
         attachment.Text,
         attachment.SizeBytes,
-        attachment.CreatedAt);
+        attachment.CreatedAt,
+        attachment.ExtractionStatus,
+        attachment.ExtractedText?.Length ?? 0);
 }

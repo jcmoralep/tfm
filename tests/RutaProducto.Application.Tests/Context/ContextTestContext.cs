@@ -1,3 +1,4 @@
+using RutaProducto.Application.Abstractions.Documents;
 using RutaProducto.Application.Features.Context;
 using RutaProducto.Application.Features.Context.AddFileAttachment;
 using RutaProducto.Application.Features.Context.AddLinkAttachment;
@@ -23,9 +24,10 @@ public sealed class ContextTestContext
 
     public const long TenMegabytes = 10L * 1024 * 1024;
 
-    public ContextTestContext(long maxFileBytes = TenMegabytes)
+    public ContextTestContext(long maxFileBytes = TenMegabytes, IReadOnlyList<IDocumentTextExtractor>? extractors = null, TimeSpan? extractionTimeout = null)
     {
-        Limits = new ContextLimits(maxFileBytes);
+        Limits = new ContextLimits(maxFileBytes) { ExtractionTimeout = extractionTimeout ?? ContextLimits.DefaultExtractionTimeout };
+        Extractors = extractors ?? [];
         Attachments = new InMemoryAttachmentRepository(Journal);
         Storage = new InMemoryFileStorage(Journal);
         Loggers = LoggerFactory.Create(builder => builder.AddProvider(Logs));
@@ -34,7 +36,7 @@ public sealed class ContextTestContext
             new InMemoryConversationRepository(),
             User,
             Clock,
-            new ContextRoutes(Attachments, Storage, Limits, Loggers));
+            new ContextRoutes(Attachments, Storage, Limits, Loggers, Extractors));
     }
 
     /// <summary>The order of storage and row operations, shared by both doubles.</summary>
@@ -45,6 +47,8 @@ public sealed class ContextTestContext
     public InitiativeTestContext Initiatives { get; } = new();
 
     public ContextLimits Limits { get; }
+
+    public IReadOnlyList<IDocumentTextExtractor> Extractors { get; }
 
     public InMemoryAttachmentRepository Attachments { get; }
 
@@ -63,7 +67,7 @@ public sealed class ContextTestContext
 
     /// <summary>Adds a file whose announced size defaults to the real one.</summary>
     public Task<ContextView> AddFile(Guid initiativeId, string name, byte[] bytes, long? declaredSize = null, string? contentType = "text/plain") =>
-        new AddFileAttachmentCommandHandler(Sender, Attachments, Storage, User, Clock, Limits, Loggers.CreateLogger<AddFileAttachmentCommandHandler>())
+        new AddFileAttachmentCommandHandler(Sender, Attachments, Storage, Extractors, User, Clock, Limits, Loggers.CreateLogger<AddFileAttachmentCommandHandler>())
             .Handle(new AddFileAttachmentCommand(initiativeId, name, contentType, declaredSize ?? bytes.Length, new MemoryStream(bytes)), default);
 
     public Task<ContextView> AddLink(Guid initiativeId, string url) =>

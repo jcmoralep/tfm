@@ -14,6 +14,8 @@
     <!-- Lifts the EF Core floor set by Pomelo (9.0.0) to the latest 9.0.x servicing release. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+    <!-- Reads the text of uploaded .docx files (MIT). -->
+    <PackageReference Include="DocumentFormat.OpenXml" />
     <!-- Persists the Data Protection keys in the database when DataProtection:Provider=Database. -->
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">

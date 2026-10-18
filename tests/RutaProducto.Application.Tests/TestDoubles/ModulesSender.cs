@@ -1,4 +1,5 @@
 using RutaProducto.Application.Features.Assistant.GetConversationAnswers;
+using RutaProducto.Application.Abstractions.Documents;
 using RutaProducto.Application.Features.Context;
 using RutaProducto.Application.Features.Context.AddFileAttachment;
 using RutaProducto.Application.Features.Context.AddLinkAttachment;
@@ -66,7 +67,7 @@ public sealed class ModulesSender(
                 return (TResponse)excerpts;
             case AddFileAttachmentCommand command when context is not null:
                 var file = await new AddFileAttachmentCommandHandler(
-                    this, context.Attachments, context.Storage, currentUser, timeProvider, context.Limits,
+                    this, context.Attachments, context.Storage, context.Extractors ?? [], currentUser, timeProvider, context.Limits,
                     context.Loggers.CreateLogger<AddFileAttachmentCommandHandler>()).Handle(command, cancellationToken);
 
                 return (TResponse)(object)file;
@@ -147,4 +148,5 @@ public sealed record ContextRoutes(
     InMemoryAttachmentRepository Attachments,
     InMemoryFileStorage Storage,
     ContextLimits Limits,
-    ILoggerFactory Loggers);
+    ILoggerFactory Loggers,
+    IReadOnlyList<IDocumentTextExtractor>? Extractors = null);

@@ -63,6 +63,8 @@ public static class ContextLabels
 
     public const string ChangeFailed = "No se pudo completar la operación. Inténtelo de nuevo.";
 
+    public const string UnreadableLine = "No se pudo leer el texto de este archivo.";
+
     /// <summary>Files per selection the card accepts. A UI guard only, not a product limit.</summary>
     public const int MaxFilesPerSelection = 5;
 
@@ -83,6 +85,10 @@ public static class ContextLabels
 
         return $"{(bytes / (double)Megabyte).ToString("0.#", Spanish)} MB";
     }
+
+    /// <summary>"Texto extraído: 12.345 caracteres" (thousands with a dot).</summary>
+    public static string ExtractedLine(int characters) =>
+        $"Texto extraído: {characters.ToString("N0", Spanish)} {(characters == 1 ? "carácter" : "caracteres")}";
 
     public static string Counter(int count) => $"{count} de {ContextLimits.MaxItems} elementos";
 
