@@ -1,10 +1,10 @@
 ---
 name: rp-ship-pr
-description: "Trigger: commit, push, PR, pull request, merge, fusionar, subir la rama in Ruta de Producto. Ship a change: gate, conventional commit, English PR, CI, squash merge."
+description: "Trigger: commit, push, PR, pull request, merge, fusionar, publish, publicar, subir la rama in Ruta de Producto. Ship a change: gate, conventional commit, English PR, CI, squash merge, publish to Railway."
 license: Apache-2.0
 metadata:
   author: "jcmoralep"
-  version: "1.1"
+  version: "1.2"
 ---
 
 ## Activation Contract
@@ -20,6 +20,7 @@ Load when committing, pushing, opening, updating or merging a PR in this repo.
 - Never commit secrets, `.env`, connection strings or new screenshots (user decision; the approved mockup and older evidence stay).
 - The gate (`rp-build-gate`) must be green on the exact commit being pushed; rerun it after any amend.
 - One branch per change from an up-to-date `main`; squash-merge; delete the branch; return to `main`.
+- Publish after EVERY merged PR (user rule, 2026-10-18): deploy the updated `main` to Railway with `rp-railway-deploy` and verify it from outside. Publish from a clean `main` only. If the Railway services are off, ask before turning them on (it uses credit); a docs-only PR still gets published unless the user says to skip it.
 
 ## Decision Gates
 
@@ -38,10 +39,11 @@ Load when committing, pushing, opening, updating or merging a PR in this repo.
 4. Write the PR body from `assets/pr-body.md` in a scratch file outside the repo.
 5. After the user agreed to push AND merge: `bash .claude/skills/rp-ship-pr/assets/ship.sh "<title>" <body-file>`.
 6. Confirm `main` is synced and clean except untracked local tooling.
+7. Publish: run the deploy and outside checks from `rp-railway-deploy` (`railway up -s rutaproducto-web --ci`, then `/health`, the `blazor.web.<hash>.js` URL and the registration page).
 
 ## Output Contract
 
-Return the PR number and URL, CI result, merge commit hash, and the final `git status --short`.
+Return the PR number and URL, CI result, merge commit hash, the final `git status --short`, and the publish result (deployment id and outside checks).
 
 ## References
 
