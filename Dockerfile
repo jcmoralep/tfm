@@ -14,7 +14,11 @@ COPY src/RutaProducto.Domain/RutaProducto.Domain.csproj src/RutaProducto.Domain/
 COPY src/RutaProducto.Application/RutaProducto.Application.csproj src/RutaProducto.Application/
 COPY src/RutaProducto.Infrastructure/RutaProducto.Infrastructure.csproj src/RutaProducto.Infrastructure/
 COPY src/RutaProducto.Web/RutaProducto.Web.csproj src/RutaProducto.Web/
-RUN dotnet restore src/RutaProducto.Web/RutaProducto.Web.csproj
+# RequiresAspNetWebAssets: the SDK only adds the Microsoft.AspNetCore.App.Internal.Assets package (it carries
+# _framework/blazor.web.js) when the project has .razor files, and this cached restore layer copies only the .csproj files.
+# Without the flag the image publishes without blazor.web.js, Blazor never starts in the browser and every interactive control
+# stays disabled. Check that /_framework/blazor.web.* answers 200 after changing this step.
+RUN dotnet restore src/RutaProducto.Web/RutaProducto.Web.csproj -p:RequiresAspNetWebAssets=true
 
 COPY src/ src/
 RUN dotnet publish src/RutaProducto.Web/RutaProducto.Web.csproj \

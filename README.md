@@ -281,6 +281,10 @@ Pasos:
 4. El disco del contenedor es efímero: los **archivos adjuntos locales se pierden en cada despliegue** hasta que exista almacenamiento S3 (pendiente, `AGENTS.md` §6.4). Los registros salen por la salida estándar de Railway.
 5. **Cookies `Secure`:** fuera de Development, la cookie de sesión se emite siempre con `Secure` (RF-89), también cuando el proxy entrega http plano al contenedor; la de antiforgery sale `Secure` solo si la petición se ve como https, por eso en Railway hay que definir `ForwardedHeaders__Enabled=true`. Consecuencia local: una imagen ejecutada con `ASPNETCORE_ENVIRONMENT=Production` sobre http no conserva la sesión, porque el navegador (o `curl`) no envía una cookie `Secure` por http; use https o `ASPNETCORE_ENVIRONMENT=Development`.
 
+6. **Primer despliegue (2026-10-18), con la capa gratuita:** el proyecto vive en Railway con un servicio `MySQL` (imagen `mysql:8.4`, volumen de 500 MB, arranque ligero porque el plan gratuito da 0,5 GB por servicio) y un servicio `rutaproducto-web` construido con el `Dockerfile` (`railway up`). El CLI se instala **dentro del repositorio** (`.tools/railway`, ignorado por Git). Para no gastar crédito, al terminar de usarlo se apagan los dos servicios (`railway down`; el volumen se conserva). Todo el procedimiento, con los comandos, está en la skill `rp-railway-deploy`.
+
+   **Importante, aprendido en ese despliegue:** el paso de restauración del `Dockerfile` lleva `-p:RequiresAspNetWebAssets=true`. Sin él, la imagen sale sin `_framework/blazor.web.js`, el navegador recibe un 404, Blazor no arranca y los controles interactivos (por ejemplo «Siguiente» al crear una iniciativa) quedan deshabilitados. Tras cambiar ese paso, compruebe que la página de inicio de sesión referencia un `blazor.web.<huella>.js` que responde 200.
+
 ## Ejecutar
 
 ```bash
