@@ -124,4 +124,13 @@ public sealed class ArtifactLabelsTests
         Assert.StartsWith(ArtifactTexts.UnassignedQuestions(["Q-1", "Q-3"]), text);
         Assert.Contains("Preguntas pendientes", text);
     }
+
+    [Theory]
+    [InlineData("https://sitio.example/iniciativas/ab12/artefactos/brief", "https://sitio.example/iniciativas/ab12/artefactos/brief#questions-title")]
+    [InlineData("https://sitio.example/iniciativas/ab12/artefactos/brief?generado=1", "https://sitio.example/iniciativas/ab12/artefactos/brief?generado=1#questions-title")]
+    [InlineData("http://localhost:5080/iniciativas/ab12/artefactos/prd#otra", "http://localhost:5080/iniciativas/ab12/artefactos/prd#questions-title")]
+    public void The_in_page_link_keeps_the_current_page_and_replaces_any_fragment(string current, string expected)
+    {
+        Assert.Equal(expected, ArtifactLabels.SamePageAnchor(current, "questions-title"));
+    }
 }

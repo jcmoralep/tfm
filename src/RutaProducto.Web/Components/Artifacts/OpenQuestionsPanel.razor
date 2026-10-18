@@ -44,23 +44,31 @@
                         <label for="@OwnerId(row)" class="block text-sm font-medium text-ink">Responsable de @row.Id@if (string.IsNullOrWhiteSpace(row.Owner)){<RequiredMark />}</label>
                         <input id="@OwnerId(row)" type="text" list="owner-suggestions" maxlength="@QuestionOwners.OwnerMaxLength"
                                readonly="@Busy" @bind="row.Owner" @bind:event="oninput" aria-required="true"
-                               aria-describedby="@DescribedBy"
+                               aria-describedby="@OwnerDescribedBy(row)"
                                class="mt-1 block min-h-6 w-full rounded-control border border-line bg-surface-raised px-3 py-2 text-sm text-ink read-only:opacity-60" />
+                        @if (MissingOwner(row))
+                        {
+                            <p id="@OwnerHintId(row)" class="mt-1 break-words text-xs text-warning-ink">@ArtifactLabels.OwnerMissingHint</p>
+                        }
                     </div>
                     <div>
                         <label for="@RevisitId(row)" class="block text-sm font-medium text-ink">Condición de revisión de @row.Id@if (string.IsNullOrWhiteSpace(row.Revisit)){<RequiredMark />}</label>
                         <input id="@RevisitId(row)" type="text" maxlength="@QuestionOwners.RevisitMaxLength"
                                placeholder="@ArtifactLabels.OwnerPlaceholderHint"
                                readonly="@Busy" @bind="row.Revisit" @bind:event="oninput" aria-required="true"
-                               aria-describedby="@DescribedBy"
+                               aria-describedby="@RevisitDescribedBy(row)"
                                class="mt-1 block min-h-6 w-full rounded-control border border-line bg-surface-raised px-3 py-2 text-sm text-ink read-only:opacity-60" />
+                        @if (MissingRevisit(row))
+                        {
+                            <p id="@RevisitHintId(row)" class="mt-1 break-words text-xs text-warning-ink">@ArtifactLabels.RevisitMissingHint</p>
+                        }
                     </div>
                 </div>
             </div>
         }
 
         <div class="flex flex-wrap gap-3">
-            <button type="submit" disabled="@(Busy || !CanAct || !changed)" aria-describedby="@(changed ? null : "questions-save-hint")"
+            <button type="submit" disabled="@(Busy || !CanAct || !changed)" aria-describedby="@(changed ? (ShowSaveToApprove ? "questions-save-reminder" : null) : "questions-save-hint")"
                     class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-60">
                 Guardar
             </button>
@@ -71,6 +79,10 @@
             @if (!changed && CanAct)
             {
                 <p id="questions-save-hint" class="self-center text-sm text-ink-muted">Guardar se activa cuando cambia algún dato.</p>
+            }
+            @if (ShowSaveToApprove)
+            {
+                <p id="questions-save-reminder" class="self-center text-sm text-warning-ink">@ArtifactLabels.SaveToApproveHint</p>
             }
         </div>
     </form>
@@ -132,6 +144,23 @@
             StateHasChanged();
         }
     }
+
+    // The hints guide the approval, so they exist only for a draft (Hint is null) and while the field is empty.
+    private bool MissingOwner(QuestionRow row) => Hint is null && string.IsNullOrWhiteSpace(row.Owner);
+
+    private bool MissingRevisit(QuestionRow row) => Hint is null && string.IsNullOrWhiteSpace(row.Revisit);
+
+    // Every field filled but not saved: Aprobar stays blocked until Guardar.
+    private bool ShowSaveToApprove => CanAct && Hint is null && changed
+        && rows.All(r => !string.IsNullOrWhiteSpace(r.Owner) && !string.IsNullOrWhiteSpace(r.Revisit));
+
+    private string OwnerDescribedBy(QuestionRow row) => MissingOwner(row) ? $"{DescribedBy} {OwnerHintId(row)}" : DescribedBy;
+
+    private string RevisitDescribedBy(QuestionRow row) => MissingRevisit(row) ? $"{DescribedBy} {RevisitHintId(row)}" : DescribedBy;
+
+    private static string OwnerHintId(QuestionRow row) => $"question-owner-hint-{row.Id}";
+
+    private static string RevisitHintId(QuestionRow row) => $"question-revisit-hint-{row.Id}";
 
     private static string LabelId(QuestionRow row) => $"question-label-{row.Id}";
 
