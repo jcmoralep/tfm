@@ -3,18 +3,18 @@
 
 <div class="min-h-screen">
     <header class="border-b border-line bg-surface-raised print:hidden">
-        <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
-            <a href="" class="text-base font-semibold text-ink">Ruta de Producto</a>
+        <div class="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-4 sm:gap-4 sm:px-6">
+            <a href="" class="whitespace-nowrap text-base font-semibold text-ink">Ruta de Producto</a>
 
             <AuthorizeView>
                 <Authorized>
                     <MainNav />
-                    <div class="ml-auto flex items-center gap-4">
+                    <div class="ml-auto flex items-center gap-2 sm:gap-4">
                         <span class="hidden text-sm text-ink-muted sm:inline">@context.User.Identity?.Name</span>
                         <form action="@AuthenticationEndpoints.LogoutPath" method="post">
                             <AntiforgeryToken />
                             <button type="submit"
-                                    class="rounded-control border border-line px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface">
+                                    class="whitespace-nowrap rounded-control border border-line px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface">
                                 Cerrar sesión
                             </button>
                         </form>

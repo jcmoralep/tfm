@@ -58,7 +58,7 @@ else
 
             @if (!editing)
             {
-                <div class="flex flex-wrap items-center gap-3 print:hidden">
+                <div class="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:flex-wrap sm:items-center print:hidden">
                     @if (!view.Generated)
                     {
                         @if (view.CanGenerate)
@@ -87,7 +87,7 @@ else
                                 aria-expanded="@(confirm == PanelKind.Approve ? "true" : "false")" aria-controls="approve-panel"
                                 aria-describedby="@(ApproveBlocked ? "approve-blocked" : null)"
                                 @onclick="AskApprove"
-                                class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-60">
+                                class="col-span-2 rounded-full border border-transparent bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-60 sm:col-auto">
                             Aprobar
                         </button>
                         }

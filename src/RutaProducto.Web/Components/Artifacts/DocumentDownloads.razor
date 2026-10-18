@@ -5,11 +5,11 @@
 
 @* Download choices of a document: the .md file for developers and the PDF for the person (RF-21). The PDF is the browser's
    "Save as PDF" over the print style sheet, opened by wwwroot/js/print.js; nothing is sent to a server for it. *@
-<div class="flex flex-wrap items-center gap-3 text-sm print:hidden">
-    <span class="font-medium text-ink-muted">Descargar</span>
+<div class="grid grid-cols-2 gap-3 text-sm sm:flex sm:flex-wrap sm:items-center print:hidden">
+    <span class="col-span-2 font-medium text-ink-muted sm:col-auto">Descargar</span>
     @* Full page load: the response is a file, which enhanced navigation must not try to render. *@
     <a href="@ArtifactEndpoints.DownloadPath(InitiativeId, Type)" download data-enhance-nav="false"
-       class="inline-flex items-center gap-2 rounded-full border border-line bg-surface-raised px-4 py-1.5 font-medium text-ink hover:bg-surface">
+       class="inline-flex items-center justify-center gap-2 rounded-full border border-line bg-surface-raised px-4 py-1.5 font-medium text-ink hover:bg-surface">
         @* A page with text lines: the .md is plain text. *@
         <svg class="size-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -18,7 +18,7 @@
         Markdown (.md)
     </a>
     <button type="button" @onclick="PrintAsync"
-            class="inline-flex items-center gap-2 rounded-full border border-line bg-surface-raised px-4 py-1.5 font-medium text-ink hover:bg-surface">
+            class="inline-flex items-center justify-center gap-2 rounded-full border border-line bg-surface-raised px-4 py-1.5 font-medium text-ink hover:bg-surface">
         @* A page with a down arrow: the PDF is saved from the print window. *@
         <svg class="size-4 text-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -26,7 +26,7 @@
         </svg>
         PDF
     </button>
-    <span class="text-xs text-ink-muted">Para el PDF elija «Guardar como PDF» en la ventana de impresión.</span>
+    <span class="col-span-2 text-xs text-ink-muted sm:col-auto">Para el PDF elija «Guardar como PDF» en la ventana de impresión.</span>
 </div>
 
 @code {

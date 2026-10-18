@@ -102,15 +102,15 @@ else if (items.Count > 0)
         </ConfirmPanel>
     }
 
-    @* Below md each initiative is a stacked card; the table takes over from md. "hidden" removes the inactive layout from the accessibility tree. *@
-    <ul class="mt-2 space-y-3 md:hidden" aria-label="Sus iniciativas, de la modificada más recientemente a la más antigua">
+    @* Below lg each initiative is a stacked card; the table takes over from lg. "hidden" removes the inactive layout from the accessibility tree. *@
+    <ul class="mt-2 space-y-3 lg:hidden" aria-label="Sus iniciativas, de la modificada más recientemente a la más antigua">
         @foreach (var item in items)
         {
             var isDraft = item.Status == InitiativeStatus.Draft;
             @* Stretched link: the name link's ::after covers the whole card, so the card is the click target. *@
             <li class="relative cursor-pointer rounded-card border border-line bg-surface-raised p-4 shadow-card hover:bg-surface focus-within:bg-surface">
                 <div class="flex items-start justify-between gap-2">
-                    <a href="@ItemHref(item)" class="min-w-0 break-words font-medium text-ink after:absolute after:inset-0 after:content-[''] hover:underline">@item.Name</a>
+                    <a href="@ItemHref(item)" class="min-w-0 [overflow-wrap:anywhere] font-medium text-ink after:absolute after:inset-0 after:content-[''] hover:underline">@item.Name</a>
                     <InitiativeRowActions Name="@item.Name" EditHref="@EditHref(item)" Disabled="deleting" OnDelete="() => AskDelete(item)" />
                 </div>
                 <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
@@ -127,16 +127,16 @@ else if (items.Count > 0)
     </ul>
 
     @* "relative" makes the wrapper the containing block of the table's sr-only (absolute) text, so it is clipped here instead of widening the page. *@
-    <div class="relative mt-2 hidden overflow-x-auto rounded-card border border-line bg-surface-raised shadow-card md:block">
-        <table class="w-full min-w-[40rem] text-left text-sm">
+    <div class="relative mt-2 hidden overflow-x-auto rounded-card border border-line bg-surface-raised shadow-card lg:block">
+        <table class="w-full table-fixed text-left text-sm">
             <caption class="sr-only">Sus iniciativas, de la modificada más recientemente a la más antigua</caption>
             <thead class="border-b border-line text-xs font-medium uppercase tracking-wide text-ink-muted">
                 <tr>
-                    <th scope="col" class="px-4 py-3">Nombre</th>
-                    <th scope="col" class="px-4 py-3">Profundidad</th>
-                    <th scope="col" class="px-4 py-3">Estado</th>
-                    <th scope="col" class="px-4 py-3">Modificada</th>
-                    <th scope="col" class="px-4 py-3"><span class="sr-only">Acción</span></th>
+                    <th scope="col" class="w-[34%] px-4 py-3">Nombre</th>
+                    <th scope="col" class="w-[20%] px-3 py-3">Profundidad</th>
+                    <th scope="col" class="w-[17%] px-3 py-3">Estado</th>
+                    <th scope="col" class="w-32 px-3 py-3">Modificada</th>
+                    <th scope="col" class="w-28 px-3 py-3"><span class="sr-only">Acción</span></th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-line">
@@ -145,14 +145,14 @@ else if (items.Count > 0)
                     var isDraft = item.Status == InitiativeStatus.Draft;
                     @* Stretched link: the name link's ::after covers the whole row, so the row is the click target. *@
                     <tr class="relative cursor-pointer hover:bg-surface focus-within:bg-surface">
-                        <th scope="row" class="px-4 py-3 font-medium text-ink">
+                        <th scope="row" class="min-w-0 px-4 py-3 font-medium text-ink [overflow-wrap:anywhere]">
                             <a href="@ItemHref(item)" class="after:absolute after:inset-0 after:content-[''] hover:underline">@item.Name</a>
                         </th>
-                        <td class="px-4 py-3 text-ink">@InitiativeLabels.DepthSummary(item.DepthMode, item.Depth)</td>
-                        <td class="px-4 py-3"><StatusBadge Status="item.Status" /></td>
-                        <td class="px-4 py-3 text-ink-muted"><time datetime="@item.UpdatedAt.ToString("O")">@InitiativeLabels.Date(item.UpdatedAt)</time></td>
-                        <td class="px-4 py-3">
-                            <div class="flex items-center justify-end gap-3">
+                        <td class="px-3 py-3 text-ink">@InitiativeLabels.DepthSummary(item.DepthMode, item.Depth)</td>
+                        <td class="whitespace-nowrap px-3 py-3"><StatusBadge Status="item.Status" /></td>
+                        <td class="whitespace-nowrap px-3 py-3 text-ink-muted"><time datetime="@item.UpdatedAt.ToString("O")">@InitiativeLabels.Date(item.UpdatedAt)</time></td>
+                        <td class="px-3 py-3">
+                            <div class="flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
                                 @if (isDraft)
                                 {
                                     <a href="@ItemHref(item)" class="relative z-10 font-semibold text-primary-ink hover:underline">Continuar<span class="sr-only"> con @item.Name</span></a>

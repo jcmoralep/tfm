@@ -26,14 +26,14 @@
     {
         @* One 12-column grid; every row splits 7/5 so the edges line up from top to bottom. *@
         <div class="grid gap-6 lg:grid-cols-12">
-            <div class="lg:col-span-7"><StatusCards Counts="view.StatusCounts" /></div>
-            <div class="lg:col-span-5"><KpiStrip View="view" /></div>
+            <div class="lg:col-span-7 min-w-0"><StatusCards Counts="view.StatusCounts" /></div>
+            <div class="lg:col-span-5 min-w-0"><KpiStrip View="view" /></div>
 
-            <div class="lg:col-span-7"><ResumeList Items="view.Resume" Now="now" /></div>
-            <div class="lg:col-span-5"><RecentActivity Items="view.Recent" Now="now" /></div>
+            <div class="lg:col-span-7 min-w-0"><ResumeList Items="view.Resume" Now="now" /></div>
+            <div class="lg:col-span-5 min-w-0"><RecentActivity Items="view.Recent" Now="now" /></div>
 
-            <div class="lg:col-span-7"><ActivityChart Weeks="view.Weeks" /></div>
-            <div class="lg:col-span-5"><DepthBars Depths="view.Depths" /></div>
+            <div class="lg:col-span-7 min-w-0"><ActivityChart Weeks="view.Weeks" /></div>
+            <div class="lg:col-span-5 min-w-0"><DepthBars Depths="view.Depths" /></div>
         </div>
     }
 </div>

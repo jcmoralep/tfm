@@ -32,9 +32,9 @@ else
                     var isCurrent = item.Step == step;
                     var isDone = item.Step < step;
                     <li aria-current="@(isCurrent ? "step" : null)"
-                        class="flex flex-1 items-center gap-3 rounded-control px-3 py-2 text-sm lg:flex-none @(isCurrent ? "bg-primary-soft font-semibold text-primary-ink" : "text-ink-muted")">
+                        class="flex min-w-0 flex-1 items-center justify-center gap-3 rounded-control px-2 py-2 text-sm sm:justify-start sm:px-3 lg:flex-none @(isCurrent ? "bg-primary-soft font-semibold text-primary-ink" : "text-ink-muted")">
                         <span class="flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold @(isCurrent ? "bg-primary text-on-primary" : isDone ? "bg-primary-soft text-primary-ink" : "bg-bubble text-ink-muted")">@(isDone ? "✓" : ((int)item.Step + 1).ToString())</span>
-                        <span>@item.Label<span class="sr-only">@(isDone ? " (completado)" : null)</span></span>
+                        <span class="sr-only sm:not-sr-only">@item.Label<span class="sr-only">@(isDone ? " (completado)" : null)</span></span>
                     </li>
                 }
             </ol>
